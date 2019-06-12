@@ -9959,6 +9959,8 @@ int ufshcd_init(struct ufs_hba *hba, void __iomem *mmio_base, unsigned int irq)
 	ufshcd_add_sysfs_nodes(hba);
 #endif
 
+	device_enable_async_suspend(dev);
+
 	return 0;
 
 free_tmf_queue:
