@@ -290,6 +290,8 @@ populate_dot11f_tx_power_env(struct mac_context *mac,
 						      chan_freq,
 						      &psd_tpe,
 						      &reg_power, &eirp_power);
+		pe_debug("chan_freq %d, reg_power %d, psd_power %d",
+			 chan_freq, reg_power, eirp_power);
 	}
 
 	switch (chan_width) {
@@ -353,6 +355,8 @@ populate_dot11f_tx_power_env(struct mac_context *mac,
 		if (bw_threshold < bw_val)
 			add_eirp_power = true;
 
+		pe_debug("bw_threshold %d", bw_threshold);
+
 		if (add_eirp_power) {
 			tpe_ptr->present = 1;
 			tpe_ptr->max_tx_pwr_count = max_tx_pwr_count;
@@ -367,6 +371,8 @@ populate_dot11f_tx_power_env(struct mac_context *mac,
 				else
 					tpe_ptr->tx_power[count] =
 								reg_power * 2;
+				pe_debug("non-psd default TPE %d %d",
+					 count, tpe_ptr->tx_power[count]);
 			}
 
 			num_tpe_ies++;
@@ -408,6 +414,9 @@ populate_dot11f_tx_power_env(struct mac_context *mac,
 					else
 						tpe_ptr->tx_power[count] =
 								reg_power * 2;
+					pe_debug("non-psd subord TPE %d %d",
+						 count,
+						 tpe_ptr->tx_power[count]);
 				}
 
 				num_tpe_ies++;
@@ -427,7 +436,12 @@ populate_dot11f_tx_power_env(struct mac_context *mac,
 						     chan_freq,
 						     &chan_params);
 
-		psd_start_freq = chan_params.mhz_freq_seg0 - bw_val / 2 + 10;
+		if (chan_params.mhz_freq_seg1)
+			psd_start_freq =
+				chan_params.mhz_freq_seg1 - bw_val / 2 + 10;
+		else
+			psd_start_freq =
+				chan_params.mhz_freq_seg0 - bw_val / 2 + 10;
 
 		for (count = 0; count < num_tx_power_psd; count++) {
 			wlan_reg_get_client_power_for_6ghz_ap(
@@ -439,6 +453,8 @@ populate_dot11f_tx_power_env(struct mac_context *mac,
 							&reg_power,
 							&eirp_power);
 			tpe_ptr->tx_power[count] = reg_power * 2;
+			pe_debug("psd default TPE %d %d",
+				 count, tpe_ptr->tx_power[count]);
 		}
 
 		num_tpe_ies++;
@@ -458,12 +474,6 @@ populate_dot11f_tx_power_env(struct mac_context *mac,
 			tpe_ptr->max_tx_pwr_category = 1;
 			tpe_ptr->num_tx_power = num_tx_power_psd;
 
-			chan_params.ch_width = chan_width;
-			wlan_reg_set_channel_params_for_freq(mac->pdev,
-							     chan_freq,
-							     chan_freq,
-							     &chan_params);
-
 			for (count = 0; count < num_tx_power_psd; count++) {
 				wlan_reg_get_client_power_for_6ghz_ap(
 							mac->pdev,
@@ -474,6 +484,8 @@ populate_dot11f_tx_power_env(struct mac_context *mac,
 							&reg_power,
 							&eirp_power);
 				tpe_ptr->tx_power[count] = reg_power * 2;
+				pe_debug("psd subord TPE %d %d",
+					 count, tpe_ptr->tx_power[count]);
 			}
 
 			num_tpe_ies++;
