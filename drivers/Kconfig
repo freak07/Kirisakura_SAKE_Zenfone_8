@@ -255,4 +255,8 @@ source "drivers/tuxera/zs675kw/ntfs/user/Kconfig"
 
 source "drivers/tuxera/zs675kw/ntfs/userdebug/Kconfig"
 
+source "techpack/datarmnet/Kconfig"
+
+source "techpack/datarmnet-ext/Kconfig"
+
 endmenu
