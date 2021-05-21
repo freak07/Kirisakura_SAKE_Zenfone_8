@@ -2053,6 +2053,8 @@ QDF_STATUS policy_mgr_decr_connection_count(struct wlan_objmgr_psoc *psoc,
 		policy_mgr_err("Invalid Context");
 		return status;
 	}
+	// ASUS debug
+	policy_mgr_debug("ASUs debug policy_mgr_decr_connection_count");
 
 	qdf_mutex_acquire(&pm_ctx->qdf_conc_list_lock);
 	while (PM_CONC_CONNECTION_LIST_VALID_INDEX(conn_index)) {
@@ -2069,6 +2071,8 @@ QDF_STATUS policy_mgr_decr_connection_count(struct wlan_objmgr_psoc *psoc,
 		qdf_mutex_release(&pm_ctx->qdf_conc_list_lock);
 		return status;
 	}
+	// ASUS debug
+	policy_mgr_debug("ASUs policy_mgr_decr_connection_count conn_index %d",conn_index);
 	next_conn_index = conn_index + 1;
 	while (PM_CONC_CONNECTION_LIST_VALID_INDEX(next_conn_index)) {
 		pm_conc_connection_list[conn_index].vdev_id =
@@ -2094,6 +2098,7 @@ QDF_STATUS policy_mgr_decr_connection_count(struct wlan_objmgr_psoc *psoc,
 	}
 
 	/* clean up the entry */
+	policy_mgr_debug("ASUs policy_mgr_decr_connection_count clean up %d",next_conn_index - 1);
 	qdf_mem_zero(&pm_conc_connection_list[next_conn_index - 1],
 		sizeof(*pm_conc_connection_list));
 	qdf_mutex_release(&pm_ctx->qdf_conc_list_lock);

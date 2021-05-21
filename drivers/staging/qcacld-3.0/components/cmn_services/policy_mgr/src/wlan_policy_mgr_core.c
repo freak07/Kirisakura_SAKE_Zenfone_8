@@ -597,6 +597,11 @@ void policy_mgr_update_conc_list(struct wlan_objmgr_psoc *psoc,
 		return;
 	}
 
+	// ASUs debug
+	policy_mgr_debug("ASUS debug policy_mgr_update_conc_list update");
+	policy_mgr_debug("pm_conc_connection_list[conn_index %d] mode %d, freq %d, mac %d, chain_mask %d, vdev_id %d, in_use %d",
+ 	conn_index, mode, ch_freq, mac, chain_mask, vdev_id, in_use);
+
 	qdf_mutex_acquire(&pm_ctx->qdf_conc_list_lock);
 	pm_conc_connection_list[conn_index].mode = mode;
 	pm_conc_connection_list[conn_index].freq = ch_freq;

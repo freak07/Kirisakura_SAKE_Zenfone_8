@@ -8559,6 +8559,7 @@ struct hdd_adapter *hdd_get_adapter_by_rand_macaddr(
 				dev_put(next_adapter->dev);
 			return adapter;
 		}
+		dev_put(adapter->dev);
 	}
 
 	return NULL;

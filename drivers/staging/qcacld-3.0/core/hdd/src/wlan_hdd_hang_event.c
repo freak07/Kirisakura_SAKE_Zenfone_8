@@ -96,6 +96,8 @@ static int wlan_hdd_recovery_notifier_call(struct notifier_block *block,
 		hdd_hang_data->offset += total_len;
 		hdd_objmgr_put_vdev(vdev);
 		dev_put(adapter->dev);
+		if (next_adapter)
+			dev_put(next_adapter->dev);
 	}
 
 	return NOTIFY_OK;
