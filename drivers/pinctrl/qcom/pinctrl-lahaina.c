@@ -1991,24 +1991,24 @@ static const unsigned int config_mpm_wake_disable_gpios[] = {
 
 static void lahaina_pinctrl_config_mpm_wake_disable_gpios(void)
 {
-       unsigned int i;
-       unsigned int n_gpios = ARRAY_SIZE(config_mpm_wake_disable_gpios);
+	unsigned int i;
+	unsigned int n_gpios = ARRAY_SIZE(config_mpm_wake_disable_gpios);
 
-       for (i = 0; i < n_gpios; i++)
-               msm_gpio_mpm_wake_set(config_mpm_wake_disable_gpios[i], false);
+	for (i = 0; i < n_gpios; i++)
+		msm_gpio_mpm_wake_set(config_mpm_wake_disable_gpios[i], false);
 }
 
 static int lahaina_pinctrl_probe(struct platform_device *pdev)
 {
-	   int ret;
+	int ret;
 
-       ret = msm_pinctrl_probe(pdev, &lahaina_pinctrl);
-       if (ret)
-               return ret;
+	ret = msm_pinctrl_probe(pdev, &lahaina_pinctrl);
+	if (ret)
+		return ret;
 
-       lahaina_pinctrl_config_mpm_wake_disable_gpios();
+	lahaina_pinctrl_config_mpm_wake_disable_gpios();
 
-       return 0;
+	return 0;
 }
 
 static const struct of_device_id lahaina_pinctrl_of_match[] = {

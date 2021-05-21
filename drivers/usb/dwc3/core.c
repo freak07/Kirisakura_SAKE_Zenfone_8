@@ -1622,6 +1622,7 @@ static int dwc3_probe(struct platform_device *pdev)
 
 	platform_set_drvdata(pdev, dwc);
 
+	init_waitqueue_head(&dwc->wait_linkstate);
 	spin_lock_init(&dwc->lock);
 
 	pm_runtime_no_callbacks(dev);
@@ -1724,6 +1725,8 @@ static int dwc3_remove(struct platform_device *pdev)
 
 	ipc_log_context_destroy(dwc->dwc_ipc_log_ctxt);
 	dwc->dwc_ipc_log_ctxt = NULL;
+	ipc_log_context_destroy(dwc->dwc_dma_ipc_log_ctxt);
+	dwc->dwc_dma_ipc_log_ctxt = NULL;
 	count--;
 	dwc3_instance[dwc->index] = NULL;
 
@@ -1996,24 +1999,16 @@ static int dwc3_resume(struct device *dev)
 
 	/* Check if platform glue driver handling PM, if not then handle here */
 	if (!dwc3_notify_event(dwc, DWC3_CORE_PM_RESUME_EVENT, 0)) {
-#ifdef CONFIG_MACH_ASUS
 		/*
 		 * If the core was in host mode during suspend, then perform
 		 * runtime resume which will do resume and set the runtime PM
 		 * state as active to reflect actual state of device which
 		 * is now out of LPM. This allows runtime_suspend later.
 		 */
-		if (dwc->current_dr_role == DWC3_GCTL_PRTCAP_HOST)
+		if (dwc->current_dr_role == DWC3_GCTL_PRTCAP_HOST &&
+					pm_runtime_status_suspended(dev))
 			pm_runtime_resume(dev);
-#else
-		/*
-		 * If the core was in host mode during suspend, then set the
-		 * runtime PM state as active to reflect actual state of device
-		 * which is now out of LPM. This allows runtime_suspend later.
-		 */
-		if (dwc->current_dr_role == DWC3_GCTL_PRTCAP_HOST)
-			goto runtime_set_active;
-#endif
+
 		return 0;
 	}
 
@@ -2022,13 +2017,7 @@ static int dwc3_resume(struct device *dev)
 	ret = dwc3_resume_common(dwc, PMSG_RESUME);
 	if (ret)
 		return ret;
-#ifdef CONFIG_MACH_ASUS
-#else
-runtime_set_active:
-	pm_runtime_disable(dev);
-	pm_runtime_set_active(dev);
-	pm_runtime_enable(dev);
-#endif
+
 	return 0;
 }
 #endif /* CONFIG_PM_SLEEP */
