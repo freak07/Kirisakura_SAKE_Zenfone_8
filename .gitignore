@@ -22,7 +22,7 @@
 *.elf
 *.gcno
 *.gz
-*.i
+#*.i
 *.ko
 *.lex.c
 *.ll
@@ -153,3 +153,7 @@ arch/*/configs/vendor/*_defconfig
 # vendor device tree directories
 arch/arm64/boot/dts/vendor
 arch/arm/boot/dts/vendor
+
+generate_defconfig.txt
+arch/arm64/configs/vendor/lahaina_ALLYES_GKI.config.backup
+

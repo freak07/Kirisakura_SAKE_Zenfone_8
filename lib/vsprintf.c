@@ -2499,7 +2499,12 @@ int vsnprintf(char *buf, size_t size, const char *fmt, va_list args)
 			if (str < end) {
 				if (copy > end - str)
 					copy = end - str;
+			#ifdef CONFIG_MACH_ASUS
+				//~ memcpy(str, old_fmt, copy);
+				strncpy(str, old_fmt, copy);
+			#else
 				memcpy(str, old_fmt, copy);
+			#endif
 			}
 			str += read;
 			break;

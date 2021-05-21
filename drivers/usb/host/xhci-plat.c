@@ -435,12 +435,16 @@ static int xhci_plat_resume(struct device *dev)
 	ret = xhci_priv_resume_quirk(hcd);
 	if (ret)
 		return ret;
-
+#ifdef CONFIG_MACH_ASUS
+	ret = pm_runtime_resume(dev);
+	if (ret)
+		dev_err(dev, "failed to resume xhci-plat (%d)\n", ret);
+#else
 	ret = xhci_resume(xhci, false);
 	pm_runtime_disable(dev);
 	pm_runtime_set_active(dev);
 	pm_runtime_enable(dev);
-
+#endif
 	return ret;
 }
 

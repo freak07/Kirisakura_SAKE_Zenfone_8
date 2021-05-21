@@ -5,6 +5,13 @@
 
 menu "Misc devices"
 
+config RT_REGMAP
+	bool "Richtek Regmap"
+	#select DEBUG_FS
+	default n
+	help
+	  Say Y to enable Richtek Register Map
+
 config SENSORS_LIS3LV02D
 	tristate
 	depends on INPUT
@@ -516,6 +523,10 @@ config HISI_HIKEY_USB
 	help
 	  If you say yes here you get support for usb functionality of HiSilicon Hikey Platform.
 
+config AUDIO_GM_CDEV
+	tristate "audio game mode"
+
+
 source "drivers/misc/c2port/Kconfig"
 source "drivers/misc/eeprom/Kconfig"
 source "drivers/misc/cb710/Kconfig"
@@ -531,4 +542,8 @@ source "drivers/misc/cxl/Kconfig"
 source "drivers/misc/ocxl/Kconfig"
 source "drivers/misc/cardreader/Kconfig"
 source "drivers/misc/habanalabs/Kconfig"
+source "drivers/misc/aw8697_haptic/Kconfig"
+source "drivers/misc/latch_ak09973/Kconfig"
+source "drivers/misc/latch_sensor/Kconfig"
+source "drivers/misc/hall_sensor/Kconfig"
 endmenu

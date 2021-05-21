@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/* Copyright (c) 2016-2020, The Linux Foundation. All rights reserved. */
+/* Copyright (c) 2016-2021, The Linux Foundation. All rights reserved. */
 
 #ifndef _CNSS_MAIN_H
 #define _CNSS_MAIN_H
@@ -259,7 +259,7 @@ enum cnss_driver_event_type {
 	CNSS_DRIVER_EVENT_IMS_WFC_CALL_IND,
 	CNSS_DRIVER_EVENT_WLFW_TWT_CFG_IND,
 	CNSS_DRIVER_EVENT_QDSS_TRACE_REQ_MEM,
-	CNSS_DRIVER_EVENT_QDSS_TRACE_SAVE,
+	CNSS_DRIVER_EVENT_FW_MEM_FILE_SAVE,
 	CNSS_DRIVER_EVENT_QDSS_TRACE_FREE,
 	CNSS_DRIVER_EVENT_MAX,
 };
@@ -407,6 +407,7 @@ struct cnss_plat_data {
 	struct cnss_platform_cap cap;
 	struct pm_qos_request qos_request;
 	struct cnss_device_version device_version;
+	u32 rc_num;
 	unsigned long device_id;
 	enum cnss_driver_status driver_status;
 	u32 recovery_count;

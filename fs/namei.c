@@ -125,6 +125,13 @@
  * PATH_MAX includes the nul terminator --RR.
  */
 
+#if defined ASUS_ZS673KS_PROJECT || defined ASUS_PICASSO_PROJECT || defined ASUS_SAKE_PROJECT || defined ASUS_VODKA_PROJECT
+extern bool g_is_country_code_EU;
+extern bool g_is_country_code_RU;
+extern bool g_is_country_code_CN;
+extern bool g_is_country_code_QC;
+#endif
+
 #define EMBEDDED_NAME_MAX	(PATH_MAX - offsetof(struct filename, iname))
 
 struct filename *
@@ -154,6 +161,81 @@ getname_flags(const char __user *filename, int flags, int *empty)
 		__putname(result);
 		return ERR_PTR(len);
 	}
+
+	#if defined ASUS_SAKE_PROJECT || defined ASUS_VODKA_PROJECT
+	//Do nothing/Skip, this has been done in build.prop by import
+	#else
+	#if defined ASUS_ZS673KS_PROJECT || defined ASUS_PICASSO_PROJECT
+	//  +++ ASUS_BSP : parse cmdline to load eu/ru/cn build.prop
+	if (!strncmp(kname, "/vendor/build.prop", 18)) {
+
+		if (g_is_country_code_EU){
+			//printk("%s: load build.prop from build_eu.prop",__func__);
+			strncpy(kname, "/vendor/build_eu.prop", EMBEDDED_NAME_MAX);
+			len = 21;
+		}else if(g_is_country_code_RU){
+			//printk("%s: load build.prop from build_ru.prop",__func__);
+			strncpy(kname, "/vendor/build_ru.prop", EMBEDDED_NAME_MAX);
+			len = 21;
+		}else if(g_is_country_code_CN){
+			//printk("%s: load build.prop from build_cn.prop",__func__);
+			strncpy(kname, "/vendor/build_cn.prop", EMBEDDED_NAME_MAX);
+			len = 21;
+		}else if(g_is_country_code_QC){
+			printk("%s: load vendor build.prop from build_qc.prop",__func__);
+			strncpy(kname, "/vendor/build_qc.prop", EMBEDDED_NAME_MAX);
+			len = 21;
+		}
+    	}
+    #endif
+	#endif
+	#if defined ASUS_ZS673KS_PROJECT || defined ASUS_PICASSO_PROJECT
+	if (!strncmp(kname, "/system/build.prop", 18)) {
+
+		if(g_is_country_code_QC){
+			printk("%s: load system build.prop from build_qc.prop",__func__);
+			strncpy(kname, "/system/build_qc.prop", EMBEDDED_NAME_MAX);
+			len = 21;
+		}
+    	}
+	if (!strncmp(kname, "/odm/etc/build.prop", 19)) {
+		
+		if (g_is_country_code_EU){
+			printk("%s: load odm build.prop from build_eu.prop",__func__);
+			strncpy(kname, "/odm/etc/build_eu.prop", EMBEDDED_NAME_MAX);
+			len = 22;
+		}else if(g_is_country_code_RU){
+			printk("%s: load odm build.prop from build_ru.prop",__func__);
+			strncpy(kname, "/odm/etc/build_ru.prop", EMBEDDED_NAME_MAX);
+			len = 22;
+		}else if(g_is_country_code_CN){
+			printk("%s: load odm build.prop  from build_cn.prop",__func__);
+			strncpy(kname, "/odm/etc/build_cn.prop", EMBEDDED_NAME_MAX);
+			len = 22;
+		}else if(g_is_country_code_QC){
+			printk("%s: load odm build.prop from build_qc.prop",__func__);
+			strncpy(kname, "/odm/etc/build_qc.prop", EMBEDDED_NAME_MAX);
+			len = 22;
+		}
+    	}
+	if (!strncmp(kname, "/product/build.prop", 19)) {
+
+		if(g_is_country_code_QC){
+			printk("%s: load product build.prop from build_qc.prop",__func__);
+			strncpy(kname, "/product/build_qc.prop", EMBEDDED_NAME_MAX);
+			len = 22;
+		}
+    	}
+	if (!strncmp(kname, "/system_ext/build.prop", 22)) {
+
+		if(g_is_country_code_QC){
+			printk("%s: load system_ext build.prop from build_qc.prop",__func__);
+			strncpy(kname, "/system_ext/build_qc.prop", EMBEDDED_NAME_MAX);
+			len = 25;
+		}
+    	}
+	#endif
+	//  --- ASUS_BSP : parse cmdline to load eu/ru/cn build.prop
 
 	/*
 	 * Uh-oh. We have a name that's approaching PATH_MAX. Allocate a
@@ -305,9 +387,13 @@ static int acl_permission_check(struct inode *inode, int mask)
 			if (error != -EAGAIN)
 				return error;
 		}
-
+#ifdef CONFIG_MACH_ASUS
+		if (in_group_p(inode->i_gid))
+		        mode >>= 3;
+#else
 		if (in_group_p(inode->i_gid))
 			mode >>= 3;
+#endif
 	}
 
 	/*
@@ -315,6 +401,20 @@ static int acl_permission_check(struct inode *inode, int mask)
 	 */
 	if ((mask & ~mode & (MAY_READ | MAY_WRITE | MAY_EXEC)) == 0)
 		return 0;
+#ifdef CONFIG_MACH_ASUS
+	else { //[TwinApps] {
+            gid_t gid_val_1 = __kgid_val(inode->i_gid);
+            gid_t gid_val_2 = 0;
+            if (gid_val_1 > 10000 && gid_val_1 < 99999) {
+                gid_val_2 = gid_val_1 + 235700000;
+            } else if (gid_val_1 > 235710000 && gid_val_1 < 235799999) {
+                gid_val_2 = gid_val_1 - 235700000;
+            }
+            if (gid_val_2 > 0 && in_group_p(KGIDT_INIT(gid_val_2))) {
+                return 0;
+            }
+        } //[TwinApps] }
+#endif
 	return -EACCES;
 }
 

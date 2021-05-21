@@ -14,6 +14,7 @@
 #include <linux/spinlock.h>
 #include <linux/types.h>
 #include <linux/wait.h>
+#include <linux/ipc_logging.h>
 
 #include <soc/qcom/rpmh.h>
 
@@ -36,6 +37,7 @@
 	}
 
 #define ctrlr_to_drv(ctrlr) container_of(ctrlr, struct rsc_drv, client)
+#define ctrlr_to_ctx(ctrlr) ctrlr_to_drv(ctrlr)->ipc_log_ctx
 
 /**
  * struct cache_req: the request object for caching
@@ -105,6 +107,7 @@ int rpmh_mode_solver_set(const struct device *dev, bool enable)
 	spin_lock_irqsave(&ctrlr->cache_lock, flags);
 	rpmh_rsc_mode_solver_set(ctrlr_to_drv(ctrlr), enable);
 	ctrlr->in_solver_mode = enable;
+	ipc_log_string(ctrlr_to_ctx(ctrlr), "%s solver mode enable=%d", dev->of_node->name, enable);
 	spin_unlock_irqrestore(&ctrlr->cache_lock, flags);
 
 	return 0;
@@ -197,6 +200,10 @@ existing:
 	}
 
 unlock:
+	if (req)
+		ipc_log_string(ctrlr_to_ctx(ctrlr),
+				"caching state=%d addr=%#x data=%#x",
+				state, cmd->addr, cmd->data);
 	spin_unlock_irqrestore(&ctrlr->cache_lock, flags);
 
 	return req;
@@ -347,10 +354,21 @@ EXPORT_SYMBOL(rpmh_write);
 static void cache_batch(struct rpmh_ctrlr *ctrlr, struct batch_cache_req *req)
 {
 	unsigned long flags;
+	const struct rpmh_request *rpm_msg;
+	const struct tcs_request *msg;
+	int i, j;
 
 	spin_lock_irqsave(&ctrlr->cache_lock, flags);
 	list_add_tail(&req->list, &ctrlr->batch_cache);
 	ctrlr->dirty = true;
+	for (i = 0; i < req->count; i++) {
+		rpm_msg = req->rpm_msgs + i;
+		msg = &rpm_msg->msg;
+		for (j = 0; j < msg->num_cmds; j++)
+			ipc_log_string(ctrlr_to_ctx(ctrlr),
+					"caching state=%d addr=%#x data=%#x",
+					msg->state, msg->cmds[j].addr, msg->cmds[j].data);
+	}
 	spin_unlock_irqrestore(&ctrlr->cache_lock, flags);
 }
 
@@ -421,6 +439,12 @@ int rpmh_write_batch(const struct device *dev, enum rpmh_state state,
 	int ret, i;
 	void *ptr;
 
+	for (i = 0; n[i]; i++)
+		count += n[i];
+	ipc_log_string(ctrlr_to_ctx(ctrlr),
+			"write_batch: dev:%s state:%d num-cmds:%d", dev->of_node->name, state, count);
+	count = 0;
+
 	if (!cmd || !n)
 		return -EINVAL;
 
@@ -428,8 +452,11 @@ int rpmh_write_batch(const struct device *dev, enum rpmh_state state,
 		return 0;
 
 	ret = check_ctrlr_state(ctrlr, state);
-	if (ret)
+	if (ret) {
+		ipc_log_string(ctrlr_to_ctx(ctrlr),
+			       "solver busy:%d dev:%s state:%d", ret, dev->of_node->name, state);
 		return ret;
+	}
 
 	while (n[count] > 0)
 		count++;
@@ -570,6 +597,7 @@ int rpmh_flush(const struct device *dev)
 
 	if (!ctrlr->dirty) {
 		pr_debug("Skipping flush, TCS has latest data.\n");
+		ipc_log_string(ctrlr_to_ctx(ctrlr), "no dirty data, skipping flush batch");
 		return 0;
 	}
 
@@ -579,6 +607,7 @@ int rpmh_flush(const struct device *dev)
 	} while (ret == -EAGAIN);
 
 	/* First flush the cached batch requests */
+	ipc_log_string(ctrlr_to_ctx(ctrlr), "%s flush batch", dev->of_node->name);
 	ret = flush_batch(ctrlr);
 	if (ret)
 		return ret;
@@ -591,6 +620,9 @@ int rpmh_flush(const struct device *dev)
 		if (!is_req_valid(p)) {
 			pr_debug("%s: skipping RPMH req: a:%#x s:%#x w:%#x",
 				 __func__, p->addr, p->sleep_val, p->wake_val);
+			ipc_log_string(ctrlr_to_ctx(ctrlr),
+					"skipping sleep/wake: addr:%#x sleep:%#x wake:%#x",
+					p->addr, p->sleep_val, p->wake_val);
 			continue;
 		}
 		ret = send_single(dev, RPMH_SLEEP_STATE, p->addr, p->sleep_val);
@@ -624,6 +656,7 @@ int rpmh_invalidate(const struct device *dev)
 	if (rpmh_standalone)
 		return 0;
 
+	ipc_log_string(ctrlr_to_ctx(ctrlr), "%s invalidating batch", dev->of_node->name);
 	invalidate_batch(ctrlr);
 	ctrlr->dirty = true;
 

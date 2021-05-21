@@ -29,6 +29,14 @@
 #include "drm_internal.h"
 #include "drm_crtc_internal.h"
 
+#ifdef MACH_ASUS_ZS673KS
+/* ASUS BSP Display +++ */
+#include <drm/drm_anakin.h>
+#endif
+#if defined ASUS_SAKE_PROJECT || defined ASUS_VODKA_PROJECT
+#include <drm/drm_zf8.h>
+#endif
+
 #define to_drm_minor(d) dev_get_drvdata(d)
 #define to_drm_connector(d) dev_get_drvdata(d)
 
@@ -83,6 +91,26 @@ int drm_sysfs_init(void)
 		drm_class = NULL;
 		return err;
 	}
+#if defined MACH_ASUS_ZS673KS
+	/* ASUS BSP Display +++ */
+	err = drm_anakin_sysfs_init();
+	if (err) {
+		class_destroy(drm_class);
+		drm_class = NULL;
+		return err;
+	}
+	/* ASUS BSP Display --- */
+#endif
+#if defined ASUS_SAKE_PROJECT || defined ASUS_VODKA_PROJECT
+	/* ASUS BSP Display +++ */
+	err = drm_zf8_sysfs_init();
+	if (err) {
+		class_destroy(drm_class);
+		drm_class = NULL;
+		return err;
+	}
+	/* ASUS BSP Display --- */
+#endif
 
 	drm_class->devnode = drm_devnode;
 	drm_setup_hdcp_srm(drm_class);
@@ -98,6 +126,14 @@ void drm_sysfs_destroy(void)
 {
 	if (IS_ERR_OR_NULL(drm_class))
 		return;
+#if defined MACH_ASUS_ZS673KS
+	/* ASUS BSP Display +++ */
+	drm_anakin_sysfs_destroy();
+#endif
+#if defined ASUS_SAKE_PROJECT || defined ASUS_VODKA_PROJECT
+	drm_zf8_sysfs_destroy();
+#endif
+
 	drm_teardown_hdcp_srm(drm_class);
 	class_remove_file(drm_class, &class_attr_version.attr);
 	class_destroy(drm_class);

@@ -230,7 +230,7 @@ static struct binder_transaction_log_entry *binder_transaction_log_add(
 struct binder_work {
 	struct list_head entry;
 
-	enum {
+	enum binder_work_type {
 		BINDER_WORK_TRANSACTION = 1,
 		BINDER_WORK_TRANSACTION_COMPLETE,
 		BINDER_WORK_RETURN_ERROR,
@@ -917,27 +917,6 @@ static struct binder_work *binder_dequeue_work_head_ilocked(
 	return w;
 }
 
-/**
- * binder_dequeue_work_head() - Dequeues the item at head of list
- * @proc:         binder_proc associated with list
- * @list:         list to dequeue head
- *
- * Removes the head of the list if there are items on the list
- *
- * Return: pointer dequeued binder_work, NULL if list was empty
- */
-static struct binder_work *binder_dequeue_work_head(
-					struct binder_proc *proc,
-					struct list_head *list)
-{
-	struct binder_work *w;
-
-	binder_inner_proc_lock(proc);
-	w = binder_dequeue_work_head_ilocked(list);
-	binder_inner_proc_unlock(proc);
-	return w;
-}
-
 static void
 binder_defer_work(struct binder_proc *proc, enum binder_deferred_state defer);
 static void binder_free_thread(struct binder_thread *thread);
@@ -986,7 +965,8 @@ static void binder_wakeup_poll_threads_ilocked(struct binder_proc *proc,
 			if (thread->task && current->signal &&
 				(current->signal->oom_score_adj == 0) &&
 				(current->prio < DEFAULT_PRIO))
-				thread->task->wts.low_latency = true;
+				thread->task->wts.low_latency |=
+						WALT_LOW_LATENCY_BINDER;
 #endif
 			if (sync)
 				wake_up_interruptible_sync(&thread->wait);
@@ -1051,7 +1031,8 @@ static void binder_wakeup_thread_ilocked(struct binder_proc *proc,
 		if (thread->task && current->signal &&
 			(current->signal->oom_score_adj == 0) &&
 			(current->prio < DEFAULT_PRIO))
-			thread->task->wts.low_latency = true;
+			thread->task->wts.low_latency |=
+					WALT_LOW_LATENCY_BINDER;
 #endif
 		if (sync)
 			wake_up_interruptible_sync(&thread->wait);
@@ -4711,8 +4692,9 @@ retry:
 
 		trace_binder_transaction_received(t);
 #ifdef CONFIG_SCHED_WALT
-		if (current->wts.low_latency)
-			current->wts.low_latency = false;
+		if (current->wts.low_latency & WALT_LOW_LATENCY_BINDER)
+			thread->task->wts.low_latency &=
+						~WALT_LOW_LATENCY_BINDER;
 #endif
 		binder_stat_br(proc, thread, cmd);
 		binder_debug(BINDER_DEBUG_TRANSACTION,
@@ -4769,13 +4751,17 @@ static void binder_release_work(struct binder_proc *proc,
 				struct list_head *list)
 {
 	struct binder_work *w;
+	enum binder_work_type wtype;
 
 	while (1) {
-		w = binder_dequeue_work_head(proc, list);
+		binder_inner_proc_lock(proc);
+		w = binder_dequeue_work_head_ilocked(list);
+		wtype = w ? w->type : 0;
+		binder_inner_proc_unlock(proc);
 		if (!w)
 			return;
 
-		switch (w->type) {
+		switch (wtype) {
 		case BINDER_WORK_TRANSACTION: {
 			struct binder_transaction *t;
 
@@ -4809,9 +4795,11 @@ static void binder_release_work(struct binder_proc *proc,
 			kfree(death);
 			binder_stats_deleted(BINDER_STAT_DEATH);
 		} break;
+		case BINDER_WORK_NODE:
+			break;
 		default:
 			pr_err("unexpected work type, %d, not freed\n",
-			       w->type);
+			       wtype);
 			break;
 		}
 	}

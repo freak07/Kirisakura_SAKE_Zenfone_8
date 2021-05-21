@@ -1718,11 +1718,19 @@ composite_setup(struct usb_gadget *gadget, const struct usb_ctrlrequest *ctrl)
 					cdev->desc.bcdUSB = cpu_to_le16(0x0320);
 					cdev->desc.bMaxPacketSize0 = 9;
 				} else {
+				#ifdef CONFIG_MACH_ASUS
+					cdev->desc.bcdUSB = cpu_to_le16(0x0200);
+				#else
 					cdev->desc.bcdUSB = cpu_to_le16(0x0210);
+				#endif
 				}
 			} else {
 				if (gadget->lpm_capable)
+				#ifdef CONFIG_MACH_ASUS
+					cdev->desc.bcdUSB = cpu_to_le16(0x0200);
+				#else
 					cdev->desc.bcdUSB = cpu_to_le16(0x0201);
+				#endif
 				else
 					cdev->desc.bcdUSB = cpu_to_le16(0x0200);
 			}
@@ -2091,6 +2099,12 @@ void composite_disconnect(struct usb_gadget *gadget)
 {
 	struct usb_composite_dev	*cdev = get_gadget_data(gadget);
 	unsigned long			flags;
+
+	if (cdev == NULL) {
+		WARN(1, "%s: Calling disconnect on a Gadget that is \
+			 not connected\n", __func__);
+		return;
+	}
 
 	/* REVISIT:  should we have config and device level
 	 * disconnect callbacks?

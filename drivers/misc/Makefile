@@ -58,9 +58,22 @@ obj-y				+= cardreader/
 obj-$(CONFIG_PVPANIC)   	+= pvpanic.o
 obj-$(CONFIG_HABANA_AI)		+= habanalabs/
 obj-$(CONFIG_XILINX_SDFEC)	+= xilinx_sdfec.o
+ifeq ($(CONFIG_MACH_ASUS_SAKE),y)
+obj-$(CONFIG_UID_SYS_STATS)	+= uid_sys_stats_zf8.o
+else ifeq ($(CONFIG_MACH_ASUS_VODKA),y)
+obj-$(CONFIG_UID_SYS_STATS)	+= uid_sys_stats_zf8.o
+else
 obj-$(CONFIG_UID_SYS_STATS)	+= uid_sys_stats.o
+endif
 obj-$(CONFIG_QSEECOM)		+= qseecom-mod.o
 qseecom-mod-y			:= qseecom.o
 qseecom-mod-$(CONFIG_COMPAT)	+= compat_qseecom.o
 obj-$(CONFIG_WIGIG_SENSING_SPI)	+= wigig_sensing.o
 obj-$(CONFIG_HISI_HIKEY_USB)	+= hisi_hikey_usb.o
+obj-$(CONFIG_RT_REGMAP)		+= rt-regmap.o
+obj-y		+= audio_gm_cdev.o
+obj-$(CONFIG_AW8697_HAPTIC) += aw8697_haptic/
+obj-$(CONFIG_LATCH_AK09973) += latch_ak09973/
+obj-$(CONFIG_LATCH_SENSOR)	+= latch_sensor/
+obj-$(CONFIG_HALL_SENSOR)	+= hall_sensor/
+

@@ -28,6 +28,13 @@
 #include <linux/of_irq.h>
 #include <linux/spinlock.h>
 #include <dt-bindings/input/gpio-keys.h>
+#ifdef CONFIG_MACH_ASUS
+#include <linux/input/qpnp-power-on.h>
+#include <linux/uaccess.h>
+bool volume_key_wake_en = 0; /* /sys/module/gpio_keys/parameters/volume_key_wake_en, default is N */
+module_param(volume_key_wake_en, bool, 0644);
+MODULE_PARM_DESC(volume_key_wake_en, "Enable/Disable volume key wakeup");
+#endif
 
 struct gpio_button_data {
 	const struct gpio_keys_button *button;
@@ -353,6 +360,12 @@ static struct attribute *gpio_keys_attrs[] = {
 };
 ATTRIBUTE_GROUPS(gpio_keys);
 
+#ifdef CONFIG_MACH_ASUS
+unsigned int vol_up_press = 0;
+extern unsigned int vol_down_press_count;
+unsigned int b_press = 0; //ASUS_BSP : Wei_Lai
+#endif
+
 static void gpio_keys_gpio_report_event(struct gpio_button_data *bdata)
 {
 	const struct gpio_keys_button *button = bdata->button;
@@ -367,11 +380,50 @@ static void gpio_keys_gpio_report_event(struct gpio_button_data *bdata)
 		return;
 	}
 
+#ifdef CONFIG_MACH_ASUS
+	if(type == EV_KEY) {
+		if(button->code == 115) {
+			printk("[keypad][gpio_keys.c] keycode=%d, state=%s\n", button->code, state?"press":"release");
+			if (state > 0) {
+				//if (g_startlog) {
+					vol_up_press = 1;
+				//}
+			}
+			else {
+				vol_up_press = 0;
+				if(vol_down_press_count != 0) {
+					printk("[keypad][gpio_keys.c] vol down (keycode=114) count = %d\n", vol_down_press_count);
+					vol_down_press_count = 0;
+				}
+			}
+		}
+		else {
+			pr_info("[keypad] %s: keycode=%d, state=%s\n",
+					__func__, button->code, state?"press":"release");
+		}
+	}
+#endif
+
 	if (type == EV_ABS) {
 		if (state)
 			input_event(input, type, button->code, button->value);
 	} else {
 		input_event(input, type, *bdata->code, state);
+#ifdef CONFIG_MACH_ASUS
+               if(state) {
+                      if(button->code == 114)
+                              b_press |= 0x01;
+
+                      if(button->code == 115)
+                              b_press |= 0x02;
+               }else {
+                       if(button->code == 114)
+                              b_press &= ~(0x01);
+
+                       if(button->code == 115)
+                              b_press &= ~(0x02);
+               }
+#endif
 	}
 	input_sync(input);
 }
@@ -761,6 +813,32 @@ static const struct of_device_id gpio_keys_of_match[] = {
 };
 MODULE_DEVICE_TABLE(of, gpio_keys_of_match);
 
+#if defined(ASUS_VODKA_PROJECT) || defined(ASUS_SAKE_PROJECT)
+#ifdef ASUS_FTM_BUILD//add by stone1_wang for factory build +++
+static ssize_t printklog_write (struct file *filp, const char *userbuf, size_t size, loff_t *loff_p)
+{
+	char str[128];
+	memset(str, 0, sizeof(str));
+
+	if(size > 127)
+		size = 127;
+
+	if (copy_from_user(str, userbuf, size))
+	{
+		pr_err("copy from bus failed!\n");
+		return -EFAULT;
+	}
+
+	printk(KERN_ERR"[factool log]:%s",str);
+	return size;
+}
+
+static struct file_operations printklog_fops = {
+	.write = printklog_write,
+};
+#endif
+#endif
+
 static int gpio_keys_probe(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
@@ -857,6 +935,15 @@ static int gpio_keys_probe(struct platform_device *pdev)
 
 	device_init_wakeup(dev, wakeup);
 
+#if defined(ASUS_VODKA_PROJECT) || defined(ASUS_SAKE_PROJECT)
+#ifdef ASUS_FTM_BUILD//add by stone1_wang for factory build +++
+	if(proc_create("fac_printklog", 0777, NULL, &printklog_fops)==NULL)
+	{
+		printk(KERN_ERR"create printklog node is error\n");
+	}
+#endif
+#endif
+
 	return 0;
 }
 
@@ -925,6 +1012,10 @@ gpio_keys_enable_wakeup(struct gpio_keys_drvdata *ddata)
 			error = gpio_keys_button_enable_wakeup(bdata);
 			if (error)
 				goto err_out;
+#ifdef CONFIG_MACH_ASUS
+			if(volume_key_wake_en && bdata->button->code == 115)
+				asus_enable_resin_irq_wake(1);
+#endif
 		}
 		bdata->suspended = true;
 	}
@@ -951,8 +1042,17 @@ gpio_keys_disable_wakeup(struct gpio_keys_drvdata *ddata)
 	for (i = 0; i < ddata->pdata->nbuttons; i++) {
 		bdata = &ddata->data[i];
 		bdata->suspended = false;
+#ifdef CONFIG_MACH_ASUS
+		if (irqd_is_wakeup_set(irq_get_irq_data(bdata->irq))){
+			gpio_keys_button_disable_wakeup(bdata);
+			
+			if(volume_key_wake_en && bdata->button->code == 115)
+				asus_enable_resin_irq_wake(0);
+		}
+#else
 		if (irqd_is_wakeup_set(irq_get_irq_data(bdata->irq)))
 			gpio_keys_button_disable_wakeup(bdata);
+#endif
 	}
 }
 

@@ -398,6 +398,9 @@ EXPORT_SYMBOL(msm_set_restart_mode);
 
 static void msm_restart_prepare(const char *cmd)
 {
+#if defined ASUS_SAKE_PROJECT || defined ASUS_VODKA_PROJECT
+	ulong *printk_buffer_slot2_addr;
+#endif
 	bool need_warm_reset = false;
 	u8 reason = PON_RESTART_REASON_UNKNOWN;
 	/* Write download mode flags if we're panic'ing
@@ -421,7 +424,13 @@ static void msm_restart_prepare(const char *cmd)
 		need_warm_reset = (get_dload_mode() ||
 				(cmd != NULL && cmd[0] != '\0'));
 	}
-
+#if defined ASUS_SAKE_PROJECT || defined ASUS_VODKA_PROJECT
+	if (!in_panic) {
+		// Normal reboot. Clean the printk buffer magic
+		printk_buffer_slot2_addr = (ulong *)PRINTK_BUFFER_SLOT2;
+		*printk_buffer_slot2_addr = 0;
+	}
+#endif
 	if (force_warm_reboot)
 		pr_info("Forcing a warm reset of the system\n");
 
@@ -511,8 +520,20 @@ static int do_msm_restart(struct notifier_block *unused, unsigned long action,
 
 static void do_msm_poweroff(void)
 {
+
+#if defined ASUS_SAKE_PROJECT || defined ASUS_VODKA_PROJECT
+	ulong *printk_buffer_slot2_addr;
+#endif
 	pr_notice("Powering off the SoC\n");
 
+#if defined ASUS_SAKE_PROJECT || defined ASUS_VODKA_PROJECT
+	// Normal power off. Clean the printk buffer magic
+	printk_buffer_slot2_addr = (ulong *)PRINTK_BUFFER_SLOT2;
+	*printk_buffer_slot2_addr = 0;
+
+	printk(KERN_CRIT "Clean asus_global...\n");
+	flush_cache_all();
+#endif
 	set_dload_mode(0);
 	qpnp_pon_system_pwr_off(PON_POWER_OFF_SHUTDOWN);
 

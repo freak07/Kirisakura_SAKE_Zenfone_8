@@ -1,0 +1,6 @@
+config GOODIX_FINGERPRINT_2ND
+	tristate "generic goodix fingerprint driver"
+	depends on MACH_ASUS_SAKE || MACH_ASUS_VODKA
+	default m
+	help
+	   add support for goodix fingerprint driver.

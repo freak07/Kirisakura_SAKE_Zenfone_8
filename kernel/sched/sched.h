@@ -3004,6 +3004,7 @@ static inline struct walt_related_thread_group
 	return rcu_dereference(p->wts.grp);
 }
 
+/* applying the task threshold for all types of low latency tasks. */
 static inline bool walt_low_latency_task(struct task_struct *p)
 {
 	return p->wts.low_latency &&
@@ -3367,4 +3368,19 @@ extern void dequeue_task_core(struct rq *rq, struct task_struct *p, int flags);
 extern void walt_init_sched_boost(struct task_group *tg);
 #else
 static inline void walt_init_sched_boost(struct task_group *tg) {}
+#endif
+
+#ifdef CONFIG_SCHED_WALT
+static inline void walt_irq_work_queue(struct irq_work *work)
+{
+	if (likely(cpu_online(raw_smp_processor_id())))
+		irq_work_queue(work);
+	else
+		irq_work_queue_on(work, cpumask_any(cpu_online_mask));
+}
+#else
+static inline void walt_irq_work_queue(struct irq_work *work)
+{
+	irq_work_queue(work);
+}
 #endif

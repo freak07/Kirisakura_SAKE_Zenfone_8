@@ -1954,12 +1954,12 @@ static const struct msm_gpio_wakeirq_map lahaina_pdc_map[] = {
 	{ 39, 92 }, { 40, 101 }, { 43, 137 }, { 44, 102 }, { 46, 96 },
 	{ 47, 93 }, { 50, 108 }, { 51, 127 }, { 55, 128 }, { 56, 81 },
 	{ 59, 112 }, { 60, 119 }, { 63, 73 }, { 67, 74 }, { 71, 134 },
-	{ 75, 103 }, { 79, 104 }, { 80, 126 }, { 81, 139 }, { 82, 140 },
+	{ 75, 103 }, { 79, 104 }, { 80, 126 }, { 81, 139 }, /*{ 82, 140 },*/
 	{ 83, 141 }, { 84, 124 }, { 85, 109 }, { 86, 143 }, { 87, 138 },
 	{ 88, 122 }, { 89, 113 }, { 90, 114 }, { 91, 115 }, { 92, 76 },
 	{ 95, 147 }, { 96, 148 }, { 98, 149 }, { 99, 150 }, { 115, 125 },
 	{ 116, 106 }, { 117, 105 }, { 118, 116 }, { 119, 123 }, { 130, 145 },
-	{ 136, 72 }, { 140, 100 }, { 151, 110 }, { 153, 95 }, { 155, 107 },
+	{ 136, 72 }, { 140, 100 }, /*{ 151, 110 },*/ { 153, 95 }, { 155, 107 },
 	{ 156, 94 }, { 157, 111 }, { 159, 118 }, { 162, 77 }, { 165, 78 },
 	{ 169, 70 }, { 172, 132 }, { 174, 87 }, { 175, 88 }, { 177, 89 },
 	{ 179, 120 }, { 180, 129 }, { 183, 90 }, { 185, 136 }, { 187, 142 },
@@ -1981,9 +1981,34 @@ static const struct msm_pinctrl_soc_data lahaina_pinctrl = {
 	.nwakeirq_map = ARRAY_SIZE(lahaina_pdc_map),
 };
 
+/* By default, all the gpios that are mpm wake capable are enabled.
+ * The following list disables the gpios explicitly
+ */
+static const unsigned int config_mpm_wake_disable_gpios[] = {
+		82, 	//LCD_TE
+		151 //disable GPIO 151 wake up for suspend GIC stuck issue
+};
+
+static void lahaina_pinctrl_config_mpm_wake_disable_gpios(void)
+{
+       unsigned int i;
+       unsigned int n_gpios = ARRAY_SIZE(config_mpm_wake_disable_gpios);
+
+       for (i = 0; i < n_gpios; i++)
+               msm_gpio_mpm_wake_set(config_mpm_wake_disable_gpios[i], false);
+}
+
 static int lahaina_pinctrl_probe(struct platform_device *pdev)
 {
-	return msm_pinctrl_probe(pdev, &lahaina_pinctrl);
+	   int ret;
+
+       ret = msm_pinctrl_probe(pdev, &lahaina_pinctrl);
+       if (ret)
+               return ret;
+
+       lahaina_pinctrl_config_mpm_wake_disable_gpios();
+
+       return 0;
 }
 
 static const struct of_device_id lahaina_pinctrl_of_match[] = {
