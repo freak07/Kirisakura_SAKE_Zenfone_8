@@ -736,8 +736,48 @@ static int aw8697_haptic_set_bst_peak_cur(struct aw8697 *aw8697,
 	return 0;
 }
 
+#ifdef CONFIG_UCI
+
+static int booster_percentage = 0;
+#define MAX_GAIN 175
+static bool booster_in_pocket = false;
+static bool skip_next_boosting = false;
+
+void ntf_vibration_set_in_pocket(int percentage, bool in_pocket) {
+	booster_percentage = percentage;
+	booster_in_pocket = in_pocket;
+}
+EXPORT_SYMBOL(ntf_vibration_set_in_pocket);
+
+static int haptic_percentage = 0;
+void ntf_vibration_set_haptic(int power) {
+	haptic_percentage = power;
+}
+EXPORT_SYMBOL(ntf_vibration_set_haptic);
+
+
+static int uci_calc_gain(int gain) {
+	if (booster_in_pocket) {
+		int c = (gain * (100+booster_percentage))/100;
+		if (c>MAX_GAIN) c = MAX_GAIN;
+		return c;
+	} 
+	// on zf8 this just rattles over 128
+	/*else if (haptic_percentage>0) {
+		int c = (gain * (100+haptic_percentage))/100;
+		if (c>MAX_GAIN) c = MAX_GAIN;
+		return c;
+	}*/
+	return gain;
+}
+#endif
 static int aw8697_haptic_set_gain(struct aw8697 *aw8697, unsigned char gain)
 {
+#ifdef CONFIG_UCI
+	int calc_gain = uci_calc_gain(gain);
+	pr_info("%s set gain %u BOOST -> %u \n",__func__,gain, calc_gain);
+	gain = calc_gain;
+#endif
 	aw8697_i2c_write(aw8697, AW8697_REG_DATDBG, gain);
 	return 0;
 }
@@ -768,7 +808,7 @@ static int aw8697_haptic_set_pwm(struct aw8697 *aw8697, unsigned char mode)
 
 static int aw8697_haptic_play_wav_seq(struct aw8697 *aw8697, unsigned char flag)
 {
-	pr_debug("%s enter\n", __func__);
+	pr_info("%s enter\n", __func__);
 
 	if (flag) {
 		aw8697_haptic_play_mode(aw8697, AW8697_HAPTIC_RAM_MODE);
@@ -780,7 +820,7 @@ static int aw8697_haptic_play_wav_seq(struct aw8697 *aw8697, unsigned char flag)
 static int aw8697_haptic_play_repeat_seq(struct aw8697 *aw8697,
 					 unsigned char flag)
 {
-	pr_debug("%s enter\n", __func__);
+	pr_info("%s enter\n", __func__);
 
 	if (flag) {
 		aw8697_haptic_play_mode(aw8697, AW8697_HAPTIC_RAM_LOOP_MODE);
@@ -799,7 +839,7 @@ static int aw8697_haptic_swicth_motorprotect_config(struct aw8697 *aw8697,
 						    unsigned char addr,
 						    unsigned char val)
 {
-	pr_debug("%s enter\n", __func__);
+	pr_info("%s enter\n", __func__);
 	if (addr == 1) {
 		aw8697_i2c_write_bits(aw8697, AW8697_REG_DETCTRL,
 				      AW8697_BIT_DETCTRL_PROTECT_MASK,
@@ -2423,6 +2463,148 @@ static void aw8697_haptic_brightness_set(struct led_classdev *cdev,
 	mutex_unlock(&aw8697->lock);
 
 }
+#ifdef CONFIG_UCI
+
+static int vib_func_num = 0;
+static int vib_func_boost_level = 0;
+static bool vib_func_start = 0;
+static bool vib_func_stop = 0;
+static bool vib_func_params_read = true;
+
+static struct workqueue_struct *vib_func_wq;
+
+static void uci_vibrate_func(struct work_struct * uci_vibrate_func_work)
+{
+
+    int num = vib_func_num;
+    int boost_level = vib_func_boost_level;
+    bool start = vib_func_start;
+    bool stop = vib_func_stop;
+
+    pr_info("%s enter\n",__func__);
+    pr_info("%s inside vib func, params read -- num: %d boost %d start %u stop %u \n",__func__, num, boost_level,start,stop);
+
+    vib_func_params_read = true;
+
+	if (g_aw8697 == NULL) return;
+
+	if (!g_aw8697->ram_init)
+		return;
+	if (g_aw8697->ramupdate_flag < 0)
+		return;
+	g_aw8697->amplitude = vib_func_boost_level;
+
+
+    if (start) {
+	mutex_lock(&g_aw8697->lock);
+	{
+        cancel_delayed_work(&g_aw8697->gain_work);
+	aw8697_haptic_stop(g_aw8697);
+	aw8697_haptic_set_rtp_aei(g_aw8697, false);
+	aw8697_interrupt_clear(g_aw8697);
+
+	if (g_aw8697->amplitude > 0) {
+		aw8697_haptic_ram_vbat_comp(g_aw8697, false);
+
+		if (num>50) { // longer loop
+			aw8697_haptic_set_wav_seq(g_aw8697, 0, (unsigned char)1);
+			aw8697_haptic_set_wav_seq(g_aw8697, 1, 0);
+			aw8697_haptic_set_wav_loop(g_aw8697, 0x00,
+				   AW8697_BIT_WAVLOOP_INIFINITELY);
+			aw8697_haptic_play_wav_seq(g_aw8697, g_aw8697->amplitude);
+		} else { // short haptic
+			int curr_gain = g_aw8697->gain;
+			cancel_delayed_work(&g_aw8697->gain_work);
+			if (boost_level>=5) {
+				g_aw8697->gain = 127;
+				aw8697_haptic_set_gain(g_aw8697, g_aw8697->gain);
+				aw8697_haptic_set_wav_seq(g_aw8697, 0, (unsigned char)10); 
+			} else {
+				g_aw8697->gain = 47;
+				aw8697_haptic_set_gain(g_aw8697, g_aw8697->gain);
+				aw8697_haptic_set_wav_seq(g_aw8697, 0, (unsigned char)8);
+			}
+			aw8697_haptic_set_wav_seq(g_aw8697, 1, 0);
+			aw8697_haptic_set_wav_loop(g_aw8697, 0, 0);
+			aw8697_haptic_play_wav_seq(g_aw8697, 1);
+			mdelay(10);
+
+			// reset to backup gain value:
+			g_aw8697->gain = curr_gain;
+			aw8697_haptic_set_gain(g_aw8697, g_aw8697->gain);
+
+			// set back wave data, to prevent normal stock vibration getting stuck with these short ones
+			aw8697_haptic_set_wav_seq(g_aw8697, 0, (unsigned char)1);
+			aw8697_haptic_set_wav_seq(g_aw8697, 1, 0);
+			aw8697_haptic_set_wav_loop(g_aw8697, 0x00,
+				   AW8697_BIT_WAVLOOP_INIFINITELY);
+		}
+	}
+	mutex_unlock(&g_aw8697->lock);
+	}
+    }
+    if (start && stop) {
+	if(num>50) {
+		mdelay(num); // cannot sleep, as this can be in atomic context as well
+	}
+    }
+
+    if (stop) {
+// stop
+	mutex_lock(&g_aw8697->lock);
+	aw8697_haptic_stop(g_aw8697);
+	mutex_unlock(&g_aw8697->lock);
+    }
+
+    pr_info("%s exit\n",__func__);
+
+}
+static DECLARE_WORK(uci_vibrate_func_work, uci_vibrate_func);
+
+static DEFINE_MUTEX(vib_int);
+
+void set_vibrate_int(int num, int boost_level, bool start, bool stop) {
+
+#if 1
+	int count = 30;
+	pr_debug("%s enter\n",__func__);
+	mutex_lock(&vib_int);
+	{
+	pr_debug("%s scheduling vib func, setting up params...\n",__func__);
+	while (!vib_func_params_read) {
+		mdelay(10);
+		count--;
+		if (count<=0) break;
+	}
+
+	// this is to set up params, and make sure they are read by the work (TODO use INIT_WORK instead)...
+	vib_func_params_read = false;
+	vib_func_num = num;
+	vib_func_boost_level = boost_level;
+	vib_func_start = start;
+	vib_func_stop = stop;
+	pr_info("%s scheduling vib func, params set, schedule! num: %d boost %d start %u stop %u \n",__func__, num, boost_level,start,stop);
+	queue_work(vib_func_wq,&uci_vibrate_func_work);
+	mutex_unlock(&vib_int);
+	}
+#endif
+	pr_info("%s exit\n",__func__);
+}
+
+
+void set_vibrate_boosted(int num) {
+	set_vibrate_int(num, 40, true,true);
+}
+EXPORT_SYMBOL(set_vibrate_boosted);
+void set_vibrate(int num) {
+	set_vibrate_int(num, 30, true,true);
+}
+EXPORT_SYMBOL(set_vibrate);
+void set_vibrate_2(int num, int boost_level) {
+	set_vibrate_int(num, boost_level, true,true);
+}
+EXPORT_SYMBOL(set_vibrate_2);
+#endif
 #endif
 
 static ssize_t aw8697_state_show(struct device *dev,
@@ -4651,6 +4833,11 @@ static int aw8697_i2c_probe(struct i2c_client *i2c,
 	aw8697_haptic_init(aw8697);
 
 	aw8697_ram_init(aw8697);
+#ifdef CONFIG_UCI
+	vib_func_wq = alloc_workqueue("vib_func_wq",
+		WQ_HIGHPRI | WQ_MEM_RECLAIM, 1);
+#endif
+
 
 	pr_info("%s probe completed successfully!\n", __func__);
 
