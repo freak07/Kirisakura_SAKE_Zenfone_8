@@ -1,9 +1,11 @@
+#include <linux/module.h>
 #include "focaltech_core.h"
 #include "asus_tp.h"
 
 /*****************************************************************************
 * Global variable or extern global variabls/functions
 *****************************************************************************/
+
 bool game_mode_active = false;
 int touch_figer_slot[TOTAL_SLOT] = {0};
 u16 touch_level = 0x0,leave_level = 0x0, first_filter = 0x0, normal_filter = 0x0;
@@ -248,6 +250,9 @@ static ssize_t fts_game_mode_show (struct device *dev, struct device_attribute *
     return count;
 }
 
+static bool sr_or = false;
+module_param(sr_or, bool, 0644);
+
 static ssize_t fts_game_mode_store(
     struct device *dev, struct device_attribute *attr, const char *buf, size_t count)
 {
@@ -259,7 +264,13 @@ static ssize_t fts_game_mode_store(
             ts_data->game_mode = ENABLE;
             fts_write_reg(FTS_REG_REPORT_RATE, 0);
         }
-    } else if (FTS_SYSFS_ECHO_OFF(buf)) {
+     } else if ((FTS_SYSFS_ECHO_OFF(buf)) && (sr_or == true)) {
+        if (!ts_data->game_mode) {
+            FTS_DEBUG("enter game mode override, switch to 240HZ.");
+            ts_data->game_mode = ENABLE;
+            fts_write_reg(FTS_REG_REPORT_RATE, 0);
+        }
+    } else if ((FTS_SYSFS_ECHO_OFF(buf)) && (sr_or == false)) {
         if (ts_data->game_mode) {
             FTS_DEBUG("exit game mode, switch to 120HZ.");
             ts_data->game_mode = DISABLE;
