@@ -608,6 +608,11 @@ static int dsi_panel_wled_register(struct dsi_panel *panel,
 	return 0;
 }
 
+static bool bl_dimmer = true;
+module_param(bl_dimmer, bool, 0644);
+static int bl_min = 2;
+module_param(bl_min, int, 0644);
+
 static int dsi_panel_update_backlight(struct dsi_panel *panel,
 	u32 bl_lvl)
 {
@@ -635,9 +640,15 @@ static int dsi_panel_update_backlight(struct dsi_panel *panel,
 
 	/* ASUS BSP Display +++ */
 	DSI_LOG("set bl=%d\n", bl_lvl);
+	
+	if ((bl_dimmer == true) && (bl_lvl == 4))
+		{
+		bl_lvl = bl_min ;
+		}
+	
 	dsi_anakin_record_backlight(bl_lvl);
 	dsi_zf8_record_backlight(bl_lvl);
-
+	
 	// always 0 except project Anakin & Picasso
 	if (panel->allow_panel_fod_hbm == 1)
 		return rc;
@@ -646,6 +657,7 @@ static int dsi_panel_update_backlight(struct dsi_panel *panel,
 
 	if (panel->bl_config.bl_inverted_dbv)
 		bl_lvl = (((bl_lvl & 0xff) << 8) | (bl_lvl >> 8));
+
 #if defined(CONFIG_PXLW_IRIS)
 	if (iris_is_mp_panel()) {
 		if (!iris_dc_on_off_pending())
