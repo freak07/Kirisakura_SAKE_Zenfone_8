@@ -56,6 +56,12 @@
 /* ASUS BSP Display +++ */
 #include <drm/drm_zf8.h>
 
+#ifdef CONFIG_UCI
+#include <linux/uci/uci.h>
+#include <linux/inputfilter/sweep2sleep.h>
+#endif
+
+
 /*****************************************************************************
 * Private constant and macro definitions using #define
 *****************************************************************************/
@@ -600,8 +606,22 @@ static int fts_input_report_b(struct fts_ts_data *data)
                 if (!fts_data->wait_reset) {
                     input_mt_report_slot_state(data->input_dev, MT_TOOL_FINGER, true);
                     input_report_abs(data->input_dev, ABS_MT_TOUCH_MAJOR, events[i].area);
+#ifdef CONFIG_UCI
+	        {
+                        int x2, y2;
+                        bool frozen_coords = s2s_freeze_coords(&x2,&y2,events[i].x,events[i].y);
+                        if (frozen_coords) { 
+	                    input_report_abs(data->input_dev, ABS_MT_POSITION_X, x2);
+	                    input_report_abs(data->input_dev, ABS_MT_POSITION_Y, y2);
+			} else {
+#endif
                     input_report_abs(data->input_dev, ABS_MT_POSITION_X, events[i].x);
                     input_report_abs(data->input_dev, ABS_MT_POSITION_Y, events[i].y);
+#ifdef CONFIG_UCI
+			}
+		}
+#endif
+
                     data->finger_press = true;
                 }
             }
@@ -711,8 +731,21 @@ static int fts_input_report_a(struct fts_ts_data *data)
             }
             input_report_abs(data->input_dev, ABS_MT_TOUCH_MAJOR, events[i].area);
 
+#ifdef CONFIG_UCI
+	        {
+                        int x2, y2;
+                        bool frozen_coords = s2s_freeze_coords(&x2,&y2,events[i].x,events[i].y);
+                        if (frozen_coords) { 
+	                    input_report_abs(data->input_dev, ABS_MT_POSITION_X, x2);
+	                    input_report_abs(data->input_dev, ABS_MT_POSITION_Y, y2);
+			} else {
+#endif
             input_report_abs(data->input_dev, ABS_MT_POSITION_X, events[i].x);
             input_report_abs(data->input_dev, ABS_MT_POSITION_Y, events[i].y);
+#ifdef CONFIG_UCI
+		}
+	    }
+#endif
 
             input_mt_sync(data->input_dev);
 
@@ -1700,6 +1733,9 @@ static int drm_check_dt(struct device_node *np)
         if (!IS_ERR(panel)) {
             FTS_INFO("find drm_panel successfully");
             active_panel = panel;
+#ifdef CONFIG_UCI
+	    uci_set_active_panel(panel);
+#endif
             return 0;
         }
     }
