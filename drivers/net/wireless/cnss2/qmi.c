@@ -1661,7 +1661,7 @@ int cnss_wlfw_get_info_send_sync(struct cnss_plat_data *plat_priv, int type,
 	int ret = 0;
 
 	cnss_pr_buf("Sending get info message, type: %d, cmd length: %d, state: 0x%lx\n",
-		    type, cmd_len, plat_priv->driver_state);
+		     type, cmd_len, plat_priv->driver_state);
 
 	if (cmd_len > QMI_WLFW_MAX_DATA_SIZE_V01)
 		return -EINVAL;
@@ -1725,6 +1725,8 @@ out:
 
 unsigned int cnss_get_qmi_timeout(struct cnss_plat_data *plat_priv)
 {
+	cnss_pr_dbg("QMI timeout is %u ms\n", QMI_WLFW_TIMEOUT_MS);
+
 	return QMI_WLFW_TIMEOUT_MS;
 }
 
@@ -2028,9 +2030,9 @@ static void cnss_wlfw_respond_get_info_ind_cb(struct qmi_handle *qmi_wlfw,
 	//	     ind_msg->data_len, ind_msg->type,
 	//	     ind_msg->is_last, ind_msg->seq_no);
 #else
-	cnss_pr_buf("Extract message with event length: %d, type: %d, is last: %d, seq no: %d\n",
-		    ind_msg->data_len, ind_msg->type,
-		    ind_msg->is_last, ind_msg->seq_no);
+	cnss_pr_vdbg("Extract message with event length: %d, type: %d, is last: %d, seq no: %d\n",
+		     ind_msg->data_len, ind_msg->type,
+		     ind_msg->is_last, ind_msg->seq_no);
 #endif
 
 	if (plat_priv->get_info_cb_ctx && plat_priv->get_info_cb)
