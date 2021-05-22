@@ -554,4 +554,7 @@ source "drivers/misc/aw8697_haptic/Kconfig"
 source "drivers/misc/latch_ak09973/Kconfig"
 source "drivers/misc/latch_sensor/Kconfig"
 source "drivers/misc/hall_sensor/Kconfig"
+source "drivers/misc/uci/Kconfig"
+source "drivers/misc/notification/Kconfig"
+source "drivers/misc/inputfilter/Kconfig"
 endmenu

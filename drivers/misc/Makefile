@@ -78,3 +78,7 @@ obj-$(CONFIG_LATCH_AK09973) += latch_ak09973/
 obj-$(CONFIG_LATCH_SENSOR)	+= latch_sensor/
 obj-$(CONFIG_HALL_SENSOR)	+= hall_sensor/
 
+obj-$(CONFIG_UCI)  += uci/
+obj-$(CONFIG_UCI_NOTIFICATIONS)  += notification/
+obj-y  += inputfilter/
+
