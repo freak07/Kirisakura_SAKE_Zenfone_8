@@ -36,6 +36,14 @@ extern void rt_send_screen_resume(void);
 #include <video/mipi_display.h>
 #endif
 
+#ifdef CONFIG_UCI
+#include <linux/uci/uci.h>
+#endif
+#ifdef CONFIG_UCI_NOTIFICATIONS_SCREEN_CALLBACKS
+#include <linux/notification/notification.h>
+static bool last_on_state = true;
+#endif
+
 #define to_dsi_display(x) container_of(x, struct dsi_display, host)
 #define INT_BASE_10 10
 
@@ -1299,12 +1307,20 @@ int dsi_display_set_power(struct drm_connector *connector,
 				DSI_WARN("failed to set load for lp1 state\n");
 		}
 		rc = dsi_panel_set_lp1(display->panel);
+#ifdef CONFIG_UCI_NOTIFICATIONS_SCREEN_CALLBACKS
+		ntf_screen_off();
+		last_on_state = false;
+#endif
 		break;
 	case SDE_MODE_DPMS_LP2:
 		DSI_LOG("enter LP2 doze suspend\n");
 		rc = dsi_panel_set_lp2(display->panel);
 		if (dsi_display_set_ulp_load(display, true) < 0)
 			DSI_WARN("failed to set load for lp2 state\n");
+#ifdef CONFIG_UCI_NOTIFICATIONS_SCREEN_CALLBACKS
+		ntf_screen_off();
+		last_on_state = false;
+#endif
 		break;
 	case SDE_MODE_DPMS_ON:
 		if (display->panel->power_mode == SDE_MODE_DPMS_LP2) {
@@ -1323,9 +1339,17 @@ int dsi_display_set_power(struct drm_connector *connector,
 #endif
 //Bottom USB RT1715 ---
 
+#ifdef CONFIG_UCI_NOTIFICATIONS_SCREEN_CALLBACKS
+		if (!last_on_state) ntf_screen_on();
+		last_on_state = true;
+#endif
 		break;
 	case SDE_MODE_DPMS_OFF:
 	default:
+#ifdef CONFIG_UCI_NOTIFICATIONS_SCREEN_CALLBACKS
+		ntf_screen_off();
+		last_on_state = false;
+#endif
 		return rc;
 	}
 
@@ -7737,6 +7761,12 @@ int dsi_display_set_mode(struct dsi_display *display,
 		DSI_ERR("[%s] failed to set mode\n", display->name);
 		goto error;
 	}
+
+#ifdef CONFIG_UCI_NOTIFICATIONS_SCREEN_CALLBACKS
+	// on pixel5 we need this extra reporting when no AOD is used.
+	if (!last_on_state) ntf_screen_on();
+	last_on_state = true;
+#endif
 
 	DSI_INFO("mdp_transfer_time=%d, hactive=%d, vactive=%d, fps=%d\n",
 			adj_mode.priv_info->mdp_transfer_time_us,
