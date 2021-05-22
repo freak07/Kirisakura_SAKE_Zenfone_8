@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2019-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2019-2021, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/module.h>
@@ -1986,7 +1986,8 @@ static const struct msm_pinctrl_soc_data lahaina_pinctrl = {
  */
 static const unsigned int config_mpm_wake_disable_gpios[] = {
 		82, 	//LCD_TE
-		151 //disable GPIO 151 wake up for suspend GIC stuck issue
+		151, //disable GPIO 151 wake up for suspend GIC stuck issue
+		202
 };
 
 static void lahaina_pinctrl_config_mpm_wake_disable_gpios(void)
