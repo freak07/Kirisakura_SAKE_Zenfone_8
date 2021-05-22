@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2021, The Linux Foundation. All rights reserved.
  */
 
 #include <asm/cacheflush.h>
@@ -208,9 +208,7 @@ kgsl_pool_reduce(unsigned int target_pages, bool exit)
 		if (!pool->allocation_allowed && !exit)
 			continue;
 
-		total_pages -= pcount;
-
-		nr_removed = total_pages - target_pages;
+		nr_removed = total_pages - target_pages - pcount;
 		if (nr_removed <= 0)
 			return pcount;
 
@@ -445,8 +443,7 @@ int kgsl_pool_alloc_pages(u64 size, struct page ***pages, struct device *dev)
 {
 	int count = 0;
 	int npages = size >> PAGE_SHIFT;
-	struct page **local = kvcalloc(npages, sizeof(*local),
-		GFP_KERNEL | __GFP_NORETRY | __GFP_NOWARN);
+	struct page **local = kvcalloc(npages, sizeof(*local), GFP_KERNEL);
 	u32 page_size, align;
 	u64 len = size;
 

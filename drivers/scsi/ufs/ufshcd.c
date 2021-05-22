@@ -3,7 +3,7 @@
  *
  * This code is based on drivers/scsi/ufs/ufshcd.c
  * Copyright (C) 2011-2013 Samsung India Software Operations
- * Copyright (c) 2013-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2013-2021, The Linux Foundation. All rights reserved.
  *
  * Authors:
  *	Santosh Yaraganavi <santosh.sy@samsung.com>
@@ -1014,7 +1014,8 @@ static int ufshcd_set_clk_freq(struct ufs_hba *hba, bool scale_up)
 	list_for_each_entry(clki, head, list) {
 		if (!IS_ERR_OR_NULL(clki->clk)) {
 			if (scale_up && clki->max_freq) {
-				if (clki->curr_freq == clki->max_freq)
+				if ((clki->curr_freq == clki->max_freq) ||
+				   (!strcmp(clki->name, "core_clk_ice_hw_ctl")))
 					continue;
 
 				ret = clk_set_rate(clki->clk, clki->max_freq);
@@ -1032,7 +1033,8 @@ static int ufshcd_set_clk_freq(struct ufs_hba *hba, bool scale_up)
 				clki->curr_freq = clki->max_freq;
 
 			} else if (!scale_up && clki->min_freq) {
-				if (clki->curr_freq == clki->min_freq)
+				if ((clki->curr_freq == clki->min_freq) ||
+				   (!strcmp(clki->name, "core_clk_ice_hw_ctl")))
 					continue;
 
 				ret = clk_set_rate(clki->clk, clki->min_freq);
@@ -7772,7 +7774,6 @@ static int ufshcd_add_lus(struct ufs_hba *hba)
 
 	ufs_bsg_probe(hba);
 	scsi_scan_host(hba->host);
-	pm_runtime_put_sync(hba->dev);
 
 out:
 	return ret;
@@ -7933,10 +7934,10 @@ out:
 	 * present, turn off the power/clocks etc.
 	 */
 	if (ret) {
-		pm_runtime_put_sync(hba->dev);
 		ufshcd_exit_clk_scaling(hba);
 		ufshcd_hba_exit(hba);
 	}
+	pm_runtime_put_sync(hba->dev);
 }
 
 static enum blk_eh_timer_return ufshcd_eh_timed_out(struct scsi_cmnd *scmd)
@@ -8317,7 +8318,8 @@ static int ufshcd_init_clocks(struct ufs_hba *hba)
 		goto out;
 
 	list_for_each_entry(clki, head, list) {
-		if (!clki->name)
+		if ((!clki->name) ||
+		   (!strcmp(clki->name, "core_clk_ice_hw_ctl")))
 			continue;
 
 		clki->clk = devm_clk_get(dev, clki->name);

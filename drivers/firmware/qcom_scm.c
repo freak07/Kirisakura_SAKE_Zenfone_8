@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-/* Copyright (c) 2010,2015,2020 The Linux Foundation. All rights reserved.
+/* Copyright (c) 2010,2015,2020-2021 The Linux Foundation. All rights reserved.
  * Copyright (C) 2015 Linaro Ltd.
  */
 #include <linux/platform_device.h>
@@ -174,6 +174,14 @@ int qcom_scm_config_cpu_errata(void)
 }
 EXPORT_SYMBOL(qcom_scm_config_cpu_errata);
 
+void qcom_scm_phy_update_scm_level_shifter(u32 val)
+{
+	struct device *dev = __scm ? __scm->dev : NULL;
+
+	__qcom_scm_phy_update_scm_level_shifter(dev, val);
+}
+EXPORT_SYMBOL(qcom_scm_phy_update_scm_level_shifter);
+
 /**
  * qcom_scm_pas_supported() - Check if the peripheral authentication service is
  *			      available for the given peripherial
@@ -263,6 +271,24 @@ int qcom_scm_pas_mem_setup(u32 peripheral, phys_addr_t addr, phys_addr_t size)
 	return ret;
 }
 EXPORT_SYMBOL(qcom_scm_pas_mem_setup);
+
+/**
+ * qcom_scm_pas_mss_reset() - MSS restart
+ */
+int qcom_scm_pas_mss_reset(bool reset)
+{
+	int ret;
+
+	ret = qcom_scm_clk_enable();
+	if (ret)
+		return ret;
+
+	ret = __qcom_scm_pas_mss_reset(__scm->dev, reset);
+	qcom_scm_clk_disable();
+
+	return ret;
+}
+EXPORT_SYMBOL(qcom_scm_pas_mss_reset);
 
 /**
  * qcom_scm_pas_auth_and_reset() - Authenticate the given peripheral firmware
@@ -482,6 +508,13 @@ int qcom_scm_iommu_secure_unmap(u64 sec_id, int cbndx, unsigned long iova,
 						total_len);
 }
 EXPORT_SYMBOL(qcom_scm_iommu_secure_unmap);
+
+int qcom_scm_mem_protect_audio(phys_addr_t paddr, size_t size)
+{
+	return __qcom_scm_mem_protect_audio(__scm ? __scm->dev : NULL,
+								paddr, size);
+}
+EXPORT_SYMBOL(qcom_scm_mem_protect_audio);
 
 /**
  * qcom_scm_assign_mem_regions() - Make a secure call to reassign memory
@@ -954,6 +987,15 @@ int qcom_scm_request_encrypted_log(phys_addr_t buf, size_t len,
 }
 EXPORT_SYMBOL(qcom_scm_request_encrypted_log);
 
+int qcom_scm_invoke_smc_legacy(phys_addr_t in_buf, size_t in_buf_size,
+		phys_addr_t out_buf, size_t out_buf_size, int32_t *result,
+		u64 *response_type, unsigned int *data)
+{
+	return __qcom_scm_invoke_smc_legacy(__scm->dev, in_buf, in_buf_size, out_buf,
+		out_buf_size, result, response_type, data);
+}
+EXPORT_SYMBOL(qcom_scm_invoke_smc_legacy);
+
 int qcom_scm_invoke_smc(phys_addr_t in_buf, size_t in_buf_size,
 		phys_addr_t out_buf, size_t out_buf_size, int32_t *result,
 		u64 *response_type, unsigned int *data)
@@ -1178,6 +1220,9 @@ early_initcall(scm_mem_protection_init);
 #if IS_MODULE(CONFIG_QCOM_SCM)
 static void __exit qcom_scm_exit(void)
 {
+#if IS_ENABLED(CONFIG_QCOM_SCM_QCPE)
+	__qcom_scm_qcpe_exit();
+#endif
 	platform_driver_unregister(&qcom_scm_driver);
 	qtee_shmbridge_driver_exit();
 }

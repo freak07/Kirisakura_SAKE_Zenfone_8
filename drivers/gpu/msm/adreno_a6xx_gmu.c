@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2018-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2018-2021, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/clk.h>
@@ -16,6 +16,7 @@
 #include <linux/soc/qcom/llcc-qcom.h>
 #include <linux/mailbox/qmp.h>
 #include <soc/qcom/cmd-db.h>
+#include <soc/qcom/boot_stats.h>
 
 #include "adreno.h"
 #include "adreno_a6xx.h"
@@ -1978,7 +1979,7 @@ static bool a6xx_gmu_scales_bandwidth(struct kgsl_device *device)
 {
 	struct adreno_device *adreno_dev = ADRENO_DEVICE(device);
 
-	return (ADRENO_GPUREV(adreno_dev) >= ADRENO_REV_A640);
+	return (ADRENO_GPUREV(adreno_dev) >= ADRENO_REV_A635);
 }
 
 static irqreturn_t a6xx_gmu_irq_handler(int irq, void *data)
@@ -2971,6 +2972,8 @@ static int a6xx_first_boot(struct adreno_device *adreno_dev)
 	if (test_bit(GMU_PRIV_FIRST_BOOT_DONE, &gmu->flags))
 		return a6xx_boot(adreno_dev);
 
+	place_marker("M - DRIVER ADRENO Init");
+
 	ret = adreno_dispatcher_init(adreno_dev);
 	if (ret)
 		return ret;
@@ -3024,6 +3027,7 @@ static int a6xx_first_boot(struct adreno_device *adreno_dev)
 
 	trace_kgsl_pwr_set_state(device, KGSL_STATE_ACTIVE);
 
+	place_marker("M - DRIVER ADRENO Ready");
 
 	return 0;
 }
@@ -3102,6 +3106,8 @@ no_gx_power:
 	del_timer_sync(&device->idle_timer);
 
 	kgsl_pwrscale_sleep(device);
+
+	kgsl_pwrctrl_clear_l3_vote(device);
 
 	trace_kgsl_pwr_set_state(device, KGSL_STATE_SLUMBER);
 

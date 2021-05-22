@@ -21,7 +21,7 @@
 #include "../smpboot.h"
 
 #include "pelt.h"
-#include "walt.h"
+#include "walt/walt.h"
 
 #define CREATE_TRACE_POINTS
 #include <trace/events/sched.h>
@@ -5255,6 +5255,7 @@ int sched_setattr_nocheck(struct task_struct *p, const struct sched_attr *attr)
 {
 	return __sched_setscheduler(p, attr, false, true);
 }
+EXPORT_SYMBOL_GPL(sched_setattr_nocheck);
 
 /**
  * sched_setscheduler_nocheck - change the scheduling policy and/or RT priority of a thread from kernelspace.

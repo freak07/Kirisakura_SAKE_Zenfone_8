@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2002,2007-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2002,2007-2021, The Linux Foundation. All rights reserved.
  */
 #include <linux/component.h>
 #include <linux/delay.h>
@@ -16,6 +16,7 @@
 #include <linux/nvmem-consumer.h>
 #include <linux/soc/qcom/llcc-qcom.h>
 #include <soc/qcom/subsystem_restart.h>
+#include <soc/qcom/boot_stats.h>
 
 #include "adreno.h"
 #include "adreno_a3xx.h"
@@ -1034,13 +1035,11 @@ l3_pwrlevel_probe(struct kgsl_device *device, struct device_node *node)
 				&device->l3_freq[index]);
 	}
 
-	device->l3_clk = devm_clk_get(&device->pdev->dev, "l3_vote");
+	device->l3_icc = of_icc_get(&device->pdev->dev, "l3_path");
 
-	if (IS_ERR_OR_NULL(device->l3_clk)) {
+	if (IS_ERR(device->l3_icc))
 		dev_err(&device->pdev->dev,
-			"Unable to get the l3_vote clock\n");
-		device->l3_clk = NULL;
-	}
+			"Unable to get the l3 icc path\n");
 }
 
 static int adreno_of_get_power(struct adreno_device *adreno_dev,
@@ -1298,6 +1297,18 @@ static void adreno_setup_device(struct adreno_device *adreno_dev)
 
 		INIT_LIST_HEAD(&rb->events.group);
 	}
+
+	/*
+	 * Some GPUs needs UCHE GMEM base address to be minimum 0x100000
+	 * and 1MB aligned. Configure UCHE GMEM base based on GMEM size
+	 * and align it one 1MB. This needs to be done based on GMEM size
+	 * because setting it to minimum value 0x100000 will result in RB
+	 * and UCHE GMEM range overlap for GPUs with GMEM size >1MB.
+	 */
+	if (!adreno_is_a650_family(adreno_dev))
+		adreno_dev->uche_gmem_base =
+			ALIGN(adreno_dev->gpucore->gmem_size, SZ_1M);
+
 }
 
 static const struct of_device_id adreno_gmu_match[] = {
@@ -1314,6 +1325,8 @@ int adreno_device_probe(struct platform_device *pdev,
 	unsigned int priv = 0;
 	int status;
 	u32 size;
+
+	place_marker("M - DRIVER GPU Init");
 
 	/* Initialize the adreno device structure */
 	adreno_setup_device(adreno_dev);
@@ -1447,6 +1460,8 @@ int adreno_device_probe(struct platform_device *pdev,
 		}
 	}
 #endif
+
+	place_marker("M - DRIVER GPU Ready");
 
 	return 0;
 err:
@@ -2235,7 +2250,7 @@ static int adreno_prop_device_info(struct kgsl_device *device,
 		.device_id = device->id + 1,
 		.chip_id = adreno_dev->chipid,
 		.mmu_enabled = kgsl_mmu_has_feature(device, KGSL_MMU_PAGED),
-		.gmem_gpubaseaddr = adreno_dev->gpucore->gmem_base,
+		.gmem_gpubaseaddr = 0,
 		.gmem_sizebytes = adreno_dev->gpucore->gmem_size,
 	};
 
@@ -2302,9 +2317,9 @@ static int adreno_prop_uche_gmem_addr(struct kgsl_device *device,
 		struct kgsl_device_getproperty *param)
 {
 	struct adreno_device *adreno_dev = ADRENO_DEVICE(device);
-	u64 vaddr = adreno_dev->gpucore->gmem_base;
 
-	return copy_prop(param, &vaddr, sizeof(vaddr));
+	return copy_prop(param, &adreno_dev->uche_gmem_base,
+		sizeof(adreno_dev->uche_gmem_base));
 }
 
 static int adreno_prop_ucode_version(struct kgsl_device *device,
@@ -2614,8 +2629,13 @@ static int adreno_setproperty(struct kgsl_device_private *dev_priv,
 bool adreno_irq_pending(struct adreno_device *adreno_dev)
 {
 	unsigned int status;
+	struct kgsl_device *device = KGSL_DEVICE(adreno_dev);
 
-	adreno_readreg(adreno_dev, ADRENO_REG_RBBM_INT_0_STATUS, &status);
+	if (gmu_core_isenabled(device))
+		adreno_read_gmureg(adreno_dev,
+			ADRENO_REG_GMU_AO_RBBM_INT_UNMASKED_STATUS, &status);
+	else
+		adreno_readreg(adreno_dev, ADRENO_REG_RBBM_INT_0_STATUS, &status);
 
 	/*
 	 * IRQ handler clears the RBBM INT0 status register immediately
