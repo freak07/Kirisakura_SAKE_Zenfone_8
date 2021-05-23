@@ -1272,7 +1272,7 @@ EXIT:
 
 }
 
-int insure_debug_write() {
+int insure_debug_write(void) {
 	struct es928x_jdet_priv *es928x_jdet;
 	pr_err("[es928x] insure_debug_write: enter\n");
 
