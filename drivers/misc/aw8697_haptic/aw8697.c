@@ -656,7 +656,7 @@ static int aw8697_haptic_stop_delay(struct aw8697 *aw8697)
 
 static int aw8697_haptic_stop(struct aw8697 *aw8697)
 {
-	pr_debug("%s enter\n", __func__);
+	pr_info("%s enter\n", __func__);
 
 	aw8697_haptic_play_go(aw8697, false);
 	aw8697_haptic_stop_delay(aw8697);
@@ -2418,7 +2418,7 @@ static void aw8697_vibrator_enable(struct timed_output_dev *dev, int value)
 
 	mutex_lock(&aw8697->lock);
 
-	pr_debug("%s enter\n", __func__);
+	pr_info("%s enter\n", __func__);
 
 	aw8697_haptic_stop(aw8697);
 
@@ -2511,7 +2511,7 @@ static void uci_vibrate_func(struct work_struct * uci_vibrate_func_work)
 			aw8697_haptic_set_wav_seq(g_aw8697, 1, 0);
 			aw8697_haptic_set_wav_loop(g_aw8697, 0x00,
 				   AW8697_BIT_WAVLOOP_INIFINITELY);
-			aw8697_haptic_play_wav_seq(g_aw8697, g_aw8697->amplitude);
+			aw8697_haptic_play_wav_seq(g_aw8697, 1);
 		} else { // short haptic
 			int curr_gain = g_aw8697->gain;
 			cancel_delayed_work(&g_aw8697->gain_work);
@@ -2533,11 +2533,6 @@ static void uci_vibrate_func(struct work_struct * uci_vibrate_func_work)
 			g_aw8697->gain = curr_gain;
 			aw8697_haptic_set_gain(g_aw8697, g_aw8697->gain);
 
-			// set back wave data, to prevent normal stock vibration getting stuck with these short ones
-			aw8697_haptic_set_wav_seq(g_aw8697, 0, (unsigned char)1);
-			aw8697_haptic_set_wav_seq(g_aw8697, 1, 0);
-			aw8697_haptic_set_wav_loop(g_aw8697, 0x00,
-				   AW8697_BIT_WAVLOOP_INIFINITELY);
 		}
 	}
 	mutex_unlock(&g_aw8697->lock);
@@ -2547,6 +2542,16 @@ static void uci_vibrate_func(struct work_struct * uci_vibrate_func_work)
 	if(num>50) {
 		mdelay(num); // cannot sleep, as this can be in atomic context as well
 	}
+    }
+
+    if (start && stop) {
+		mutex_lock(&g_aw8697->lock);
+		// set back wave data, to prevent normal stock vibration getting stuck with these short ones
+		aw8697_haptic_set_wav_seq(g_aw8697, 0, (unsigned char)1);
+		aw8697_haptic_set_wav_seq(g_aw8697, 1, 0);
+		aw8697_haptic_set_wav_loop(g_aw8697, 0x00,
+			   AW8697_BIT_WAVLOOP_INIFINITELY);
+		mutex_unlock(&g_aw8697->lock);
     }
 
     if (stop) {
@@ -4099,6 +4104,13 @@ static ssize_t aw8697_mem_play_store(struct device *dev,
 		return rc;
 	}
 	pr_info("%s: waveform id == %d\n", __func__, val);
+#ifdef CONFIG_UCI
+	if (val == 8 && haptic_percentage>0) // only for 8 -> typing
+	{
+		val = haptic_percentage%21;
+		pr_info("%s: OVERRIDE: waveform id == %d\n", __func__, val);
+	}
+#endif
 
 	mutex_lock(&aw8697->lock);
 	aw8697_i2c_read(aw8697, AW8697_REG_GO, &reg_val);
@@ -4235,7 +4247,7 @@ static enum hrtimer_restart aw8697_vibrator_timer_func(struct hrtimer *timer)
 {
 	struct aw8697 *aw8697 = container_of(timer, struct aw8697, timer);
 
-	pr_debug("%s enter\n", __func__);
+	pr_info("%s enter\n", __func__);
 	aw8697->state = 0;
 	schedule_work(&aw8697->vibrator_work);
 
@@ -4247,13 +4259,18 @@ static void aw8697_vibrator_work_routine(struct work_struct *work)
 	struct aw8697 *aw8697 =
 	    container_of(work, struct aw8697, vibrator_work);
 
-	pr_debug("%s enter\n", __func__);
+	pr_info("%s enter - duration: %d\n", __func__, aw8697->duration);
 
 	mutex_lock(&aw8697->lock);
 
 	aw8697_haptic_stop(aw8697);
 	aw8697_haptic_upload_lra(aw8697, AW8697_HAPTIC_F0_CALI_LRA);
 	if (aw8697->state) {
+#ifdef CONFIG_UCI
+		if (booster_in_pocket) {
+			set_vibrate_int(aw8697->duration, 100, true, true);
+		} else {
+#endif
 		if (aw8697->activate_mode == AW8697_HAPTIC_ACTIVATE_RAM_MODE) {
 			aw8697_haptic_ram_vbat_comp(aw8697, true);
 			aw8697_haptic_play_repeat_seq(aw8697, true);
@@ -4267,6 +4284,9 @@ static void aw8697_vibrator_work_routine(struct work_struct *work)
 			      ktime_set(aw8697->duration / 1000,
 					(aw8697->duration % 1000) * 1000000),
 			      HRTIMER_MODE_REL);
+#ifdef CONFIG_UCI
+		}
+#endif
 	}
 	mutex_unlock(&aw8697->lock);
 }
