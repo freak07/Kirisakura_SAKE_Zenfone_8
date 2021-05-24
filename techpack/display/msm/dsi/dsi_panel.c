@@ -17,6 +17,10 @@
 #include "sde_dsc_helper.h"
 #include "sde_vdc_helper.h"
 
+#ifdef CONFIG_UCI
+#include <linux/uci/uci.h>
+#endif
+
 //Bottom USB RT1715 +++
 #if defined ASUS_ZS673KS_PROJECT
 extern void rt_send_screen_suspend(void);
@@ -391,6 +395,11 @@ static int dsi_panel_set_pinctrl_state(struct dsi_panel *panel, bool enable)
 	return rc;
 }
 
+#ifdef CONFIG_UCI
+static bool screen_is_on = true; // start with true, on/off is set at power off/on only!
+static bool listener_added = false;
+static void uci_user_listener(void);
+#endif
 
 static int dsi_panel_power_on(struct dsi_panel *panel)
 {
@@ -420,6 +429,9 @@ static int dsi_panel_power_on(struct dsi_panel *panel)
 		goto error_disable_gpio;
 	}
 
+#ifdef CONFIG_UCI
+	screen_is_on = true;
+#endif
 	goto exit;
 
 error_disable_gpio:
@@ -496,6 +508,9 @@ static int dsi_panel_power_off(struct dsi_panel *panel)
 
 	/*ASUS BSP Display +++ */
 	DSI_LOG("panel off ---\n");
+#ifdef CONFIG_UCI
+	screen_is_on = false;
+#endif
 	return rc;
 }
 static int dsi_panel_tx_cmd_set(struct dsi_panel *panel,
@@ -631,6 +646,16 @@ static int dsi_panel_wled_register(struct dsi_panel *panel,
 	return 0;
 }
 
+#ifdef CONFIG_UCI
+
+struct dsi_panel *g_panel = NULL;
+static int backlight_min = 4;
+static bool backlight_dimmer = false;
+static u32 last_brightness;
+static bool first_brightness_set = false;
+
+#endif
+
 static int dsi_panel_update_backlight(struct dsi_panel *panel,
 	u32 bl_lvl)
 {
@@ -643,6 +668,12 @@ static int dsi_panel_update_backlight(struct dsi_panel *panel,
 		return -EINVAL;
 	}
 
+#ifdef CONFIG_UCI
+	if (!listener_added) {
+		uci_add_user_listener(uci_user_listener);
+		listener_added = true;
+	}
+#endif
 	dsi = &panel->mipi_device;
 	if (unlikely(panel->bl_config.lp_mode)) {
 		mode_flags = dsi->mode_flags;
@@ -658,6 +689,15 @@ static int dsi_panel_update_backlight(struct dsi_panel *panel,
 
 	/* ASUS BSP Display +++ */
 	DSI_LOG("set bl=%d\n", bl_lvl);
+
+#ifdef CONFIG_UCI
+	last_brightness= bl_lvl;
+	first_brightness_set = true;
+	if (g_panel == NULL) g_panel = panel;
+	if ((backlight_dimmer) && (bl_lvl == 4)) {
+		bl_lvl = backlight_min;
+	}
+#endif
 	dsi_anakin_record_backlight(bl_lvl);
 	dsi_zf8_record_backlight(bl_lvl);
 	dsi_zf8_set_dimming_smooth(panel, bl_lvl);
@@ -670,6 +710,7 @@ static int dsi_panel_update_backlight(struct dsi_panel *panel,
 
 	if (panel->bl_config.bl_inverted_dbv)
 		bl_lvl = (((bl_lvl & 0xff) << 8) | (bl_lvl >> 8));
+
 #if defined(CONFIG_PXLW_IRIS)
 	if (iris_is_mp_panel()) {
 		if (!iris_dc_on_off_pending())
@@ -4867,6 +4908,36 @@ int dsi_panel_mode_switch_to_vid(struct dsi_panel *panel)
 	mutex_unlock(&panel->panel_lock);
 	return rc;
 }
+
+#ifdef CONFIG_UCI
+int force_panel_fps = 0;
+
+static void uci_user_listener(void) {
+        {
+                bool change = false;
+                int on = backlight_dimmer?1:0;
+                int backlight_min_curr = backlight_min;
+
+                backlight_min = uci_get_user_property_int_mm("backlight_min", backlight_min, 2, 3);
+                on = !!uci_get_user_property_int_mm("backlight_dimmer", on, 0, 1);
+
+                if (on != backlight_dimmer || backlight_min_curr != backlight_min) change = true;
+
+                backlight_dimmer = on;
+
+                if (first_brightness_set && change) {
+			if (g_panel != NULL && screen_is_on) {
+				if (g_panel->power_mode == SDE_MODE_DPMS_ON) {
+					if (mutex_trylock(&g_panel->panel_lock)) {
+						dsi_panel_update_backlight(g_panel, last_brightness);
+						mutex_unlock(&g_panel->panel_lock);
+					}
+				}
+                        }
+                }
+        }
+}
+#endif
 
 int dsi_panel_switch(struct dsi_panel *panel)
 {
