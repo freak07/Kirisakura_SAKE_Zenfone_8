@@ -2516,13 +2516,21 @@ static void uci_vibrate_func(struct work_struct * uci_vibrate_func_work)
 			int curr_gain = g_aw8697->gain;
 			cancel_delayed_work(&g_aw8697->gain_work);
 			if (boost_level>=5) {
-				g_aw8697->gain = 127;
+				if (boost_level>=80 && boost_level <90) {
+					g_aw8697->gain = 100; // slightly less gain for the punchy '16' waveform
+				} else {
+					g_aw8697->gain = 127; // full gain for below 80 boost level and above 90
+				}
 				aw8697_haptic_set_gain(g_aw8697, g_aw8697->gain);
-				aw8697_haptic_set_wav_seq(g_aw8697, 0, (unsigned char)10); 
+				if (boost_level>=80) {
+					aw8697_haptic_set_wav_seq(g_aw8697, 0, (unsigned char)16);
+				} else {
+					aw8697_haptic_set_wav_seq(g_aw8697, 0, (unsigned char)10);
+				}
 			} else {
 				g_aw8697->gain = 47;
 				aw8697_haptic_set_gain(g_aw8697, g_aw8697->gain);
-				aw8697_haptic_set_wav_seq(g_aw8697, 0, (unsigned char)8);
+				aw8697_haptic_set_wav_seq(g_aw8697, 0, (unsigned char)10);
 			}
 			aw8697_haptic_set_wav_seq(g_aw8697, 1, 0);
 			aw8697_haptic_set_wav_loop(g_aw8697, 0, 0);
