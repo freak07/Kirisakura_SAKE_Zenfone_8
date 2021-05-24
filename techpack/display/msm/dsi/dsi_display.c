@@ -57,6 +57,10 @@ EXPORT_SYMBOL(fps_change);
 extern bool g_Charger_mode;
 #endif
 
+int switch_fps = 60;
+
+static unsigned int cur_refresh_rate = 60;
+
 u8 dbgfs_tx_cmd_buf[SZ_4K];
 static char dsi_display_primary[MAX_CMDLINE_PARAM_LEN];
 static char dsi_display_secondary[MAX_CMDLINE_PARAM_LEN];
@@ -7644,6 +7648,13 @@ error:
 	return rc;
 }
 
+unsigned int dsi_panel_get_refresh_rate(void)
+{
+	return READ_ONCE(cur_refresh_rate);
+}
+
+void sched_set_refresh_rate_walt(void);
+
 int dsi_display_set_mode(struct dsi_display *display,
 			 struct dsi_display_mode *mode,
 			 u32 flags)
@@ -7694,6 +7705,26 @@ int dsi_display_set_mode(struct dsi_display *display,
 	SDE_EVT32(adj_mode.priv_info->mdp_transfer_time_us,
 			timing.h_active, timing.v_active, timing.refresh_rate);
 	/* ASUS BSP Display +++ */
+
+	WRITE_ONCE(cur_refresh_rate, mode->timing.refresh_rate);
+	switch_fps = mode->timing.refresh_rate;
+
+	if (switch_fps == 60)
+		{
+		pr_err("[WALT-Disp] set 60fps WALT RAVG_Window\n");
+		sched_set_refresh_rate_walt();
+		}
+	else if (switch_fps == 90)
+		{
+		pr_err("[WALT-Disp] set 90fps WALT RAVG_Window\n");
+		sched_set_refresh_rate_walt();
+		}
+	else if (switch_fps == 120)
+		{
+		pr_err("[WALT-Disp] set 120fps WALT RAVG_Window\n");
+		sched_set_refresh_rate_walt();
+		}
+
 	DSI_LOG("resolution=%d*%d, fps=%d\n",
 			timing.v_active, timing.h_active,
 			timing.refresh_rate);
