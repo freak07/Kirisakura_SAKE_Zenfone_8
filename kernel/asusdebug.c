@@ -844,7 +844,7 @@ void save_last_shutdown_log(char *filename)
 
 	printk_buffer_index = *(printk_buffer_slot2_addr + 1);
 	if ((printk_buffer_index < PRINTK_BUFFER_SLOT_SIZE) && (LAST_KMSG_SIZE < SZ_128K)) {
-		fd_kmsg = ksys_open("/asdf/last_kmsg_16K", O_CREAT | O_RDWR | O_SYNC, S_IRUGO);
+		fd_kmsg = ksys_open("/asdf/last_kmsg_16K", O_CREAT | O_RDWR | O_SYNC, S_IWUGO | S_IRUGO);
 		if (!IS_ERR((const void *)(ulong)fd_kmsg)) {
 			char *buf = kzalloc(LAST_KMSG_SIZE, GFP_ATOMIC);
 			if (!buf) {

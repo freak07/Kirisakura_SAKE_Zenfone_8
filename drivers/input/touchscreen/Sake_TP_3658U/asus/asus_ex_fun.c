@@ -19,6 +19,7 @@ enum _asus_ex_mode {
 *******************************************************************************/
 static int asus_ex_mode_switch(enum _asus_ex_mode mode,u8 value)
 {
+    struct fts_ts_data *ts_data = fts_data;
     int ret = 0;
     u8 m_val = 0;
 
@@ -35,7 +36,11 @@ static int asus_ex_mode_switch(enum _asus_ex_mode mode,u8 value)
         }
         break;
     case MODE_CHARGER:
-        ret = fts_write_reg(FTS_REG_CHARGER_MODE_EN, m_val);
+        if (!ts_data->power_disabled) {
+            ret = fts_write_reg(FTS_REG_CHARGER_MODE_EN, m_val);
+        } else {
+            FTS_ERROR("TP regulator is disabled, skip write register.");
+        }
         if (ret < 0) {
             FTS_ERROR("MODE_CHARGER switch to %d fail", m_val);
         }
