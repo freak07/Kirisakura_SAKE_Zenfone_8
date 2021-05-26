@@ -16,6 +16,7 @@
 
 #include <linux/alarmtimer.h>
 #include <linux/notification/notification.h>
+#include <linux/notification/notification_set.h>
 #include <linux/uci/uci.h>
 
 #ifdef LOCKING
