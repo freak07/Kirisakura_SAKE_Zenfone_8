@@ -85,10 +85,6 @@ extern void ntf_camera_started(void);
 extern void ntf_camera_stopped(void);
 extern void ntf_block_camera(bool val);
 
-// vibration tweaks
-extern ntf_vibration_set_in_pocket(int percentage, bool in_pocket);
-extern ntf_vibration_set_haptic(int percentage);
-
 // AOD
 extern void ntf_screen_aod_on(void);
 extern void ntf_screen_full_on(void);

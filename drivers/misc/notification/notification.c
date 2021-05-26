@@ -433,12 +433,12 @@ EXPORT_SYMBOL(ntf_input_event);
 void ntf_vibration(int length) {
 	if (length>=MIN_TD_VALUE_NOTIFICATION) {
 		unsigned int time_diff_charge = jiffies - last_charge_state_change_time;
-#if 1
+#if 0
 // op6
 		if (length==MIN_TD_VALUE_OP6_FORCED_FP) return;
 		if (length==MIN_TD_VALUE_OP6_SILENT_MODE) return;
 #endif
-		if (jiffies_to_msecs(time_diff_charge) > 1800) { // if charger attached too close in time, it will be a non notif vibration, don't trigger...
+		if (jiffies_to_msecs(time_diff_charge) > 2400) { // if charger attached too close in time, it will be a non notif vibration, don't trigger...
 			ntf_notify_listeners(NTF_EVENT_NOTIFICATION, 1, NTF_EVENT_NOTIFICATION_ARG_HAPTIC);
 		}
 	}
