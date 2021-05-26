@@ -43,7 +43,7 @@
 
 #ifdef CONFIG_UCI
 #define KADAWAY
-#define SN_HACK
+//#define SN_HACK
 #endif
 int do_truncate(struct dentry *dentry, loff_t length, unsigned int time_attrs,
 	struct file *filp)
