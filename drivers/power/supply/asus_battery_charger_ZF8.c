@@ -31,6 +31,10 @@
 #include <linux/kernel.h>
 #include <linux/delay.h>
 
+#ifdef CONFIG_UCI
+#include <linux/notification/notification.h>
+#endif
+
 bool g_once_usb_thermal = false;
 bool g_asuslib_init = false;
 bool g_cos_over_full_flag = false;
@@ -1355,6 +1359,13 @@ static void handle_notification(struct battery_chg_dev *bcdev, void *data,
     int rc;
     static int pre_chg_type = 0;
 
+#ifdef CONFIG_UCI
+	pr_info("%s cleanslate charge handle notification type %d",__func__, hdr->opcode);
+	if (hdr->opcode == OEM_ASUS_WORK_EVENT_REQ) {
+		ntf_set_charge_state(true);
+	}
+#endif
+
     switch(hdr->opcode) {
     case OEM_ASUS_EVTLOG_IND:
         if (len == sizeof(*evtlog_msg)) {
@@ -1411,6 +1422,12 @@ static void handle_notification(struct battery_chg_dev *bcdev, void *data,
         if (len == sizeof(*Update_charger_type_msg)) {
             Update_charger_type_msg = data;
             CHG_DBG("%s OEM_SET_CHARGER_TYPE_CHANGE. new type : %d, old type : %d\n", __func__, Update_charger_type_msg->charger_type, pre_chg_type);
+#ifdef CONFIG_UCI
+		pr_info("%s cleanslate charge state change: type %d",__func__, Update_charger_type_msg->charger_type);
+		if (Update_charger_type_msg->charger_type==0) {
+			ntf_set_charge_state(false);
+		}
+#endif
             if (Update_charger_type_msg->charger_type != pre_chg_type) {
                 switch (Update_charger_type_msg->charger_type) {
                 case ASUS_CHARGER_TYPE_LEVEL0:
