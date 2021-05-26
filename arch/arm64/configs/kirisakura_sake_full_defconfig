@@ -6810,3 +6810,20 @@ CONFIG_DEFAULT_TCP_CONG="westwood"
 # Wakelock Blocker
 #
 # CONFIG_BOEFFLA_WL_BLOCKER is not set
+
+
+#
+# Unprivileged Configuration Interface
+#
+CONFIG_UCI=y
+# end of Unprivileged Configuration Interface
+
+#
+# UCI Notifications Module
+#
+CONFIG_UCI_NOTIFICATIONS=y
+CONFIG_UCI_NOTIFICATIONS_SCREEN_CALLBACKS=y
+# CONFIG_UCI_NOTIFICATIONS_DETECT_VIBRATIONS is not set
+# end of UCI Notifications Module
+
+CONFIG_SWEEP2SLEEP=y
