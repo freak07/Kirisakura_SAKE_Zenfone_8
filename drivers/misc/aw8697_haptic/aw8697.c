@@ -737,6 +737,7 @@ static int aw8697_haptic_set_bst_peak_cur(struct aw8697 *aw8697,
 }
 
 #ifdef CONFIG_UCI
+#include <linux/notification/notification.h>
 
 static int booster_percentage = 0;
 #define MAX_GAIN 175
@@ -4275,6 +4276,7 @@ static void aw8697_vibrator_work_routine(struct work_struct *work)
 	aw8697_haptic_upload_lra(aw8697, AW8697_HAPTIC_F0_CALI_LRA);
 	if (aw8697->state) {
 #ifdef CONFIG_UCI
+		ntf_vibration(aw8697->duration);
 		if (booster_in_pocket) {
 			set_vibrate_int(aw8697->duration, 100, true, true);
 		} else {
