@@ -1103,7 +1103,12 @@ void dsi_zf8_record_backlight(u32 bl_lvl)
 			g_display->panel->has_enter_aod_before = true;
 #endif
 			
+#if 1
+	     } else if (g_display->panel->panel_last_backlight <= 4) { // temp fix for aod issues
+#endif
+#if 0
 	     } else if (g_display->panel->panel_last_backlight == 4) {
+#endif
 #if defined ASUS_SAKE_PROJECT
 			if(1 == g_lcd_stage_id) {
 					rc = dsi_zf8_tx_cmd_set(g_display->panel, DSI_CMD_SET_AOD_LOW);
