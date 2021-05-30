@@ -6,7 +6,7 @@
  * Originally from swsusp.
  */
 
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
 //[PM_debug +++]
 //add debug message header
 #define pr_fmt(fmt) "PM: " fmt

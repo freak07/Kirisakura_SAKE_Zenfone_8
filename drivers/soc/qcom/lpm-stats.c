@@ -811,7 +811,7 @@ void lpm_stats_suspend_exit(void)
 {
 	struct timespec ts;
 	uint64_t exit_time = 0;
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
     //[PM_debug +++]
     //irq debug
     uint32_t ns;
@@ -820,16 +820,16 @@ void lpm_stats_suspend_exit(void)
 
 	getnstimeofday(&ts);
 	exit_time = timespec_to_ns(&ts) - suspend_time_stats.enter_time;
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
     //[PM_debug +++]
     //irq debug
 	ns = do_div(exit_time, NSEC_PER_SEC);
 	pr_info("Suspended for %lld.%09u secs.\n", exit_time, ns);
-    //[PM_debug ---]    
+    //[PM_debug ---]
+#endif 
 	update_level_stats(&suspend_time_stats, exit_time, true);
+#ifdef CONFIG_ASUS_POWER_DEBUG
     //[PM_debug +++]
-#endif
-#ifdef CONFIG_MACH_ASUS
     //irq debug
     pr_err("Suspended for %lld.%09u secs.\n", exit_time, ns);
     ASUSEvtlog("[PM] Suspended for %lld.%09u secs.\n", exit_time, ns);

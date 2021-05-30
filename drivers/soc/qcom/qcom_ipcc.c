@@ -431,7 +431,7 @@ static const struct dev_pm_ops qcom_ipcc_dev_pm_ops = {
 };
 
 	
-#if defined ASUS_SAKE_PROJECT || defined ASUS_VODKA_PROJECT
+#ifdef CONFIG_ASUS_POWER_DEBUG
 //[PM_debug +++]
 static int qcom_ipcc_suspend(struct platform_device *pdev, pm_message_t state);
 static int qcom_ipcc_resume(struct platform_device *pdev);
@@ -474,7 +474,7 @@ static int qcom_ipcc_resume(struct platform_device *pdev)
 static struct platform_driver qcom_ipcc_driver = {
 	.probe = qcom_ipcc_probe,
 	.remove = qcom_ipcc_remove,
-#if defined ASUS_SAKE_PROJECT || defined ASUS_VODKA_PROJECT
+#ifdef CONFIG_ASUS_POWER_DEBUG
 //[PM_debug +++]
     .suspend =  qcom_ipcc_suspend,
     .resume =   qcom_ipcc_resume,	
