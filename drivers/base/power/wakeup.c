@@ -35,7 +35,7 @@ bool wl_blocker_debug = false;
 static void wakeup_source_deactivate(struct wakeup_source *ws);
 #endif
 
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
 //[PM_debug +++]
 #include <linux/pm_debug.h>
 //Extern: this flag to check dpm_suspend has been callback for resume_console
@@ -51,7 +51,7 @@ struct work_struct pm_cpuinfo_printer;
 suspend_state_t pm_suspend_target_state;
 #define pm_suspend_target_state	(PM_SUSPEND_ON)
 #endif
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
 void pmsp_print(void)
 {
 	schedule_work(&pms_printer);
@@ -984,12 +984,13 @@ void pm_print_active_wakeup_sources(void)
 	srcuidx = srcu_read_lock(&wakeup_srcu);
 	list_for_each_entry_rcu(ws, &wakeup_sources, entry) {
 		if (ws->active) {
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
             //[PM_debug +++]
 			//pm_pr_dbg("active wakeup source: %s\n", ws->name);
             pm_printk("active wakeup source: %s\n", ws->name);
             //[PM_debug ---]
 #endif
+			pm_pr_dbg("active wakeup source: %s\n", ws->name);
 #ifdef CONFIG_BOEFFLA_WL_BLOCKER
 			if (!check_for_block(ws))	// AP: check if wakelock is on wakelock blocker list
 #endif
@@ -1003,7 +1004,7 @@ void pm_print_active_wakeup_sources(void)
 	}
 
 	if (!active && last_activity_ws)
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
         //[PM_debug +++]
 		//pm_pr_dbg("last active wakeup source: %s\n",
         	pm_printk("last active wakeup source: %s\n",
@@ -1017,7 +1018,7 @@ void pm_print_active_wakeup_sources(void)
 }
 EXPORT_SYMBOL_GPL(pm_print_active_wakeup_sources);
 
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
 //[PM_debug +++]
 void asus_uts_print_active_locks(void)
 {
@@ -1087,7 +1088,7 @@ bool pm_wakeup_pending(void)
 
 	if (ret) {
 		pm_pr_dbg("Wakeup pending, aborting suspend\n");
-	#ifdef CONFIG_MACH_ASUS
+	#ifdef CONFIG_ASUS_POWER_DEBUG
 	        //[PM_debug+++]
 	        pm_printk("Wakeup pending, aborting suspend\n");
 	        //[PM_debug ---]
@@ -1096,7 +1097,7 @@ bool pm_wakeup_pending(void)
 		pm_get_active_wakeup_sources(suspend_abort,
 					     MAX_SUSPEND_ABORT_LEN);
 		log_suspend_abort_reason(suspend_abort);
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
 		pr_info("%s\n", suspend_abort);
 #else
 		pr_info("PM: %s\n", suspend_abort);
@@ -1163,7 +1164,7 @@ void pm_system_irq_wakeup(unsigned int irq_number)
 				name = desc->action->name;
 
 			log_irq_wakeup_reason(irq_number);
-	#ifdef CONFIG_MACH_ASUS
+	#ifdef CONFIG_ASUS_POWER_DEBUG
 	            //[PM_debug +++]
 	        	//irq debug
 			//pr_warn("%s: %d triggered %s\n", __func__,

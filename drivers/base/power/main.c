@@ -37,7 +37,7 @@
 
 #include "../base.h"
 #include "power.h"
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
 //[PM_debug +++]
 #include <linux/pm_debug.h>
 
@@ -460,7 +460,7 @@ static void pm_dev_dbg(struct device *dev, pm_message_t state, const char *info)
 static void pm_dev_err(struct device *dev, pm_message_t state, const char *info,
 			int error)
 {
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
 	//[PM_debug +++]
     //irq debug
 	//pr_err("Device %s failed to %s%s: error %d\n",
@@ -471,7 +471,7 @@ static void pm_dev_err(struct device *dev, pm_message_t state, const char *info,
 	pr_err("Device %s failed to %s%s: error %d\n",
 	       dev_name(dev), pm_verb(state.event), info, error);
 #endif
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
 	//[PM_debug +++]
     //irq debug
 	ASUSEvtlog("PM: Device %s failed to %s%s: error %d\n",
@@ -495,7 +495,7 @@ static void dpm_show_time(ktime_t starttime, pm_message_t state, int error,
 		usecs = 1;
 
 	pm_pr_dbg("%s%s%s of devices %s after %ld.%03ld msecs\n",
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
 		  info ?: "", info ? " " : "", pm_verb(state.event),
 		  error ? "aborted" : "complete",
 		  usecs / USEC_PER_MSEC, usecs % USEC_PER_MSEC);
@@ -1102,7 +1102,7 @@ static void async_resume(void *data, async_cookie_t cookie)
 void dpm_resume(pm_message_t state)
 {
 	struct device *dev;
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
    //[PM_debug+++]
     ktime_t device_starttime;
     ktime_t device_endtime;
@@ -1110,7 +1110,7 @@ void dpm_resume(pm_message_t state)
 	int usecs = 0;
     //[PM_debug---]
 #endif
-    ktime_t starttime = ktime_get();
+	ktime_t starttime = ktime_get();
 
 	trace_suspend_resume(TPS("dpm_resume"), state.event, true);
 	might_sleep();
@@ -1129,7 +1129,7 @@ void dpm_resume(pm_message_t state)
 			int error;
 
 			mutex_unlock(&dpm_list_mtx);
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
             //[PM_debug+++]
             device_starttime = ktime_get();
             //[PM_debug---]
@@ -1142,7 +1142,7 @@ void dpm_resume(pm_message_t state)
 				dpm_save_failed_dev(dev_name(dev));
 				pm_dev_err(dev, state, "", error);
 			}
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
             //[PM_debug+++]
             device_endtime = ktime_get();
             usecs64 = ktime_to_ns(ktime_sub(device_endtime, device_starttime));
@@ -1933,7 +1933,7 @@ static int device_suspend(struct device *dev)
  */
 int dpm_suspend(pm_message_t state)
 {
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
    //[PM_debug+++]
     ktime_t device_starttime;
     ktime_t device_endtime;
@@ -1958,7 +1958,7 @@ int dpm_suspend(pm_message_t state)
 
 		get_device(dev);
 		mutex_unlock(&dpm_list_mtx);
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
         //[PM_debug+++]
         device_starttime = ktime_get();
         //[PM_debug---]
@@ -1973,7 +1973,7 @@ int dpm_suspend(pm_message_t state)
 			put_device(dev);
 			break;
 		}
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
         //[PM_debug+++]
         device_endtime = ktime_get();
         usecs64 = ktime_to_ns(ktime_sub(device_endtime, device_starttime));
@@ -1994,7 +1994,7 @@ int dpm_suspend(pm_message_t state)
 		if (async_error)
 			break;
 	}
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
     //[PM_debug +++]
     //irq debug
     //This flag can check dpm_suspend state for resume_console in printk.c

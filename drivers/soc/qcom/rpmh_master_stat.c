@@ -91,7 +91,7 @@ static void __iomem *rpmh_unit_base;
 
 static DEFINE_MUTEX(rpmh_stats_mutex);
 
-#ifdef CONFIG_MACH_ASUS
+#if 0
 //[PM_debug +++]
 #if defined ASUS_SAKE_PROJECT || defined ASUS_VODKA_PROJECT
 extern bool need_dump_rpmh_master_stat;
@@ -299,9 +299,11 @@ void msm_rpmh_master_stats_update(void)
 					GET_ADDR(REG_DATA_HI, i)) << 32);
 	}
 	msm_rpmh_apss_master_stats_update(profile_unit);
+#ifdef CONFIG_ASUS_POWER_DEBUG
     //[PM_debug +++]
     //msm_rpmh_master_stats_print();
     //[PM_debug ---]
+#endif
 }
 EXPORT_SYMBOL(msm_rpmh_master_stats_update);
 

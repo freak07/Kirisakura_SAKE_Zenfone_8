@@ -6,7 +6,7 @@
  * Copyright (c) 2003 Open Source Development Lab
  */
 
-#if defined ASUS_ZS673KS_PROJECT || defined ASUS_PICASSO_PROJECT || defined ASUS_SAKE_PROJECT || defined ASUS_VODKA_PROJECT
+#ifdef CONFIG_ASUS_POWER_DEBUG
 //[PM_debug +++]
 //add debug message header
 #define pr_fmt(fmt) "PM: " fmt
@@ -25,7 +25,7 @@
 #include <linux/pm_runtime.h>
 
 #include "power.h"
-#if defined ASUS_ZS673KS_PROJECT || defined ASUS_PICASSO_PROJECT || defined ASUS_SAKE_PROJECT || defined ASUS_VODKA_PROJECT
+#ifdef CONFIG_ASUS_POWER_DEBUG
 //[PM_debug +++]
 #include <linux/pm_debug.h>
 //[PM_debug ---]
@@ -628,7 +628,7 @@ static ssize_t state_store(struct kobject *kobj, struct kobj_attribute *attr,
 
 	state = decode_state(buf, n);
 	if (state < PM_SUSPEND_MAX) {
-#if defined ASUS_ZS673KS_PROJECT || defined ASUS_PICASSO_PROJECT || defined ASUS_SAKE_PROJECT || defined ASUS_VODKA_PROJECT
+#ifdef CONFIG_ASUS_POWER_DEBUG
 		//[PM_debug +++]
 		if (state == PM_SUSPEND_ON) {
 			pm_printk("unattended_timer: del_timer (state_store on)\n");
@@ -655,7 +655,7 @@ static ssize_t state_store(struct kobject *kobj, struct kobj_attribute *attr,
 }
 
 power_attr(state);
-#if defined ASUS_ZS673KS_PROJECT || defined ASUS_PICASSO_PROJECT || defined ASUS_SAKE_PROJECT || defined ASUS_VODKA_PROJECT
+#ifdef CONFIG_ASUS_POWER_DEBUG
 //[PM_debug +++]
 static ssize_t unattended_timer_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
@@ -858,7 +858,7 @@ static ssize_t wake_lock_store(struct kobject *kobj,
 			       const char *buf, size_t n)
 {
 	int error = pm_wake_lock(buf);
-#if defined ASUS_ZS673KS_PROJECT || defined ASUS_PICASSO_PROJECT || defined ASUS_SAKE_PROJECT || defined ASUS_VODKA_PROJECT
+#ifdef CONFIG_ASUS_POWER_DEBUG
 	//[PM_debug +++]
 	int ret = strcmp(buf,"PowerManager.SuspendLockout");
 	if(0 == ret) {
@@ -884,7 +884,7 @@ static ssize_t wake_unlock_store(struct kobject *kobj,
 				 const char *buf, size_t n)
 {
 	int error = pm_wake_unlock(buf);
-#if defined ASUS_ZS673KS_PROJECT || defined ASUS_PICASSO_PROJECT || defined ASUS_SAKE_PROJECT || defined ASUS_VODKA_PROJECT
+#ifdef CONFIG_ASUS_POWER_DEBUG
 	//[PM_debug +++]
 	int ret = strcmp(buf,"PowerManager.SuspendLockout");
 	if(0 == ret) {
@@ -968,7 +968,7 @@ power_attr(pm_freeze_timeout);
 
 static struct attribute * g[] = {
 	&state_attr.attr,
-#if defined ASUS_ZS673KS_PROJECT || defined ASUS_PICASSO_PROJECT || defined ASUS_SAKE_PROJECT || defined ASUS_VODKA_PROJECT
+#ifdef CONFIG_ASUS_POWER_DEBUG
 //[PM_debug +++]
 	&unattended_timer_attr.attr,
 	&device_resume_time_attr.attr,
