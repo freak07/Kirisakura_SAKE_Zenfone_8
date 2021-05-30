@@ -59,7 +59,7 @@ struct stats_entry {
 	struct entry entry;
 	struct appended_entry appended_entry;
 };
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
 //[PM_debug +++]
 struct soc_sleep_stats_data *gsoc_drv;
 //[PM_debug ---]
@@ -92,7 +92,7 @@ static inline ssize_t append_data_to_buf(char *buf, int length,
 			 data->entry.accumulated,
 			 data->appended_entry.client_votes);
 }
-#ifdef CONFIG_MACH_ASUS
+#if 0
 #if defined ASUS_SAKE_PROJECT || defined ASUS_VODKA_PROJECT
 int pre_aosd_count;
 bool need_dump_rpmh_master_stat;
@@ -382,7 +382,7 @@ static int soc_sleep_stats_probe(struct platform_device *pdev)
 	}
 
 	platform_set_drvdata(pdev, drv);
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
 	gsoc_drv = drv;
 #endif
 	return 0;

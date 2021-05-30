@@ -6,7 +6,7 @@
  *
  * Copyright (C) 2012 Rafael J. Wysocki <rjw@sisk.pl>
  */
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
 //[PM_debug +++]
 //add debug message header
 #define pr_fmt(fmt) "PM: " fmt

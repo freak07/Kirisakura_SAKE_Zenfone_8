@@ -33,7 +33,7 @@
 #include <linux/wakeup_reason.h>
 
 #include "power.h"
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
 //[PM_debug +++]
 #include <linux/pm_debug.h>
 //[PM_debug ---]
@@ -95,7 +95,7 @@ static void s2idle_begin(void)
 static void s2idle_enter(void)
 {
 	trace_suspend_resume(TPS("machine_suspend"), PM_SUSPEND_TO_IDLE, true);
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
 	//printk("[PM][Mark_debug_PM]%s:%s:%d:+++\n", __FILE__, __func__, __LINE__);
 	pm_printk("+++\n");
 #endif
@@ -124,7 +124,7 @@ static void s2idle_enter(void)
  out:
 	s2idle_state = S2IDLE_STATE_NONE;
 	raw_spin_unlock_irq(&s2idle_lock);
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
 	//printk("[PM][Mark_debug_PM]%s:%s:%d:---\n", __FILE__, __func__, __LINE__);
 	pm_printk("---\n");
 #endif
@@ -135,7 +135,7 @@ static void s2idle_enter(void)
 static void s2idle_loop(void)
 {
 	pm_pr_dbg("suspend-to-idle\n");
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
 	//printk("[PM][Mark_debug_PM]%s:%s:%d:suspend-to-idle\n", __FILE__, __func__, __LINE__);
 	pm_printk("suspend-to-idle\n");
 #endif
@@ -164,7 +164,7 @@ static void s2idle_loop(void)
 	}
 
 	pm_pr_dbg("resume from suspend-to-idle\n");
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
 	//printk("[PM][Mark_debug_PM]%s:%s:%d:resume from suspend-to-idle\n", __FILE__, __func__, __LINE__);
 	pm_printk("resume from suspend-to-idle\n");
 #endif
@@ -415,7 +415,7 @@ void __weak arch_suspend_enable_irqs(void)
  */
 static int suspend_enter(suspend_state_t state, bool *wakeup)
 {
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
 //[PM_debug +++]
 	char suspend_abort[MAX_SUSPEND_ABORT_LEN];
 //[PM_debug ---]
@@ -484,7 +484,7 @@ static int suspend_enter(suspend_state_t state, bool *wakeup)
 			trace_suspend_resume(TPS("machine_suspend"),
 				state, false);
 		} else if (*wakeup) {
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
 		//[PM_debug +++]
 			pm_get_active_wakeup_sources(suspend_abort, MAX_SUSPEND_ABORT_LEN);
 			log_suspend_abort_reason(suspend_abort);
@@ -517,7 +517,7 @@ static int suspend_enter(suspend_state_t state, bool *wakeup)
 	platform_resume_finish(state);
 	return error;
 }
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
 //[PM_debug +++]
 extern void msm_rpmh_master_stats_print(void); //drivers/soc/qcom/rpmh_master_stat.c
 #if defined ASUS_SAKE_PROJECT || defined ASUS_VODKA_PROJECT
@@ -535,7 +535,7 @@ extern void soc_sleep_stats_print(void);  //drivers/soc_qcom/soc_sleep_stats.c
 int suspend_devices_and_enter(suspend_state_t state)
 {
 	int error;
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
 	int last_dev;
 #endif
 	bool wakeup = false;
@@ -551,7 +551,7 @@ int suspend_devices_and_enter(suspend_state_t state)
 	error = platform_suspend_begin(state);
 	if (error)
 		goto Close;
-#ifdef CONFIG_MACH_ASUS
+#if 0
 //[PM_debug +++]
     pm_printk("unattended_timer: del_timer\n");
     del_pm_timer();
@@ -568,7 +568,7 @@ int suspend_devices_and_enter(suspend_state_t state)
 	suspend_test_start();
 	error = dpm_suspend_start(PMSG_SUSPEND);
 	if (error) {
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
 		last_dev = suspend_stats.last_failed_dev + REC_FAILED_NUM - 1;
 		last_dev %= REC_FAILED_NUM;
 		pr_err("Some devices failed to suspend, or early wake event detected\n");
@@ -595,7 +595,7 @@ int suspend_devices_and_enter(suspend_state_t state)
 	suspend_test_finish("resume devices");
 	trace_suspend_resume(TPS("resume_console"), state, true);
 	resume_console();
-#ifdef CONFIG_MACH_ASUS
+#if 0
 //[PM_debug +++]
     msm_rpmh_master_stats_print();
 #if defined ASUS_SAKE_PROJECT || defined ASUS_VODKA_PROJECT
@@ -643,7 +643,7 @@ static int enter_state(suspend_state_t state)
 	int error;
 
 	trace_suspend_resume(TPS("suspend_enter"), state, true);
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
     pm_printk("+++\n");
 #endif
 	if (state == PM_SUSPEND_TO_IDLE) {
@@ -669,7 +669,7 @@ static int enter_state(suspend_state_t state)
 	}
 
 	pm_pr_dbg("Preparing system for sleep (%s)\n", mem_sleep_labels[state]);
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
     //[PM_debug +++]
     pm_printk("Preparing system for sleep (%s)\n",mem_sleep_labels[state]);
     //[PM_debug ---]
@@ -684,7 +684,7 @@ static int enter_state(suspend_state_t state)
 
 	trace_suspend_resume(TPS("suspend_enter"), state, false);
 	pm_pr_dbg("Suspending system (%s)\n", mem_sleep_labels[state]);
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
     //[PM_debug +++]
     pm_printk("Suspending system (%s)\n", mem_sleep_labels[state]);
     //[PM_debug ---]
@@ -696,7 +696,7 @@ static int enter_state(suspend_state_t state)
  Finish:
 	events_check_enabled = false;
 	pm_pr_dbg("Finishing wakeup.\n");
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
     //[PM_debug +++]
     pm_printk("Finishing wakeup.\n");
     //[PM_debug ---]
@@ -704,7 +704,7 @@ static int enter_state(suspend_state_t state)
 	suspend_finish();
  Unlock:
 	mutex_unlock(&system_transition_mutex);
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
     pm_printk("---\n");
 #endif
 	return error;

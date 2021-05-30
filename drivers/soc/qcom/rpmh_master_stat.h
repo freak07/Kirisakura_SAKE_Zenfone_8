@@ -15,7 +15,7 @@ void msm_rpmh_master_stats_update(void);
 static inline void msm_rpmh_master_stats_update(void) {}
 
 #endif
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
 //[PM_debug +++]
 void msm_rpmh_master_stats_print(void);
 void soc_sleep_stats_print(void);
