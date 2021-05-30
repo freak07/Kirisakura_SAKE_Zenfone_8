@@ -62,7 +62,7 @@
 #include "braille.h"
 #include "internal.h"
 
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
 //[PM_debug +++]
 //irq debug
 #include <linux/wakeup_reason.h>
@@ -433,7 +433,7 @@ DEFINE_RAW_SPINLOCK(logbuf_lock);
 		printk_safe_exit_irqrestore(flags);	\
 	} while (0)
 
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
 static char *asus_log_buf = NULL;
 static bool is_logging_to_asus_buffer = false;
 int boot_after_60sec = 0;
@@ -528,7 +528,7 @@ static u32 clear_idx;
 static char __log_buf[__LOG_BUF_LEN] __aligned(LOG_ALIGN);
 static char *log_buf = __log_buf;
 static u32 log_buf_len = __LOG_BUF_LEN;
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
 int nSuspendInProgress;
 #endif
 
@@ -1401,7 +1401,7 @@ static size_t print_syslog(unsigned int level, char *buf)
 	return sprintf(buf, "<%u>", level);
 }
 
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
 #include <linux/rtc.h>
 extern struct timezone sys_tz;
 static void myrtc_time_to_tm(unsigned long time, struct rtc_time *tm){
@@ -1417,7 +1417,7 @@ static void myrtc_time_to_tm(unsigned long time, struct rtc_time *tm){
 static size_t print_time(u64 ts, char *buf)
 {
 	unsigned long rem_nsec = do_div(ts, 1000000000);
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
 	struct timespec timespec;
 	struct rtc_time tm;
 	int this_cpu = smp_processor_id();
@@ -1482,7 +1482,7 @@ static size_t print_prefix(const struct printk_log *msg, bool syslog,
 	if (syslog)
 		len = print_syslog((msg->facility << 3) | msg->level, buf);
 
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
 	//if (time)
 	//	len += print_time(msg->ts_nsec, buf + len);
 #else
@@ -2057,7 +2057,7 @@ static bool cont_add(u32 caller_id, int facility, int level,
 	return true;
 }
 
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
 static size_t log_output(int facility, int level, enum log_flags lflags, const char *dict, size_t dictlen, char *text, size_t text_len,u64 ts)
 #else
 static size_t log_output(int facility, int level, enum log_flags lflags, const char *dict, size_t dictlen, char *text, size_t text_len)
@@ -2089,7 +2089,7 @@ static size_t log_output(int facility, int level, enum log_flags lflags, const c
 	}
 
 	/* Store it in the record log */
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
 	return log_store(caller_id, facility, level, lflags, ts,
 			 dict, dictlen, text, text_len);
 #else
@@ -2107,7 +2107,7 @@ int vprintk_store(int facility, int level,
 	char *text = textbuf;
 	size_t text_len;
 	enum log_flags lflags = 0;
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
 	static char textbuf1[LOG_LINE_MAX];
 	char *text1 = textbuf1;
 	u64 ts = 0;
@@ -2119,14 +2119,14 @@ int vprintk_store(int facility, int level,
 	 * The printf needs to come first; we need the syslog
 	 * prefix which might be passed-in as a parameter.
 	 */
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
 	text_len = vscnprintf(text1, sizeof(textbuf1), fmt, args);
 #else
 	text_len = vscnprintf(text, sizeof(textbuf), fmt, args);
 #endif
 
 	/* mark and strip a trailing newline */
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
 	if (text_len && text1[text_len-1] == '\n') {
 #else
 	if (text_len && text[text_len-1] == '\n') {
@@ -2138,7 +2138,7 @@ int vprintk_store(int facility, int level,
 	/* strip kernel syslog prefix and extract log level or control flags */
 	if (facility == 0) {
 		int kern_level;
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
 		while ((kern_level = printk_get_level(text1)) != 0) {
 #else
 
@@ -2154,14 +2154,14 @@ int vprintk_store(int facility, int level,
 			}
 
 			text_len -= 2;
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
 			text1 += 2;
 #else
 			text += 2;
 #endif
 		}
 	}
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
 	ts = local_clock();
 	time_size = print_time(ts, time_buf);
 	strncpy(text, time_buf, time_size);
@@ -2176,7 +2176,7 @@ int vprintk_store(int facility, int level,
 
 	if (dict)
 		lflags |= LOG_NEWLINE;
-#ifdef CONFIG_MACH_ASUS	
+#ifdef CONFIG_ASUS_POWER_DEBUG
 	if (is_logging_to_asus_buffer) {
 		   write_to_asus_log_buffer(text, text_len, lflags);
 	}
@@ -2487,7 +2487,7 @@ MODULE_PARM_DESC(console_suspend, "suspend console during suspend"
  */
 void suspend_console(void)
 {
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
     //[PM_debug +++]
     ASUSEvtlog("[UTS] System Suspend\n");
     //[PM_debug ---]
@@ -2495,7 +2495,7 @@ void suspend_console(void)
 #endif
 	if (!console_suspend_enabled)
 		return;
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
     //[PM_debug +++]
 	//pr_info("Suspending console(s) (use no_console_suspend to debug)\n");
     pr_err("Suspending console(s) (use no_console_suspend to debug)\n");
@@ -2511,7 +2511,7 @@ void suspend_console(void)
 void resume_console(void)
 {
     //[PM_debug +++]
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
 	ASUSEvtlog("[PM] System Resume\n");
 	nSuspendInProgress = 0;
     //Show GIC_IRQ wakeup information in AsusEvtlog
@@ -3642,7 +3642,7 @@ EXPORT_SYMBOL_GPL(kmsg_dump_rewind);
 
 #endif
 
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
 void printk_buffer_rebase(void)
 {
 /*
