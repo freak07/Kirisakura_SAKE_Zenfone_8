@@ -331,7 +331,6 @@ int tmd2755_get_lux(struct tmd2755_chip *chip)
 	s64 sf = 0;
 	long ch_data_limit = 0;
 	static long ch0_last = 0;
-	static int log_count = 0;
 
 	// use time in ms get scaling factor 
 	tmd2755_calc_counts_per_lux(chip);
@@ -371,24 +370,15 @@ int tmd2755_get_lux(struct tmd2755_chip *chip)
 	}else{
 		ch_data_limit = ch0_last * 98 / 100;
 	}
-	
-	/* check ch data */
-	if(0 ==ch0 && 0 ==ch1){
-		if(log_count % 1000 == 0 ){ //prevent too much error log when i2c error
-			log("no data since ch0 & ch1 = 0");
-		}
-		log_count++; //prevent too much error log when i2c error
-		chip->als_info.bad_ch_data = true;
-	}else{
-		log_count = 0; //prevent too much error log when i2c error
-		chip->als_info.bad_ch_data = false;
+
+	if(ch0 != ch0_last){
 		if((ch0_last >= (ch0+ch_data_limit)) || (ch0_last <= (ch0-ch_data_limit)) || chip->als_info.first_event_log == true){
 			log("lux=%ld, ch0=%u, ch1=%u, ch0_last=%ld, (ch1*10000/ch0)=%ld, sf=%lld", 
-				lux, ch0, ch1, ch0_last, ch_temp, sf);
+			lux, ch0, ch1, ch0_last, ch_temp, sf);
 		}
-		ch0_last = ch0;
-	}
-
+        }
+	ch0_last = ch0;
+	
 	if (lux < 0) {
 		dev_info(&chip->client->dev, "%*.*s():%*d --> lux < 0,  Use previous value.\n",
 		MIN_KERNEL_LOG_LEN, MAX_KERNEL_LOG_LEN, __func__, LINE_NUM_KERNEL_LOG_LEN, __LINE__);
@@ -416,9 +406,7 @@ int tmd2755_get_lux(struct tmd2755_chip *chip)
 				chip->als_info.ch0_raw, chip->als_info.ch1_raw, chip->als_info.saturation);
 		}
 	} else {
-		if(chip->als_info.bad_ch_data){
-			return 0;
-		}else if (chip->als_info.ch0_raw < low_thres || chip->als_info.ch1_raw < low_thres) {
+		if (chip->als_info.ch0_raw < low_thres || chip->als_info.ch1_raw < low_thres) {
 			if((chip->shadow[TMD2755_REG_CFG1] & TMD2755_MASK_AGAIN) != ALS_GAIN_REG_VAL_1024){
 				dev_info(&chip->client->dev, "%*.*s():%*d --> Autogain Incrementing, ch0:%d, ch1:%d, low_thres=%d\n",
 					MIN_KERNEL_LOG_LEN, MAX_KERNEL_LOG_LEN, __func__, LINE_NUM_KERNEL_LOG_LEN, 
@@ -537,10 +525,6 @@ void tmd2755_report_als(struct tmd2755_chip *chip)
 	if (!rc) {
 		lux = chip->als_info.lux;
 		lux = light_get_lux(chip->als_info.lux);
-		if(chip->als_info.bad_ch_data){
-			dbg("Error, als no data since ch0 & ch1 = 0");
-			return;
-		}
 		lsensor_report_lux(lux);
 		if(chip->als_info.first_event_log == true){
 			log("ALS lux First= %d (orig lux=%d)", lux, chip->als_info.lux);

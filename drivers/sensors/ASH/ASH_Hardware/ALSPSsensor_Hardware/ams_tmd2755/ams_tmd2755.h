@@ -393,7 +393,6 @@ struct tmd2755_als_info {
 	u16 ch0_raw;
 	u16 ch1_raw;
 	u16 lux;
-	bool bad_ch_data;
 	bool first_event_log;
 };
 

@@ -3304,6 +3304,23 @@ int asuslib_init(void) {
         }
     }
 
+    //[+++]Register the extcon for quick_charger
+    quickchg_extcon = extcon_dev_allocate(asus_fg_extcon_cable);
+    if (IS_ERR(quickchg_extcon)) {
+        rc = PTR_ERR(quickchg_extcon);
+        printk(KERN_ERR "[BAT][CHG] failed to allocate ASUS quickchg extcon device rc=%d\n", rc);
+    }
+    quickchg_extcon->fnode_name = "quick_charging";
+
+    rc = extcon_dev_register(quickchg_extcon);
+    if (rc < 0)
+        printk(KERN_ERR "[BAT][CHG] failed to register ASUS quickchg extcon device rc=%d\n", rc);
+
+    asus_extcon_set_state_sync(quickchg_extcon, SWITCH_LEVEL0_DEFAULT);
+
+    INIT_DELAYED_WORK(&asus_set_qc_state_work, asus_set_qc_state_worker);
+    //[---]Register the extcon for quick_charger
+
     //[+++] Init the PMIC-GLINK
     client_data.id = PMIC_GLINK_MSG_OWNER_OEM;
     client_data.name = "asus_BC";
@@ -3351,23 +3368,6 @@ int asuslib_init(void) {
     bat_id_extcon->fnode_name = "battery_id";
     printk("[BAT]extcon_dev_register");
     rc = extcon_dev_register(bat_id_extcon);
-
-    //[+++]Register the extcon for quick_charger
-    quickchg_extcon = extcon_dev_allocate(asus_fg_extcon_cable);
-    if (IS_ERR(quickchg_extcon)) {
-        rc = PTR_ERR(quickchg_extcon);
-        printk(KERN_ERR "[BAT][CHG] failed to allocate ASUS quickchg extcon device rc=%d\n", rc);
-    }
-    quickchg_extcon->fnode_name = "quick_charging";
-
-    rc = extcon_dev_register(quickchg_extcon);
-    if (rc < 0)
-        printk(KERN_ERR "[BAT][CHG] failed to register ASUS quickchg extcon device rc=%d\n", rc);
-
-    asus_extcon_set_state_sync(quickchg_extcon, SWITCH_LEVEL0_DEFAULT);
-
-    INIT_DELAYED_WORK(&asus_set_qc_state_work, asus_set_qc_state_worker);
-    //[---]Register the extcon for quick_charger
 
     //[+++]Register the extcon for thermal alert
     thermal_extcon = extcon_dev_allocate(asus_fg_extcon_cable);
