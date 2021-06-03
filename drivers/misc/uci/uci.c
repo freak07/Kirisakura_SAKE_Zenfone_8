@@ -620,14 +620,14 @@ static void parse_work_func(struct work_struct * parse_work_func_work)
 }
 static DECLARE_DELAYED_WORK(parse_work_func_work, parse_work_func);
 static void do_reschedule(void) {
-	schedule_delayed_work(&parse_work_func_work, 3 * 100);
+	queue_delayed_work(system_power_efficient_wq, &parse_work_func_work, 3 * 100);
 }
 // alarm timer
 static struct alarm parse_user_cfg_rtc;
 static enum alarmtimer_restart parse_user_cfg_rtc_callback(struct alarm *al, ktime_t now)
 {
 	pr_info("%s uci alarm \n",__func__);
-	schedule_delayed_work(&parse_work_func_work, 15 * 100);
+	queue_delayed_work(system_power_efficient_wq, &parse_work_func_work, 15 * 100);
 	return ALARMTIMER_NORESTART;
 }
 
@@ -642,11 +642,11 @@ void notify_uci_file_closed(const char *file_name) {
 		return;
 	}
 	if (!strcmp(file_name, UCI_USER_FILE_END) && should_parse_user) {
-		schedule_delayed_work(&parse_work_func_work,1);
+		queue_delayed_work(system_power_efficient_wq, &parse_work_func_work,1);
 		return;
 	}
 	if (!strcmp(file_name, UCI_SYS_FILE_END) && should_parse_sys) {
-		schedule_delayed_work(&parse_work_func_work,1);
+		queue_delayed_work(system_power_efficient_wq, &parse_work_func_work,1);
 		return;
 	}
 }
