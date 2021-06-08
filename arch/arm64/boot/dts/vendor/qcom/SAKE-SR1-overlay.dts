@@ -65,6 +65,7 @@
 		qcom,sn-ven = <&tlmm 3 0x00>;
 		qcom,sn-firm = <&tlmm 86 0x00>;
 		qcom,sn-clkreq = <&tlmm 63 0x00>;
+		qcom,sn-esepwr = <&tlmm 47 0x00>;
 		interrupt-parent = <&tlmm>;
 		interrupts = <87 0>;
 		interrupt-names = "nfc_irq";

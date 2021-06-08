@@ -338,6 +338,10 @@
 					15 01 00 00 00 00 02 53 28
 				];
 
+				qcom,mdss-dsi-aod-off-command = [
+					05 01 00 00 10 00 02 28 00
+				];
+
 				qcom,mdss-dsi-on-command-state = "dsi_lp_mode";
 				qcom,mdss-dsi-ER1-on-command-state = "dsi_lp_mode";
 				qcom,mdss-dsi-off-command-state = "dsi_hs_mode";
@@ -362,6 +366,7 @@
 				qcom,mdss-dsi-dimming-speed-1frame-command-state = "dsi_hs_mode";
 				qcom,mdss-dsi-dimming-speed-20frame-command-state = "dsi_hs_mode";
 				qcom,mdss-dsi-dimming-smooth-command-state = "dsi_hs_mode";
+				qcom,mdss-dsi-aod-off-command-state = "dsi_hs_mode";
 
 
 				/* DSC */
@@ -664,6 +669,10 @@
 					15 01 00 00 00 00 02 53 28
 				];
 
+				qcom,mdss-dsi-aod-off-command = [
+					05 01 00 00 10 00 02 28 00
+				];
+
 				qcom,mdss-dsi-on-command-state = "dsi_lp_mode";
 				qcom,mdss-dsi-ER1-on-command-state = "dsi_lp_mode";
 				qcom,mdss-dsi-off-command-state = "dsi_hs_mode";
@@ -688,6 +697,7 @@
 				qcom,mdss-dsi-dimming-speed-1frame-command-state = "dsi_hs_mode";
 				qcom,mdss-dsi-dimming-speed-20frame-command-state = "dsi_hs_mode";
 				qcom,mdss-dsi-dimming-smooth-command-state = "dsi_hs_mode";
+				qcom,mdss-dsi-aod-off-command-state = "dsi_hs_mode";
 
 				/* DSC */
 				qcom,compression-mode = "dsc";
@@ -962,6 +972,11 @@
 					15 01 00 00 00 00 02 53 28
 				];
 
+
+				qcom,mdss-dsi-aod-off-command = [
+					05 01 00 00 10 00 02 28 00
+				];
+
 				qcom,mdss-dsi-on-command-state = "dsi_lp_mode";
 				qcom,mdss-dsi-ER1-on-command-state = "dsi_lp_mode";
 				qcom,mdss-dsi-off-command-state = "dsi_hs_mode";
@@ -986,6 +1001,7 @@
 				qcom,mdss-dsi-dimming-speed-1frame-command-state = "dsi_hs_mode";
 				qcom,mdss-dsi-dimming-speed-20frame-command-state = "dsi_hs_mode";
 				qcom,mdss-dsi-dimming-smooth-command-state = "dsi_hs_mode";
+				qcom,mdss-dsi-aod-off-command-state = "dsi_hs_mode";
 
 				/* DSC */
 				qcom,compression-mode = "dsc";

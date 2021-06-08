@@ -47,6 +47,16 @@ int nfc_parse_dt(struct device *dev, struct platform_gpio *nfc_gpio,
 		return -EINVAL;
 	}
 
+#ifdef ASUS_SAKE_PROJECT
+//For eSE +++
+	nfc_gpio->ese_gpio = of_get_named_gpio(np, DTS_ESEPWR_GPIO_STR, 0);
+	if (!gpio_is_valid(nfc_gpio->ese_gpio)) {
+		dev_err(dev, "esepwr gpio invalid %d\n", nfc_gpio->ese_gpio);
+		return -EINVAL;
+	}
+//For eSE ---
+#endif //ASUS_SAKE_PROJECT
+
 	pr_info("%s: ven %d, dwl req %d, clkreq %d\n", __func__,
 		nfc_gpio->ven, nfc_gpio->dwl_req, nfc_gpio->clkreq);
 
@@ -438,6 +448,29 @@ int nfc_ese_pwr(struct nfc_dev *nfc_dev, unsigned long arg)
 			pr_debug("ven already HIGH\n");
 		}
 		nfc_dev->is_ese_session_active = true;
+
+#ifdef ASUS_SAKE_PROJECT
+//For eSE +++
+		/* We want to power on the eSE and to do so we need the
+		 * eSE_pwr_req pin and the NFC_EN pin to be high
+		 */
+		if (gpio_get_value(nfc_dev->gpio.ese_gpio)) {
+			pr_debug("ese_gpio is already high\n");
+		} else {
+			/**
+			 * Let's store the NFC_EN pin state
+			 * only if the eSE is not yet on
+			 */
+			usleep_range(1000, 1100);
+			gpio_set_value(nfc_dev->gpio.ese_gpio, 1);
+			usleep_range(1000, 1100);
+			if (gpio_get_value(nfc_dev->gpio.ese_gpio)) {
+				pr_debug("ese_gpio is enabled\n");
+			}
+		}
+//For eSE ---
+#endif //ASUS_SAKE_PROJECT
+
 	} else if (arg == ESE_POWER_OFF) {
 		if (!nfc_dev->nfc_ven_enabled) {
 			pr_debug("NFC not enabled, disabling ven\n");
@@ -507,6 +540,99 @@ int nfc_ese_pwr(struct nfc_dev *nfc_dev, unsigned long arg)
 	return ret;
 }
 
+#ifdef ASUS_SAKE_PROJECT
+//For eSE +++
+// int nfc_ese_pwr(struct nfc_dev *nfc_dev, unsigned long arg)
+/*
+ * Power management of the eSE
+ * NFC & eSE ON : NFC_EN high and eSE_pwr_req high.
+ * NFC OFF & eSE ON : NFC_EN high and eSE_pwr_req high.
+ * NFC OFF & eSE OFF : NFC_EN low and eSE_pwr_req low.
+ */
+static int nqx_ese_pwr_pn81(struct nfc_dev *nfc_dev, unsigned long arg)
+{
+	int r = -1;
+	//const unsigned char svdd_off_cmd_warn[] =  {0x2F, 0x31, 0x01, 0x01};
+	//const unsigned char svdd_off_cmd_done[] =  {0x2F, 0x31, 0x01, 0x00};
+
+	if (!gpio_is_valid(nfc_dev->gpio.ese_gpio)) {
+		pr_err("%s: ese_gpio is not valid\n", __func__);
+		return -EINVAL;
+	}
+
+	if (arg == 0) {
+		/*
+		 * We want to power on the eSE and to do so we need the
+		 * eSE_pwr_req pin and the NFC_EN pin to be high
+		 */
+		if (gpio_get_value(nfc_dev->gpio.ese_gpio)) {
+			pr_debug("ese_gpio is already high\n");
+			r = 0;
+		} else {
+			/**
+			 * Let's store the NFC_EN pin state
+			 * only if the eSE is not yet on
+			 */
+			nfc_dev->nfc_ven_enabled =
+					gpio_get_value(nfc_dev->gpio.ven);
+			if (!nfc_dev->nfc_ven_enabled) {
+				gpio_set_value(nfc_dev->gpio.ven, 1);
+				/* hardware dependent delay */
+				usleep_range(10000, 11000);
+			}
+			gpio_direction_output(nfc_dev->gpio.ese_gpio, 1);
+			gpio_set_value(nfc_dev->gpio.ese_gpio, 1);
+			usleep_range(10000, 12000);
+			if (gpio_get_value(nfc_dev->gpio.ese_gpio)) {
+				pr_debug("ese_gpio is enabled\n");
+				r = 0;
+			}
+		}
+		nfc_dev->is_ese_session_active = true;
+	} else if (arg == 1) {
+		if (nfc_dev->nfc_ven_enabled) {
+			/**
+			 * Let's inform the CLF we're
+			 * powering off the eSE
+			 */
+			/* let's power down the eSE */
+			gpio_set_value(nfc_dev->gpio.ese_gpio, 0);
+			pr_debug("%s: nqx_dev->ese_gpio set to 0\n", __func__);
+
+			/**
+			 * Time needed for the SVDD capacitor
+			 * to get discharged
+			 */
+			usleep_range(8000, 8100);
+		} else {
+			/**
+			 * In case the NFC is off,
+			 * there's no need to send the i2c commands
+			 */
+			gpio_set_value(nfc_dev->gpio.ese_gpio, 0);
+			usleep_range(1000, 1100);
+		}
+
+		nfc_dev->is_ese_session_active = false;
+		if (!gpio_get_value(nfc_dev->gpio.ese_gpio)) {
+			pr_debug("ese_gpio is disabled\n");
+			r = 0;
+		}
+
+		if (!nfc_dev->nfc_ven_enabled) {
+			/* hardware dependent delay */
+			usleep_range(1000, 1100);
+			pr_debug("disabling en_gpio\n");
+			gpio_set_value(nfc_dev->gpio.ven, 0);
+		}
+	} else if (arg == 3) {
+		r = gpio_get_value(nfc_dev->gpio.ese_gpio);
+	}
+	return r;
+}
+//For eSE ---
+#endif //ASUS_SAKE_PROJECT
+
 /*
  * nfc_ioctl_power_states() - power control
  * @nfc_dev:    nfc device data structure
@@ -535,10 +661,14 @@ static int nfc_ioctl_power_states(struct nfc_dev *nfc_dev, unsigned long arg)
 			gpio_set_value(nfc_dev->gpio.dwl_req, 0);
 			usleep_range(10000, 10100);
 		}
-
+#ifdef ASUS_SAKE_PROJECT
+		if (nfc_dev->is_ese_session_active == false) {
+#endif //ASUS_SAKE_PROJECT
 		pr_debug("Set ven to low\n");
 		gpio_set_ven(nfc_dev, 0);
-
+#ifdef ASUS_SAKE_PROJECT
+		}
+#endif //ASUS_SAKE_PROJECT
 		nfc_dev->nfc_ven_enabled = false;
 
 	} else if (arg == NFC_POWER_ON) {
@@ -548,7 +678,13 @@ static int nfc_ioctl_power_states(struct nfc_dev *nfc_dev, unsigned long arg)
 			gpio_set_value(nfc_dev->gpio.dwl_req, 0);
 			usleep_range(10000, 10100);
 		}
+#ifdef ASUS_SAKE_PROJECT
+        if (nfc_dev->is_ese_session_active == false) {
+#endif //ASUS_SAKE_PROJECT
 		gpio_set_ven(nfc_dev, 1);
+#ifdef ASUS_SAKE_PROJECT
+        }
+#endif //ASUS_SAKE_PROJECT
 		nfc_dev->nfc_ven_enabled = true;
 
 		if (nfc_dev->interface == PLATFORM_IF_I3C)
@@ -674,10 +810,18 @@ long nfc_dev_ioctl(struct file *pfile, unsigned int cmd, unsigned long arg)
 		ret = nfc_ioctl_power_states(nfc_dev, arg);
 		break;
 	case ESE_SET_PWR:
+#ifdef ASUS_SAKE_PROJECT
+		ret = nqx_ese_pwr_pn81(nfc_dev, arg);
+#else
 		ret = nfc_ese_pwr(nfc_dev, arg);
+#endif //ASUS_SAKE_PROJECT
 		break;
 	case ESE_GET_PWR:
+#ifdef ASUS_SAKE_PROJECT
+		ret = nqx_ese_pwr_pn81(nfc_dev, ESE_POWER_STATE);
+#else
 		ret = nfc_ese_pwr(nfc_dev, ESE_POWER_STATE);
+#endif //ASUS_SAKE_PROJECT
 		break;
 	case NFCC_GET_INFO:
 		ret = nfc_ioctl_nfcc_info(pfile, arg);

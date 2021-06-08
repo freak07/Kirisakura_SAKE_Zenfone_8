@@ -335,6 +335,9 @@ int nfc_i2c_dev_probe(struct i2c_client *client, const struct i2c_device_id *id)
 	nfc_dev->gpio.irq = nfc_gpio.irq;
 	nfc_dev->gpio.dwl_req = nfc_gpio.dwl_req;
 	nfc_dev->gpio.clkreq = nfc_gpio.clkreq;
+#ifdef ASUS_SAKE_PROJECT
+	nfc_dev->gpio.ese_gpio = nfc_gpio.ese_gpio;
+#endif //ASUS_SAKE_PROJECT
 
 	/* init mutex and queues */
 	init_waitqueue_head(&nfc_dev->read_wq);

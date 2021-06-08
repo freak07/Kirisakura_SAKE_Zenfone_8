@@ -92,6 +92,10 @@
 #define DTS_FWDN_GPIO_STR	"qcom,sn-firm"
 #define DTS_CLKREQ_GPIO_STR	"qcom,sn-clkreq"
 #define DTS_CLKSRC_GPIO_STR	"qcom,clk-src"
+#ifdef ASUS_SAKE_PROJECT
+#define DTS_ESEPWR_GPIO_STR	"qcom,sn-esepwr"
+#endif //ASUS_SAKE_PROJECT
+
 #define NFC_LDO_SUPPLY_DT_NAME	"qcom,sn-vdd-1p8"
 #define NFC_LDO_SUPPLY_NAME	"qcom,sn-vdd-1p8-supply"
 #define NFC_LDO_VOL_DT_NAME	"qcom,sn-vdd-1p8-voltage"
@@ -193,6 +197,9 @@ struct platform_gpio {
 	unsigned int ven;
 	unsigned int clkreq;
 	unsigned int dwl_req;
+#ifdef ASUS_SAKE_PROJECT
+	unsigned int ese_gpio;
+#endif //ASUS_SAKE_PROJECT
 };
 
 // NFC LDO entries from DT
@@ -219,6 +226,9 @@ struct nfc_dev {
 	struct class *nfc_class;
 	struct device *nfc_device;
 	struct cdev c_dev;
+#ifdef ASUS_SAKE_PROJECT
+	struct	i2c_client	*client;
+#endif //ASUS_SAKE_PROJECT
 	dev_t devno;
 	/* Interface flag */
 	uint8_t interface;
