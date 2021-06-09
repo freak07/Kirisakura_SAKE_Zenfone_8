@@ -7308,6 +7308,7 @@ int msm_pcie_pm_control(enum msm_pcie_pm_opt pm_opt, u32 busnr, void *user,
 			break;
 		}
 
+		mutex_lock(&pcie_dev->recovery_lock);
 		mutex_lock(&pcie_dev->enumerate_lock);
 
 		/*
@@ -7338,12 +7339,12 @@ int msm_pcie_pm_control(enum msm_pcie_pm_opt pm_opt, u32 busnr, void *user,
 				 "PCIe: RC%d: request to suspend the link is rejected\n",
 				 pcie_dev->rc_idx);
 			mutex_unlock(&pcie_dev->enumerate_lock);
+			mutex_unlock(&pcie_dev->recovery_lock);
 			break;
 		}
 
 		pcie_dev->user_suspend = true;
 
-		mutex_lock(&pcie_dev->recovery_lock);
 
 		ret = msm_pcie_pm_suspend(dev, user, data, options);
 		if (ret) {
@@ -7359,9 +7360,9 @@ int msm_pcie_pm_control(enum msm_pcie_pm_opt pm_opt, u32 busnr, void *user,
 			}
 		}
 
-		mutex_unlock(&pcie_dev->recovery_lock);
-
 		mutex_unlock(&pcie_dev->enumerate_lock);
+
+		mutex_unlock(&pcie_dev->recovery_lock);
 		break;
 	case MSM_PCIE_RESUME:
 		PCIE_DBG(pcie_dev,
@@ -7373,6 +7374,8 @@ int msm_pcie_pm_control(enum msm_pcie_pm_opt pm_opt, u32 busnr, void *user,
 			ret = msm_pcie_drv_resume(pcie_dev);
 			break;
 		}
+
+		mutex_lock(&pcie_dev->recovery_lock);
 
 		/* when link was suspended and link resume is requested */
 		mutex_lock(&pcie_dev->enumerate_lock);
@@ -7400,10 +7403,10 @@ int msm_pcie_pm_control(enum msm_pcie_pm_opt pm_opt, u32 busnr, void *user,
 			PCIE_ERR(pcie_dev,
 				 "PCIe: RC%d: requested to resume when link is already powered on. Number of active EP(s): %d\n",
 				 pcie_dev->rc_idx, pcie_dev->num_active_ep);
+			mutex_unlock(&pcie_dev->recovery_lock);
 			break;
 		}
 
-		mutex_lock(&pcie_dev->recovery_lock);
 		ret = msm_pcie_pm_resume(dev, user, data, options);
 		if (ret) {
 			PCIE_ERR(pcie_dev,
