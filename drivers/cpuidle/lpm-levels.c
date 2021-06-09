@@ -1776,7 +1776,6 @@ static int lpm_probe(struct platform_device *pdev)
 failed:
 	free_cluster_node(lpm_root_node);
 	lpm_root_node = NULL;
-	dma_free_coherent(&pdev->dev, size, lpm_debug, lpm_debug_phys);
 
 	return ret;
 }
