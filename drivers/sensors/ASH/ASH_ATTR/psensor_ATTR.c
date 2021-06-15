@@ -863,7 +863,7 @@ static struct device_attribute proximity_property_attrs[] = {
 	/*For power key turn on screen and enable touch*/
 	__ATTR(enable_anti_oil, 0664, ATT_proximity_show_anti_oil_enable, ATT_proximity_store_anti_oil_enable),
 #ifdef CONFIG_TMD2755_FLAG
-	__ATTR(chip_cal_en, 0664, NULL, ATT_proximity_store_chip_cal_en),
+	__ATTR(chip_cal_en, 0220, NULL, ATT_proximity_store_chip_cal_en),
 #endif
 };
 
