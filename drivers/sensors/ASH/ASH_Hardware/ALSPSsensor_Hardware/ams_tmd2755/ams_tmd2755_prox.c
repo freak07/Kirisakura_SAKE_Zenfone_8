@@ -372,6 +372,7 @@ int tmd2755_configure_prox_mode(struct tmd2755_chip *chip, u8 state)
 		chip->prox_info.detected = true;
 		chip->prox_info.raw = 0;
 	} else {
+		chip->params.poffset_last = chip->params.poffset;
 		/* Turning off prox */
 		/* Disable Proximity feature, and all interrupts associated with prox */
 		ams_i2c_modify(client, sh, TMD2755_REG_ENABLE, TMD2755_PEN, 0);
@@ -766,7 +767,6 @@ static ssize_t tmd2755_prox_high_thresh_store(struct device *dev, struct device_
 
 	return size;
 }
-
 
 static ssize_t tmd2755_prox_regs_show(struct device *dev, struct device_attribute *attr, char *buf)
 {

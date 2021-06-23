@@ -209,6 +209,7 @@ struct fts_ts_data {
 #endif
 //ASUS +++
     int init_success;
+    bool irq_off;
 //fod
     bool fp_enable;
     int fp_report_type;

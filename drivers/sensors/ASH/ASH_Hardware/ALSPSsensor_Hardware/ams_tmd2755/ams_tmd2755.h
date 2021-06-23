@@ -384,7 +384,9 @@ struct tmd2755_parameters {
 	u32 ch1_coef0;
 	u32 ch1_coef1;
 	u32 coef_scale;
-	s16 poffset_prev;
+	s16 poffset_fac;
+	s16 poffset_limit;
+	s16 poffset_last;
 };
 
 struct tmd2755_als_info {

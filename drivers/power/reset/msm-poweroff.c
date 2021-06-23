@@ -518,6 +518,21 @@ static int do_msm_restart(struct notifier_block *unused, unsigned long action,
 	return NOTIFY_DONE;
 }
 
+int do_msm_restart2(void *arg)
+{
+	const char *cmd = arg;
+
+	pr_notice("Going down for restart now\n");
+
+	msm_restart_prepare(cmd);
+
+	deassert_ps_hold();
+
+	msleep(10000);
+
+	return NOTIFY_DONE;
+}
+
 static void do_msm_poweroff(void)
 {
 

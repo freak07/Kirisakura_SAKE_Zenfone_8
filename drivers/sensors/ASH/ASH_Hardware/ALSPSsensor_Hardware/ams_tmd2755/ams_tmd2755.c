@@ -503,7 +503,8 @@ static int tmd2755_ALSPS_hw_get_interrupt()
 	/***************/
 	/* If you get a calibration interrupt and you are in calibration, process */
 	if ((status & TMD2755_INT_ST_CALIB_IRQ) && chip->in_calib) {
-		log("Calibration Interrupt Occurred, prev_offset=%d", chip->params.poffset_prev);
+		log("Calibration Interrupt Occurred, cur_offset = %d, last_offset=%d, limit = %d", 
+		chip->params.poffset, chip->params.poffset_last, chip->params.poffset_limit);
 
 		/*
 		 ** Calibration has completed, no need for more
@@ -514,19 +515,20 @@ static int tmd2755_ALSPS_hw_get_interrupt()
 		ams_i2c_modify(chip->client, chip->shadow, TMD2755_REG_CALIB,   TMD2755_MASK_START_OFFSET_CALIB, 0);
 		ams_i2c_read(chip->client,  TMD2755_REG_CALIB_OFF, &chip->shadow[TMD2755_REG_CALIB_OFF]);
 		tmd2755_read_poffset(chip);
-		if(chip->params.poffset == 255){
+		if(chip->params.poffset >= chip->params.poffset_limit){
 			tmd2755_read_prox(chip);
-			log("Cur_offset: %d, Recovery poffset as previous setting: %d, raw=%d", 
-			chip->params.poffset, chip->params.poffset_prev, chip->prox_info.raw);
-			if(chip->params.poffset_prev < 0){
+			log("Recovery poffset as last offset: %d, raw=%d", 
+			chip->params.poffset_last, chip->prox_info.raw);
+			if(chip->params.poffset_last < 0){
 				ams_i2c_modify(chip->client, chip->shadow, TMD2755_REG_POFFSET_H, TMD2755_REG_POFFSET_H, TMD2755_REG_POFFSET_H);
-				chip->params.poffset_prev *=-1;
+				chip->params.poffset_last *=-1;
 			}
-			ams_i2c_write(chip->client, chip->shadow, TMD2755_REG_POFFSET_L, chip->params.poffset_prev);
+			ams_i2c_write(chip->client, chip->shadow, TMD2755_REG_POFFSET_L, chip->params.poffset_last);
 			mdelay(12); //for psensor scan time, to make sure that psensor data will be updated according to right offset 
 		}else{
-			chip->params.poffset_prev = chip->params.poffset;
+			chip->params.poffset_last = chip->params.poffset;
 		}
+
 		complete_all(&(chip->calibration_done));
 		if(chip->als_enable == true){
 			log("als sensor on, enable PWEN");
@@ -624,8 +626,9 @@ static int tmd2755_set_defaults(struct tmd2755_chip *chip)
 		chip->params.ch1_coef0            = -chip->pdata->parameters.ch1_coef0;
 		chip->params.ch1_coef1            = chip->pdata->parameters.ch1_coef1;
 		chip->params.coef_scale           = chip->pdata->parameters.coef_scale;
-		chip->params.poffset_prev        = PROX_OFFSET_INIT;
-
+		chip->params.poffset_limit        = PROX_OFFSET_MAX;
+		chip->params.poffset_fac          = PROX_OFFSET_INIT;
+		chip->params.poffset_last          = PROX_OFFSET_INIT;
 	} else {
 		dev_info(dev, "%*.*s():%*d --> use defaults\n", MIN_KERNEL_LOG_LEN, MAX_KERNEL_LOG_LEN, __func__, LINE_NUM_KERNEL_LOG_LEN, __LINE__);
 		chip->params.prox_thresh_min     = 64;
@@ -1876,6 +1879,28 @@ static int tmd2755_proximity_hw_get_offset(void)
 	return g_tmd2755_chip->params.poffset;
 }
 
+static int tmd2755_proximity_hw_set_fac_offset(int offset)
+{
+	g_tmd2755_chip->params.poffset_fac = offset;
+	return 0;
+}
+
+static int tmd2755_proximity_hw_set_offset_limit(int en, int thresh)
+{
+	if(en == 1){
+		g_tmd2755_chip->params.poffset_limit = 
+		g_tmd2755_chip->params.poffset_fac + thresh;
+	}else{
+		g_tmd2755_chip->params.poffset_limit = PROX_OFFSET_MAX;
+	}
+	if(g_tmd2755_chip->params.poffset_limit > PROX_OFFSET_MAX){
+		g_tmd2755_chip->params.poffset_limit = PROX_OFFSET_MAX;
+	}
+	log("en=%d, thresh=%d, poffset_limit update to %d", en, thresh, g_tmd2755_chip->params.poffset_limit);
+	return 0;
+}
+
+
 #ifdef CONFIG_TMD2755_FLAG
 static ssize_t tmd2755_ALSPS_hw_show_allreg(struct device *dev, struct device_attribute *attr, char *buf)
 {
@@ -2119,6 +2144,8 @@ static struct psensor_hw psensor_hw_tmd2755 = {
 #ifdef CONFIG_TMD2755_FLAG
 	.proximity_hw_chip_cal_en = tmd2755_proximity_hw_chip_cal_en,
 	.proximity_hw_get_offset = tmd2755_proximity_hw_get_offset,
+	.proximity_hw_set_fac_offset = tmd2755_proximity_hw_set_fac_offset,
+	.proximity_hw_set_offset_limit = tmd2755_proximity_hw_set_offset_limit,
 #endif
 };
 

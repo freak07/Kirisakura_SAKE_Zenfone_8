@@ -188,6 +188,7 @@ typedef struct{
 	/*For enable anti-oil workaround*/
 	int (*proximity_show_anti_oil_enable)(void);
 	int (*proximity_store_anti_oil_enable)(bool enable);
+	int (*proximity_store_pocket_en)(bool enable);
 }psensor_ATTR_Extension;
 
 /**
@@ -982,6 +983,8 @@ typedef struct psensor_hw {
 #ifdef CONFIG_TMD2755_FLAG
 	int (*proximity_hw_chip_cal_en)(bool flag);
 	int (*proximity_hw_get_offset)(void);
+	int (*proximity_hw_set_fac_offset)(int offset);
+	int (*proximity_hw_set_offset_limit)(int en, int thresh);
 #endif
 }psensor_hw;
 

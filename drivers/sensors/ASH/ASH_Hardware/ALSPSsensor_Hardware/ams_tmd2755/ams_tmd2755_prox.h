@@ -54,7 +54,6 @@
 #define PROX_PERSIST_MAX                   (15)
 #define PROX_PERSIST_DEFAULT               (1)
 
-#define PROX_OFFSET_MAX                   (255)
 #define PROX_OFFSET_INIT                   (100)
 
 

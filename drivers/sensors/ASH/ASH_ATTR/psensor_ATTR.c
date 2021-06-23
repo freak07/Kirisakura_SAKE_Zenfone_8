@@ -819,6 +819,25 @@ static ssize_t  ATT_proximity_store_chip_cal_en(struct device *dev,
 }
 #endif
 
+static ssize_t  ATT_proximity_store_pocket_en(struct device *dev, 
+	struct device_attribute *attr, const char *buf, size_t count)
+{
+	unsigned long enable;
+
+	if(g_psensor_ATTR->ATTR_Extension->proximity_store_pocket_en== NULL) {
+		err("proximity_store_pocket_en NOT SUPPORT. \n");
+		return count;
+	}
+
+	if ((kstrtoul(buf, 10, &enable) < 0))
+		return -EINVAL;
+
+	g_psensor_ATTR->ATTR_Extension->proximity_store_pocket_en(enable);
+	log("Proximity store pocket flag: %lu\n", enable);
+
+	return count;
+}
+
 static struct device_attribute proximity_property_attrs[] = {
 	/*read only*/
 	__ATTR(vendor, 0444, ATT_proximity_show_vendor, NULL),
@@ -865,6 +884,7 @@ static struct device_attribute proximity_property_attrs[] = {
 #ifdef CONFIG_TMD2755_FLAG
 	__ATTR(chip_cal_en, 0220, NULL, ATT_proximity_store_chip_cal_en),
 #endif
+	__ATTR(pocket_en, 0664, NULL, ATT_proximity_store_pocket_en),
 };
 
 int psensor_ATTR_register(psensor_ATTR *mATTR)

@@ -253,7 +253,7 @@
 
 				qcom,mdss-dsi-nolp-command = [
 					//4.2 AOD Mode OFF Setting
-					15 01 00 00 00 00 02 53 28
+					15 01 00 00 00 00 02 53 20
 					05 01 00 00 00 00 02 29 00
 					//5.4 Frequency Change  120-60Hz
 					39 01 00 00 00 00 03 F0 5A 5A
@@ -584,7 +584,7 @@
 
 				qcom,mdss-dsi-nolp-command = [
 					//4.2 AOD Mode OFF Setting
-					15 01 00 00 00 00 02 53 28
+					15 01 00 00 00 00 02 53 20
 					05 01 00 00 00 00 02 29 00
 					//5.4 Frequency Change  120-90Hz
 					39 01 00 00 00 00 03 F0 5A 5A
@@ -903,7 +903,7 @@
 
 				qcom,mdss-dsi-nolp-command = [
 					//4.2 AOD Mode OFF Setting
-					15 01 00 00 00 00 02 53 28
+					15 01 00 00 00 00 02 53 20
 					05 01 00 00 00 00 02 29 00
 				];
 

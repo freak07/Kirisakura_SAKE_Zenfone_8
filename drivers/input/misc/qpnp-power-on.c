@@ -494,6 +494,7 @@ int qpnp_pon_set_restart_reason(enum pon_restart_reason reason)
 EXPORT_SYMBOL(qpnp_pon_set_restart_reason);
 
 #ifdef CONFIG_MACH_ASUS
+extern int do_msm_restart2(void *arg);
 extern unsigned int b_press;
 /* ASUS_BSP + [ASDF]long press power key 6sec,reset device.. ++ */
 static struct qpnp_pon *pon_for_powerkey;
@@ -592,7 +593,8 @@ void wait_for_power_key_6s_work(struct work_struct *work)
 			msleep(200);
 
 			printk("force reset device!!\n");
-			kernel_restart(NULL);
+			//kernel_restart(NULL);
+			do_msm_restart2(NULL);
 		}
 
 		power_key_6s_running = 0;
@@ -3125,8 +3127,9 @@ void pwr_press_workqueue(struct work_struct *work)
 				set_vib_enable(200);
 				msleep(200);
 
-				printk("force reset device!!\n");
-				kernel_restart(NULL);
+				printk("[ABSP] force reset device!!!\n");
+				//kernel_restart(NULL);
+				do_msm_restart2(NULL);
 		}
 	}
 	
@@ -3160,7 +3163,8 @@ void volDown_press_workqueue(struct work_struct *work)
 				msleep(200);
 
 				printk("force reset device!!\n");
-				kernel_restart(NULL);
+				//kernel_restart(NULL);
+				do_msm_restart2(NULL);
 		}
 	}
 

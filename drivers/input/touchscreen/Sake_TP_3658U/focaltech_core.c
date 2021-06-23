@@ -1605,6 +1605,7 @@ static int drm_notifier_callback(struct notifier_block *self,
     int *blank = NULL;
     struct fts_ts_data *ts_data = container_of(self, struct fts_ts_data,
                                   fb_notif);
+    bool proxy_status = false;
 //    FTS_FUNC_ENTER();
     if (!evdata) {
         FTS_ERROR("evdata is null");
@@ -1618,14 +1619,19 @@ static int drm_notifier_callback(struct notifier_block *self,
         if (DRM_PANEL_EARLY_EVENT_BLANK == event) {
             FTS_INFO("DRM_PANEL_BLANK_UNBLANK, Display resume");
         } else if (DRM_PANEL_EVENT_BLANK == event) {
-            FTS_INFO("DRM_PANEL_EVENT_BLANK, Display on");
-            if (ts_data->next_resume_isaod) {
-                FTS_INFO("Display resume into AOD, not care");
+            FTS_INFO("DRM_PANEL_EVENT_BLANK, Display on irq %d", ts_data->irq_off);
+            if (ts_data->irq_off == ENABLE) {
+                ts_data->irq_off = DISABLE;
+                fts_irq_enable();
             } else {
-                if (fts_data->fp_report_type == 1) {
-                    FTS_INFO("resume into hbm mode");
+                if (ts_data->next_resume_isaod) {
+                    FTS_INFO("Display resume into AOD, not care");
                 } else {
-                    queue_work(fts_data->ts_workqueue, &fts_data->resume_work);
+                    if (fts_data->fp_report_type == 1) {
+                        FTS_INFO("resume into hbm mode");
+                    } else {
+                        queue_work(fts_data->ts_workqueue, &fts_data->resume_work);
+                    }
                 }
             }
         }
@@ -1634,9 +1640,20 @@ static int drm_notifier_callback(struct notifier_block *self,
         ts_data->display_state = 0;
         FTS_INFO("DRM_PANEL_BLANK_POWERDOWN,Display off");
         if (DRM_PANEL_EARLY_EVENT_BLANK == event) {
-            cancel_work_sync(&fts_data->resume_work);
-            ts_data->fp_filter = false;
-            fts_ts_suspend(ts_data->dev);
+            ts_data->irq_off = DISABLE;
+            if (ts_data->phone_call_state == ENABLE && !ts_data->suspended) {
+                proxy_status = proximityStatus();
+                if (proxy_status) {
+                    ts_data->irq_off = ENABLE;
+                    fts_irq_disable();
+                    FTS_INFO("Proximity on and on phone call, disable irq not suspend");
+                }
+            }
+            if (ts_data->irq_off != ENABLE) {
+                cancel_work_sync(&fts_data->resume_work);
+                ts_data->fp_filter = false;
+                fts_ts_suspend(ts_data->dev);
+            }
         } else if (DRM_PANEL_EVENT_BLANK == event) {
 //            FTS_INFO("suspend: event = %lu, not care", event);
         }
@@ -1648,6 +1665,10 @@ static int drm_notifier_callback(struct notifier_block *self,
         ts_data->fp_filter = false;
         if (!ts_data->suspended) {
             FTS_INFO("Display AOD mode, suspend touch");
+            if (ts_data->irq_off == ENABLE) {
+                ts_data->irq_off = DISABLE;
+                fts_irq_enable();
+            }
             cancel_work_sync(&fts_data->resume_work);
             fts_ts_suspend(ts_data->dev);
         }

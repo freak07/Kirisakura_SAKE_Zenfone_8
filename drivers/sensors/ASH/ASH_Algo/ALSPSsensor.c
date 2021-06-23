@@ -85,6 +85,7 @@ static int g_alsps_power_status = ALSPS_RESUME;
 #define WAIT_I2C_DELAY 5
 static bool g_psensor_polling_cancel_flag = false;
 static int g_pocket_mode_threshold = 0;
+static int g_pocket_mode_threshold_orig = 0;
 static int anti_oil_enable = 1;
 
 /**********************************/
@@ -183,6 +184,7 @@ struct psensor_data
 	int g_ps_calvalue_offset;						/* Proximitysensor setting offset calibration value */
 	int oil_flag;						/* Proximitysensor setting oil algo. en/disable */
 #endif
+	bool pocket_mode;
 };
 
 struct lsensor_data 
@@ -2001,6 +2003,7 @@ static int mproximity_store_load_calibration_data(void)
 	ret = psensor_factory_read_1cm(PSENSOR_1CM_CALIBRATION_FILE);
 	if(ret > 0){
 		g_pocket_mode_threshold = ret;
+		g_pocket_mode_threshold_orig =ret;
 		log("Proximity read Pocket Mode Calibration : %d\n", g_pocket_mode_threshold);
 	}else{
 		err("Proximity read DEFAULT Pocket Mode Calibration : %d\n", g_pocket_mode_threshold);
@@ -2043,6 +2046,7 @@ static int mproximity_store_load_calibration_data(void)
 	ret = psensor_factory_read_inf(PSENSOR_OFFSET_CALIBRATION_FILE);
 	if(ret >= 0) {
 		g_ps_data->g_ps_calvalue_offset= ret;
+		g_ALSPS_hw_client->mpsensor_hw->proximity_hw_set_fac_offset(g_ps_data->g_ps_calvalue_offset);
 		log("Proximity read Offset Calibration : %d\n", g_ps_data->g_ps_calvalue_offset);
 	}else{
 		err("Proximity read DEFAULT Offset Calibration : %d\n", g_ps_data->g_ps_calvalue_offset);
@@ -2101,6 +2105,26 @@ static bool mlight_show_allreg(void)
 	return true;
 }
 #endif
+static int mproximity_store_pocket_en(bool flag){
+#ifdef CONFIG_TMD2755_FLAG
+	int thresh =  0;
+#endif
+	g_ps_data->pocket_mode = flag;
+	if(g_ps_data->pocket_mode){
+		g_pocket_mode_threshold = g_pocket_mode_threshold_orig * 
+		PROXIMITY_POCKET_MODE_RATIO / 100;
+	}else{
+		g_pocket_mode_threshold = g_pocket_mode_threshold_orig;
+	}
+#ifdef CONFIG_TMD2755_FLAG
+	thresh = g_pocket_mode_threshold_orig * 
+		PROXIMITY_POCKET_MODE_OFFSET_RATIO / 100 / PROXIMITY_ADC_PER_OFFSET;
+	g_ALSPS_hw_client->mpsensor_hw->proximity_hw_set_offset_limit(flag, thresh);
+#endif
+	log("cal mproximity_pocket_en = %d, pocket_thresh: %d", flag, g_pocket_mode_threshold);
+	return 0;
+}
+
 static int mlight_show_sensitivity(void)
 {
 	return g_als_data->g_als_change_sensitivity;
@@ -2205,6 +2229,7 @@ static psensor_ATTR_Extension mpsensor_ATTR_Extension = {
 #ifdef CONFIG_TMD2755_FLAG
 	.proximity_chip_cal_en = mproximity_chip_cal_en,
 #endif
+	.proximity_store_pocket_en = mproximity_store_pocket_en,
 };
 
 static lsensor_ATTR_Extension mlsensor_ATTR_Extension = {
@@ -3077,7 +3102,7 @@ static int init_data(void)
 	g_ps_data->selection = 1;
 #endif
 	g_ps_data->cur_period = PROXIMITY_PERIOD;
-
+	g_ps_data->pocket_mode = false;
 	/* Reset ASUS_light_sensor_data */
 	g_als_data = kmalloc(sizeof(struct lsensor_data), GFP_KERNEL);
 	if (!g_als_data){
