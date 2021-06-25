@@ -1185,7 +1185,7 @@ static void compareCameraSN (uint8_t moduleGroupIndex)
 
 	char dit_cali_txt_name[20];
 	char filename_cali[40];
-	uint16_t cameraidbuffer[OTP_ID_LEN];
+	uint32_t cameraidbuffer[OTP_ID_LEN];
 	int i;
 	int SN_Offset=0;
 
