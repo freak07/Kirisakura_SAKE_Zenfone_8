@@ -7801,6 +7801,7 @@ static struct platform_driver msm_dai_q6_dev = {
 		.owner = THIS_MODULE,
 		.of_match_table = msm_dai_q6_dev_dt_match,
 		.suppress_bind_attrs = true,
+		.probe_type = PROBE_FORCE_SYNCHRONOUS,
 	},
 };
 
@@ -7839,6 +7840,7 @@ static struct platform_driver msm_dai_q6 = {
 		.owner = THIS_MODULE,
 		.of_match_table = msm_dai_q6_dt_match,
 		.suppress_bind_attrs = true,
+		.probe_type = PROBE_FORCE_SYNCHRONOUS,
 	},
 };
 
@@ -8213,6 +8215,7 @@ static struct platform_driver msm_dai_tdm_q6 = {
 		.owner = THIS_MODULE,
 		.of_match_table = msm_dai_tdm_dt_match,
 		.suppress_bind_attrs = true,
+		.probe_type = PROBE_FORCE_SYNCHRONOUS,
 	},
 };
 
@@ -12536,6 +12539,7 @@ static struct platform_driver msm_dai_q6_tdm_driver = {
 		.owner = THIS_MODULE,
 		.of_match_table = msm_dai_q6_tdm_dev_dt_match,
 		.suppress_bind_attrs = true,
+		.probe_type = PROBE_FORCE_SYNCHRONOUS,
 	},
 };
 
