@@ -72,6 +72,7 @@ struct ADSP_ChargerPD_Info {
     int     jeita_cc_state;
     int     thermel_threshold;
     int     boot_completed;
+    bool    in_call;
 };
 
 struct battman_oem_read_buffer_req_msg { 
@@ -159,9 +160,10 @@ enum battman_oem_property {
     BATTMAN_OEM_Batt_Protection,
     BATTMAN_OEM_CHG_Disable_Jeita,
     BATTMAN_OEM_CHG_MODE,
-    BATTMAN_OEM_THERMAL_POLICY,
+    BATTMAN_OEM_THERMAL_THRESHOLD,
     BATTMAN_OEM_THERMAL_SENSOR,
     BATTMAN_OEM_FV,
+    BATTMAN_OEM_In_Call,
     BATTMAN_OEM_PROPERTY_MAX,
 };
 

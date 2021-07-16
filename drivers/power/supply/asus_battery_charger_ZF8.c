@@ -78,17 +78,6 @@ bool g_qxdm_en = false;
 bool g_wifi_hs_en = false;
 //ASUS_BSP --- add to printk the WIFI hotspot & QXDM UTS event
 
-//ASUS_BSP +++ thermal policy
-enum thermal_policy_state {
-    THERMAL_LESS_THAN_LOWER,
-    THERMAL_LARGER_THAN_UPPER,
-    THERMAL_NONE,
-};
-
-static u32 policy_state = THERMAL_NONE;
-static u32 policy_state_pre = THERMAL_NONE;
-//ASUS_BSP --- thermal policy
-
 //ASUS_BSP battery safety upgrade +++
 #define CYCLE_COUNT_DATA_MAGIC  0x85
 #define CYCLE_COUNT_FILE_NAME   "/batinfo/.bs"
@@ -1005,7 +994,7 @@ static ssize_t smartchg_slow_charging_store(struct class *c,
 
     CHG_DBG("%s. slow charging : %d", __func__, tmp);
     if(asus_usb_online){
-        cancel_delayed_work(&asus_slow_charging_work);
+        cancel_delayed_work_sync(&asus_slow_charging_work);
         schedule_delayed_work(&asus_slow_charging_work, 0 * HZ);
         __pm_wakeup_event(slowchg_ws, 60 * 1000);
     }
@@ -1185,7 +1174,7 @@ static ssize_t boot_completed_store(struct class *c,
 
     ChgPD_Info.boot_completed = tmp;
 
-    cancel_delayed_work(&asus_set_qc_state_work);
+    cancel_delayed_work_sync(&asus_set_qc_state_work);
     schedule_delayed_work(&asus_set_qc_state_work, msecs_to_jiffies(5000));
 
     return count;
@@ -1197,6 +1186,32 @@ static ssize_t boot_completed_show(struct class *c,
     return scnprintf(buf, PAGE_SIZE, "%d\n", ChgPD_Info.boot_completed);
 }
 static CLASS_ATTR_RW(boot_completed);
+
+static ssize_t in_call_store(struct class *c,
+                    struct class_attribute *attr,
+                    const char *buf, size_t count)
+{
+    int rc;
+    u32 tmp;
+    tmp = simple_strtol(buf, NULL, 10);
+    ChgPD_Info.in_call = tmp;
+
+    CHG_DBG_E("%s. set BATTMAN_OEM_In_Call : %d", __func__, tmp);
+    rc = oem_prop_write(BATTMAN_OEM_In_Call, &tmp, 1);
+    if (rc < 0) {
+        pr_err("Failed to set BATTMAN_OEM_In_Call rc=%d\n", rc);
+        return rc;
+    }
+
+    return count;
+}
+
+static ssize_t in_call_show(struct class *c,
+                    struct class_attribute *attr, char *buf)
+{
+    return scnprintf(buf, PAGE_SIZE, "%d\n", ChgPD_Info.in_call);
+}
+static CLASS_ATTR_RW(in_call);
 
 static struct attribute *asuslib_class_attrs[] = {
     &class_attr_asus_get_FG_SoC.attr,
@@ -1225,6 +1240,7 @@ static struct attribute *asuslib_class_attrs[] = {
     &class_attr_virtual_thermal.attr,
     &class_attr_set_virtualthermal.attr,
     &class_attr_boot_completed.attr,
+    &class_attr_in_call.attr,
     NULL,
 };
 ATTRIBUTE_GROUPS(asuslib_class);
@@ -1294,37 +1310,13 @@ void asus_thermal_policy_worker(struct work_struct *work)
     int rc;
     u32 tmp;
 
-    if(ChgPD_Info.panel_status){
-        if(ChgPD_Info.thermel_threshold >= 1)
-        {
-                policy_state = THERMAL_LARGER_THAN_UPPER;
-        }
-        else if (ChgPD_Info.thermel_threshold < 1)
-        {
-                policy_state = THERMAL_LESS_THAN_LOWER;
-        }
-    }else{
-        if(ChgPD_Info.thermel_threshold >= 3)
-        {
-                policy_state = THERMAL_LARGER_THAN_UPPER;
-        }
-        else if (ChgPD_Info.thermel_threshold < 3)
-        {
-                policy_state = THERMAL_LESS_THAN_LOWER;
-        }
+    tmp = ChgPD_Info.thermel_threshold;
+    CHG_DBG("%s. set BATTMAN_OEM_THERMAL_THRESHOLD : %d", __func__, tmp);
+    rc = oem_prop_write(BATTMAN_OEM_THERMAL_THRESHOLD, &tmp, 1);
+    if (rc < 0) {
+        pr_err("Failed to set BATTMAN_OEM_THERMAL_THRESHOLD rc=%d\n", rc);
     }
 
-    if(policy_state != policy_state_pre){
-        policy_state_pre = policy_state;
-        tmp = policy_state;
-        CHG_DBG("%s. set BATTMAN_OEM_THERMAL_POLICY : %d", __func__, tmp);
-        rc = oem_prop_write(BATTMAN_OEM_THERMAL_POLICY, &tmp, 1);
-        if (rc < 0) {
-            pr_err("Failed to set BATTMAN_OEM_THERMAL_POLICY rc=%d\n", rc);
-        }
-    }
-
-    cancel_delayed_work(&asus_thermal_policy_work);
     schedule_delayed_work(&asus_thermal_policy_work, 10 * HZ);
 }
 
@@ -1452,7 +1444,7 @@ static void handle_notification(struct battery_chg_dev *bcdev, void *data,
                 }
                 if (IS_ENABLED(CONFIG_QTI_PMIC_GLINK_CLIENT_DEBUG) && qti_phy_bat)
                     power_supply_changed(qti_phy_bat);
-                cancel_delayed_work(&asus_set_qc_state_work);
+                cancel_delayed_work_sync(&asus_set_qc_state_work);
                 if(g_Charger_mode){
                     schedule_delayed_work(&asus_set_qc_state_work, msecs_to_jiffies(0));
                 }else{
@@ -1471,17 +1463,17 @@ static void handle_notification(struct battery_chg_dev *bcdev, void *data,
             CHG_DBG_E("%s OEM_ASUS_WORK_EVENT_REQ. work=%d, enable=%d\n", __func__, work_event_msg->work, work_event_msg->data_buffer[0]);
             if(work_event_msg->work == WORK_JEITA_PRECHG){
                 if(work_event_msg->data_buffer[0] == 1){
-                    cancel_delayed_work(&asus_jeita_prechg_work);
+                    cancel_delayed_work_sync(&asus_jeita_prechg_work);
                     schedule_delayed_work(&asus_jeita_prechg_work, 0);
                 }else{
-                    cancel_delayed_work(&asus_jeita_prechg_work);
+                    cancel_delayed_work_sync(&asus_jeita_prechg_work);
                 }
             }else if(work_event_msg->work == WORK_JEITA_CC){
                 if(work_event_msg->data_buffer[0] == 1){
-                    cancel_delayed_work(&asus_jeita_cc_work);
+                    cancel_delayed_work_sync(&asus_jeita_cc_work);
                     schedule_delayed_work(&asus_jeita_cc_work, 5 * HZ);
                 }else{
-                    cancel_delayed_work(&asus_jeita_cc_work);
+                    cancel_delayed_work_sync(&asus_jeita_cc_work);
                 }
             }
         } else {
@@ -1622,9 +1614,10 @@ static void handle_message(struct battery_chg_dev *bcdev, void *data,
             case BATTMAN_OEM_Batt_Protection:
             case BATTMAN_OEM_CHG_Disable_Jeita:
             case BATTMAN_OEM_CHG_MODE:
-            case BATTMAN_OEM_THERMAL_POLICY:
+            case BATTMAN_OEM_THERMAL_THRESHOLD:
             case BATTMAN_OEM_THERMAL_SENSOR:
             case BATTMAN_OEM_FV:
+            case BATTMAN_OEM_In_Call:
                 CHG_DBG("%s set property:%d successfully\n", __func__, oem_write_buffer_resp_msg->oem_property_id);
                 ack_set = true;
                 break;
@@ -1782,7 +1775,7 @@ int asus_chg_resume(struct device *dev)
 
     ktime_get_coarse_real_ts64(&mtNow);
     if (mtNow.tv_sec - g_last_print_time.tv_sec >= 180) {
-			cancel_delayed_work(&g_bcdev->update_gauge_status_work);
+			cancel_delayed_work_sync(&g_bcdev->update_gauge_status_work);
             schedule_delayed_work(&g_bcdev->update_gauge_status_work, 0);
     }
 	return 0;
@@ -1826,7 +1819,7 @@ void set_qc_stat(int status)
     case POWER_SUPPLY_STATUS_CHARGING:
     case POWER_SUPPLY_STATUS_NOT_CHARGING:
     case POWER_SUPPLY_STATUS_FULL:
-        cancel_delayed_work(&asus_set_qc_state_work);
+        cancel_delayed_work_sync(&asus_set_qc_state_work);
         if(g_Charger_mode){
             schedule_delayed_work(&asus_set_qc_state_work, msecs_to_jiffies(0));
         }else{
@@ -1834,7 +1827,7 @@ void set_qc_stat(int status)
         }
         break;
     default:
-        cancel_delayed_work(&asus_set_qc_state_work);
+        cancel_delayed_work_sync(&asus_set_qc_state_work);
         asus_extcon_set_state_sync(quickchg_extcon, SWITCH_LEVEL0_DEFAULT);
         break;
     }
@@ -1882,7 +1875,6 @@ static void asus_jeita_rule_worker(struct work_struct *dat){
         pr_err("Failed to set BATTMAN_OEM_WORK_EVENT WORK_JEITA_RULE rc=%d\n", rc);
     }
 
-    cancel_delayed_work(&asus_jeita_rule_work);
     schedule_delayed_work(&asus_jeita_rule_work, 60 * HZ);
     if(ChgPD_Info.jeita_cc_state > JETA_NONE && ChgPD_Info.jeita_cc_state < JETA_CV){
         __pm_wakeup_event(slowchg_ws, 60 * 1000);
@@ -1900,7 +1892,6 @@ static void asus_jeita_prechg_worker(struct work_struct *dat){
         pr_err("Failed to set BATTMAN_OEM_WORK_EVENT WORK_JEITA_PRECHG rc=%d\n", rc);
     }
 
-    cancel_delayed_work(&asus_jeita_prechg_work);
     schedule_delayed_work(&asus_jeita_prechg_work, HZ);
 }
 
@@ -1915,7 +1906,6 @@ static void asus_jeita_cc_worker(struct work_struct *dat){
         pr_err("Failed to set BATTMAN_OEM_WORK_EVENT WORK_JEITA_CC rc=%d\n", rc);
     }
 
-    cancel_delayed_work(&asus_jeita_cc_work);
     schedule_delayed_work(&asus_jeita_cc_work, 5 * HZ);
 }
 
@@ -1930,7 +1920,6 @@ static void asus_panel_check_worker(struct work_struct *dat){
         pr_err("Failed to set BATTMAN_OEM_WORK_EVENT WORK_PANEL_CHECK rc=%d\n", rc);
     }
 
-    cancel_delayed_work(&asus_panel_check_work);
     schedule_delayed_work(&asus_panel_check_work, 10 * HZ);
 }
 
@@ -1969,7 +1958,6 @@ static void asus_long_full_cap_monitor_worker(struct work_struct *dat){
         pr_err("Failed to set BATTMAN_OEM_WORK_EVENT WORK_LONG_FULL_CAP rc=%d\n", rc);
     }
 
-    cancel_delayed_work(&asus_long_full_cap_monitor_work);
     schedule_delayed_work(&asus_long_full_cap_monitor_work, 30 * HZ);
 }
 
@@ -1993,34 +1981,33 @@ void asus_monitor_start(int status){
     asus_usb_online = status;
     printk(KERN_ERR "[BAT][CHG] asus_monitor_start %d\n", asus_usb_online);
     if(asus_usb_online){
-        cancel_delayed_work(&asus_jeita_rule_work);
+        cancel_delayed_work_sync(&asus_jeita_rule_work);
         schedule_delayed_work(&asus_jeita_rule_work, 0);
 
         if(!g_Charger_mode){
-            cancel_delayed_work(&asus_panel_check_work);
+            cancel_delayed_work_sync(&asus_panel_check_work);
             schedule_delayed_work(&asus_panel_check_work, 62 * HZ);
         }
 
-        cancel_delayed_work(&asus_slow_charging_work);
+        cancel_delayed_work_sync(&asus_slow_charging_work);
         schedule_delayed_work(&asus_slow_charging_work, 0 * HZ);
 
-        cancel_delayed_work(&asus_18W_workaround_work);
+        cancel_delayed_work_sync(&asus_18W_workaround_work);
         schedule_delayed_work(&asus_18W_workaround_work, 26 * HZ);
 
-        cancel_delayed_work(&asus_thermal_policy_work);
+        cancel_delayed_work_sync(&asus_thermal_policy_work);
         schedule_delayed_work(&asus_thermal_policy_work, 68 * HZ);
-        policy_state = THERMAL_NONE;
-        policy_state_pre = THERMAL_NONE;
+
         qti_charge_notify_device_charge();
         __pm_wakeup_event(slowchg_ws, 60 * 1000);
     }else{
-        cancel_delayed_work(&asus_jeita_rule_work);
-        cancel_delayed_work(&asus_jeita_prechg_work);
-        cancel_delayed_work(&asus_jeita_cc_work);
-        cancel_delayed_work(&asus_panel_check_work);
-        cancel_delayed_work(&asus_slow_charging_work);
-        cancel_delayed_work(&asus_18W_workaround_work);
-        cancel_delayed_work(&asus_thermal_policy_work);
+        cancel_delayed_work_sync(&asus_jeita_rule_work);
+        cancel_delayed_work_sync(&asus_jeita_prechg_work);
+        cancel_delayed_work_sync(&asus_jeita_cc_work);
+        cancel_delayed_work_sync(&asus_panel_check_work);
+        cancel_delayed_work_sync(&asus_slow_charging_work);
+        cancel_delayed_work_sync(&asus_18W_workaround_work);
+        cancel_delayed_work_sync(&asus_thermal_policy_work);
         qti_charge_notify_device_not_charge();
         VID_changed = false;
     }
@@ -2479,7 +2466,6 @@ void battery_safety_worker(struct work_struct *work)
 {
     update_battery_safe();
 
-    cancel_delayed_work(&battery_safety_work);
     schedule_delayed_work(&battery_safety_work, BATTERY_SAFETY_UPGRADE_TIME * HZ);
 }
 //ASUS_BSP battery safety upgrade ---
@@ -2696,7 +2682,6 @@ void battery_health_worker(struct work_struct *work)
 {
     update_battery_health();
 
-    cancel_delayed_work(&battery_health_work);
     schedule_delayed_work(&battery_health_work, g_health_upgrade_upgrade_time * HZ);
 }
 //ASUS_BS battery health upgrade ---
@@ -2813,7 +2798,7 @@ static const struct file_operations batt_safety_fops = {
 //ASUS_BS battery health upgrade +++
 static void batt_safety_csc_stop(void){
 
-    cancel_delayed_work(&battery_safety_work);
+    cancel_delayed_work_sync(&battery_safety_work);
     CHG_DBG("[BAT][CHG]%s Done! \n", __func__);
 }
 

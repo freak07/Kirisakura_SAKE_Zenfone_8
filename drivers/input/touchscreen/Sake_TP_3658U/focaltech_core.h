@@ -212,6 +212,7 @@ struct fts_ts_data {
     bool irq_off;
 //fod
     bool fp_enable;
+    bool aod_enable;
     int fp_report_type;
     int fp_x;
     int fp_y;

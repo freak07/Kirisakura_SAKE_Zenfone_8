@@ -82,16 +82,32 @@ void asus_gesture_report(struct fts_ts_data *ts_data, int gesture_id)
     int gesture = -1;
     struct input_dev *input_dev = ts_data->input_dev;
     bool proxy_status = false;
-    bool gesture_filter = false;
+    bool proxy_skip = false;
 
     FTS_DEBUG("gesture_id:0x%x, fp_report_type:%d", gesture_id, ts_data->fp_report_type);
+
+    if (ts_data->phone_call_state) {
+        proxy_status = proximityStatus();
+        if (proxy_status) {
+            FTS_INFO("Proximity on");
+            return;
+        }
+    }
+
     switch (gesture_id) {
+// FOD
     case GESTURE_O:
 	if ((ts_data->fp_enable == 1) && (ts_data-> fp_report_type!=0)) {
 	  gesture = KEY_GESTURE_O;
 	  ts_data->next_resume_isaod = true;
 	  FTS_INFO("key O");
 	  write_fp_xy(ts_data);
+          proxy_skip = true;
+	}
+	if ((ts_data->aod_enable == ENABLE) && (ts_data-> fp_report_type==0)) {  // AOD only
+	  FTS_INFO("key L in aod");
+	  gesture = KEY_GESTURE_L;
+	  proxy_skip = false;
 	}
         break;
     case GESTURE_F:
@@ -103,6 +119,12 @@ void asus_gesture_report(struct fts_ts_data *ts_data, int gesture_id)
 	  ts_data->fp_filter = true;
 	  gesture = KEY_GESTURE_F;
 	  write_fp_xy(ts_data);
+          proxy_skip = true;
+	}
+	if ((ts_data->aod_enable == ENABLE) && (ts_data-> fp_report_type==0)) {  // AOD only
+	  FTS_INFO("key L in aod");
+	  gesture = KEY_GESTURE_L;
+	  proxy_skip = false;
 	}
         break;
     case GESTURE_U:
@@ -111,98 +133,89 @@ void asus_gesture_report(struct fts_ts_data *ts_data, int gesture_id)
 	  gesture = KEY_GESTURE_U;
 	  ts_data->next_resume_isaod = false;
 	  ts_data->fp_filter = false;
+	  proxy_skip = true;
+	}
+	if ((ts_data->aod_enable == ENABLE) && (ts_data-> fp_report_type==0)) {  // AOD only
+	  FTS_INFO("key L in aod");
+	  gesture = KEY_GESTURE_L;
+	  proxy_skip = false;
 	}
 	break;
     case GESTURE_L:
         if ((ts_data->fp_enable == 1) && (ts_data-> fp_report_type!=0)) {
 	  FTS_INFO("key L");
 	  gesture = KEY_GESTURE_L;
+	  proxy_skip = true;
+	}
+	if ((ts_data->aod_enable == ENABLE) && (ts_data-> fp_report_type==0)) {  // AOD only
+	  FTS_INFO("key L in aod");
+	  gesture = KEY_GESTURE_L;
+	  proxy_skip = false;
 	}
 	break;
-    }
-
-    if (ts_data->fp_enable == 1 && (gesture != -1)) {
-	/* report event key */
-	FTS_DEBUG("Gesture Code=%d", gesture);
-	input_report_key(input_dev, gesture, 1);
-	input_sync(input_dev);
-	input_report_key(input_dev, gesture, 0);
-	input_sync(input_dev);
-	return;
-    }
-
-    proxy_status = proximityStatus();
-    if (proxy_status) {
-	FTS_INFO("Proximity on");
-        if (ts_data->phone_call_state) { return; }
-        else {
-	  gesture_filter = true;
-	}
-    }
-
-    switch (gesture_id) {
+// Zenmotion
     case GESTURE_UP:
-	if ((ts_data->swipeup_mode == 1)&& !gesture_filter) {
+	if (ts_data->swipeup_mode == 1) {
 	  gesture = KEY_GESTURE_UP;
 	  FTS_INFO("key swipeup");
 	}
         break;
     case GESTURE_DOUBLECLICK:
-        if ((ts_data->dclick_mode == 1)&& !gesture_filter) {
+        if (ts_data->dclick_mode == 1) {
 	    gesture = KEY_POWER;
 	    FTS_INFO("key double click");
 	}
         break;
     case GESTURE_W:
-	if ((ts_data->gesture_type & 1 << 1)&& !gesture_filter) { // W
+	if (ts_data->gesture_type & 1 << 1) { // W
 	  gesture = KEY_GESTURE_W;
 	  FTS_INFO("key W");
 	}
         break;
     case GESTURE_M:
-	if ((ts_data->gesture_type & 1 << 4)&& !gesture_filter){ // M
+	if (ts_data->gesture_type & 1 << 4) { // M
 	  gesture = KEY_GESTURE_M;
 	  FTS_INFO("key M");
 	}
         break;
     case GESTURE_E:
-	if ((fts_data->gesture_type & 1 << 3)&& !gesture_filter){ // e
+	if (fts_data->gesture_type & 1 << 3) { // e
 	  gesture = KEY_GESTURE_E;
 	  FTS_INFO("key E");
 	}
         break;
     case GESTURE_S:
-        if ((ts_data->gesture_type & 1 << 2)&& !gesture_filter) { // S
+        if (ts_data->gesture_type & 1 << 2) { // S
 	  gesture = KEY_GESTURE_S;
 	  FTS_INFO("key S");
 	}
         break;
     case GESTURE_V:
-	if ((fts_data->gesture_type & 1 << 6)&& !gesture_filter){ // V
+	if (fts_data->gesture_type & 1 << 6) { // V
 	  gesture = KEY_GESTURE_V;
 	  FTS_INFO("key V");
 	}
         break;
     case GESTURE_Z:
-        if ((fts_data->gesture_type & 1 << 5)&& !gesture_filter) { // Z
+        if (fts_data->gesture_type & 1 << 5) { // Z
 	  gesture = KEY_GESTURE_Z;
 	  FTS_INFO("key Z");
 	}
         break;
     case MUSIC_PAUSE:
-	if ((ts_data->gesture_type & 1 << 7)&& !gesture_filter) { // music_control
+	if (ts_data->gesture_type & 1 << 7) { // music_control
 	  FTS_INFO("key MUSIC_PAUSE");
 	  gesture = KEY_GESTURE_PAUSE;
 	}
 	break;
     case MUSIC_REWIND:
-        if ((ts_data->gesture_type & 1 << 7)&& !gesture_filter) { // music_control
+        if (ts_data->gesture_type & 1 << 7) { // music_control
 	  FTS_INFO("key MUSIC_REWIND");
 	  gesture = KEY_GESTURE_REWIND;
 	}
 	break;
     case MUSIC_FORWARD:
-        if ((ts_data->gesture_type & 1 << 7)&& !gesture_filter) { // music_control
+        if (ts_data->gesture_type & 1 << 7) { // music_control
 	  FTS_INFO("key MUSIC_FORWARD");
 	  gesture = KEY_GESTURE_FORWARD;
 	}
@@ -213,6 +226,13 @@ void asus_gesture_report(struct fts_ts_data *ts_data, int gesture_id)
     }
     /* report event key */
     if (gesture != -1) {
+        if (proxy_skip != true) {
+            proxy_status = proximityStatus();
+            if (proxy_status) {
+                FTS_INFO("Gesture Code %d Not FOD gesture and proximity on", gesture);
+                return;
+            }
+        }
         FTS_DEBUG("Gesture Code=%d", gesture);
         input_report_key(input_dev, gesture, 1);
         input_sync(input_dev);
@@ -246,7 +266,7 @@ int set_gesture_register (struct fts_ts_data *ts_data)
     reg_D6 = 0x00;
     reg_D7 = 0x00;
     
-    if (ts_data->fp_enable){
+    if ((ts_data->fp_enable) || (ts_data->aod_enable == ENABLE)) {
         reg_D1 = reg_D1|fod_bit;
     }
     if (ts_data->dclick_mode == 1){
@@ -326,7 +346,12 @@ int is_enter_gesture_mode (struct fts_ts_data *ts_data)
        enable_gesture = 1;  
        FTS_INFO("Swipe up enable , enter gesture mode");
     }
-    
+
+    if (ts_data->aod_enable == ENABLE) {
+        enable_gesture = 1;
+        FTS_INFO("AOD triggered by touch , enter gesture mode");
+    }
+
     return enable_gesture;
 }
 
