@@ -4966,6 +4966,7 @@ static struct i2c_driver aw8697_i2c_driver = {
 		   .name = AW8697_I2C_NAME,
 		   .owner = THIS_MODULE,
 		   .of_match_table = of_match_ptr(aw8697_dt_match),
+		   	.probe_type = PROBE_PREFER_ASYNCHRONOUS,
 #ifdef CONFIG_PM_SLEEP
 		    .pm = &aw8697_pm_ops,
 #endif
