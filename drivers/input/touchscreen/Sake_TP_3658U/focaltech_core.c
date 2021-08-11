@@ -415,7 +415,7 @@ void fts_release_all_finger(void)
     u32 max_touches = fts_data->pdata->max_touch_number;
 #endif
 
-    //FTS_FUNC_ENTER();
+    FTS_FUNC_ENTER();
     mutex_lock(&fts_data->report_mutex);
 #if FTS_MT_PROTOCOL_B_EN
     for (finger_count = 0; finger_count < max_touches; finger_count++) {
@@ -431,7 +431,7 @@ void fts_release_all_finger(void)
     fts_data->touchs = 0;
     fts_data->key_state = 0;
     mutex_unlock(&fts_data->report_mutex);
-    //FTS_FUNC_EXIT();
+    FTS_FUNC_EXIT();
 }
 
 /*****************************************************************************
@@ -1622,6 +1622,7 @@ static int drm_notifier_callback(struct notifier_block *self,
             FTS_INFO("DRM_PANEL_EVENT_BLANK, Display on irq %d", ts_data->irq_off);
             if (ts_data->irq_off == ENABLE) {
                 ts_data->irq_off = DISABLE;
+                fts_release_all_finger();
                 fts_irq_enable();
             } else {
                 if (ts_data->next_resume_isaod) {
