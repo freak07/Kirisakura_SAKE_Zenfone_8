@@ -38,17 +38,17 @@
 // saver 1
 #define LVL1_LITTLE 1708800
 #define LVL1_BIG    2112000
-#define LVL1_PRIME  2380800
+#define LVL1_PRIME  2496000
 
 // saver 2
 #define LVL2_LITTLE 1612800
-#define LVL2_BIG    1881600
-#define LVL2_PRIME  2150400
+#define LVL2_BIG    1766400
+#define LVL2_PRIME  2035200
 
 // saver 3
 #define LVL3_LITTLE 1497600
 #define LVL3_BIG    1440000
-#define LVL3_PRIME  1785600
+#define LVL3_PRIME  1670400
 
 static int batterysaver = 0; // 0 - 1 - 3
 // default 0, seriously cutting back max freqs for sunshine inside car/long gps tracking...
