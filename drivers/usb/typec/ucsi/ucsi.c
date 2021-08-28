@@ -96,6 +96,9 @@ static int ucsi_read_error(struct ucsi *ucsi)
 		break;
 	case UCSI_ERROR_PARTNER_REJECTED_SWAP:
 		dev_warn(ucsi->dev, "Partner rejected swap\n");
+		ret = ucsi_acknowledge_command(ucsi);
+		if (ret)
+			return ret;
 		break;
 	case UCSI_ERROR_HARD_RESET:
 		dev_warn(ucsi->dev, "Hard reset occurred\n");

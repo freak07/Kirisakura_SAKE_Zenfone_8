@@ -1460,10 +1460,25 @@ static int asusdebug_release(struct inode *inode, struct file *file)
 	return 0;
 }
 
-static ssize_t asusdebug_read(struct file *file, char __user *buf,
-			      size_t count, loff_t *ppos)
+bool f2fs_attr_ignore = false;
+EXPORT_SYMBOL(f2fs_attr_ignore);
+unsigned int readflag2 = 0;
+
+static ssize_t asusdebug_read(struct file *file, char __user *buf, size_t count, loff_t *ppos)
 {
-	return 0;
+	char print_buf[32];
+	unsigned int ret = 0, iret = 0;
+
+	sprintf(print_buf, "f2fs-attr:%s\n", f2fs_attr_ignore ? "on" : "off");
+	ret = strlen(print_buf);
+	iret = copy_to_user(buf, print_buf, ret);
+	if (!readflag2) {
+		readflag2 = 1;
+		return ret;
+	} else {
+		readflag2 = 0;
+		return 0;
+	}
 }
 
 #include <linux/reboot.h>
@@ -1483,6 +1498,9 @@ static ssize_t asusdebug_write(struct file *file, const char __user *buf, size_t
 
 	if (strncmp(messages, "panic", strlen("panic")) == 0) {
 		panic("panic test");
+	}else if (strncmp(messages, "f2fs-attr", strlen("f2fs-attr")) == 0) {
+		printk("[ABSP] f2fs-attr\n");
+		f2fs_attr_ignore = true;
 	} else if (strncmp(messages, "dbg", strlen("dbg")) == 0) {
 		//g_user_dbg_mode = 1;
 		//printk("Kernel dbg mode = %d\n", g_user_dbg_mode);
