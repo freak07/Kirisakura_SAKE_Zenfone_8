@@ -5800,7 +5800,11 @@ static const struct soc_enum msm_route_ec_ref_params_enum[] = {
 	SOC_ENUM_SINGLE_EXT(ARRAY_SIZE(ec_ref_rate_text), ec_ref_rate_text),
 };
 
+#if defined ASUS_VODKA_PROJECT/* mei +++ for vodka tfa9874 voip call EC reference */
+static const char *const ec_ref_rx[] = { "None", "SLIM_RX", "PRI_MI2S_RX",
+#else
 static const char *const ec_ref_rx[] = { "None", "SLIM_RX", "I2S_RX",
+#endif
 	"PRI_MI2S_TX", "SEC_MI2S_TX",
 	"TERT_MI2S_TX", "QUAT_MI2S_TX", "SEC_I2S_RX", "PROXY_RX",
 	"SLIM_5_RX", "SLIM_1_TX", "QUAT_TDM_TX_1",
@@ -5880,7 +5884,7 @@ static int msm_routing_ec_ref_rx_put(struct snd_kcontrol *kcontrol,
 	mutex_lock(&routing_lock);
 	msm_ec_ref_port_id = get_ec_ref_port_id(value, &msm_route_ec_ref_rx);
 	adm_ec_ref_rx_id(msm_ec_ref_port_id);
-	pr_debug("%s: msm_route_ec_ref_rx = %d\n",
+	pr_err("%s: msm_route_ec_ref_rx = %d\n",
 	    __func__, msm_route_ec_ref_rx);
 	mutex_unlock(&routing_lock);
 
@@ -7851,6 +7855,12 @@ static const struct snd_kcontrol_new primary_mi2s_rx_port_mixer_controls[] = {
 	MSM_BACKEND_DAI_PRI_MI2S_RX,
 	MSM_BACKEND_DAI_SEC_AUXPCM_TX, 1, 0, msm_routing_get_port_mixer,
 	msm_routing_put_port_mixer),
+#if defined ASUS_VODKA_PROJECT/* mei +++ for vodka tfa9874 */
+    SOC_DOUBLE_EXT("TX_CDC_DMA_TX_3", SND_SOC_NOPM,
+    MSM_BACKEND_DAI_PRI_MI2S_RX,
+    MSM_BACKEND_DAI_TX_CDC_DMA_TX_3, 1, 0, msm_routing_get_port_mixer,
+    msm_routing_put_port_mixer),
+#endif
 };
 
 static const struct snd_kcontrol_new quat_mi2s_rx_port_mixer_controls[] = {
@@ -18396,6 +18406,12 @@ static const struct snd_kcontrol_new mmul10_mixer_controls[] = {
 	MSM_BACKEND_DAI_TERTIARY_MI2S_TX,
 	MSM_FRONTEND_DAI_MULTIMEDIA10, 1, 0, msm_routing_get_audio_mixer,
 	msm_routing_put_audio_mixer),
+	/* ASUS_BSP Paul +++ */
+	SOC_DOUBLE_EXT("QUAT_MI2S_TX", SND_SOC_NOPM,
+	MSM_BACKEND_DAI_QUATERNARY_MI2S_TX,
+	MSM_FRONTEND_DAI_MULTIMEDIA10, 1, 0, msm_routing_get_audio_mixer,
+	msm_routing_put_audio_mixer),
+	/* ASUS_BSP Paul --- */
 	SOC_DOUBLE_EXT("INT2_MI2S_TX", SND_SOC_NOPM,
 	MSM_BACKEND_DAI_INT2_MI2S_TX,
 	MSM_FRONTEND_DAI_MULTIMEDIA10, 1, 0, msm_routing_get_audio_mixer,
@@ -24328,7 +24344,11 @@ static const char * const wsa_rx_0_vi_fb_tx_rch_mux_text[] = {
 };
 
 static const char * const mi2s_rx_vi_fb_tx_mux_text[] = {
+#if defined ASUS_VODKA_PROJECT/* mei +++ for vodka tfa9874 */
+	"ZERO", "PRI_MI2S_TX"
+#else
 	"ZERO", "SENARY_TX"
+#endif
 };
 
 static const char * const int4_mi2s_rx_vi_fb_tx_mono_mux_text[] = {
@@ -24357,7 +24377,11 @@ static const int wsa_rx_0_vi_fb_tx_rch_value[] = {
 
 
 static const int mi2s_rx_vi_fb_tx_value[] = {
+#if defined ASUS_VODKA_PROJECT/* mei +++ for vodka tfa9874 */
+	MSM_BACKEND_DAI_MAX, MSM_BACKEND_DAI_PRI_MI2S_TX
+#else
 	MSM_BACKEND_DAI_MAX, MSM_BACKEND_DAI_SENARY_MI2S_TX
+#endif
 };
 
 static const int int4_mi2s_rx_vi_fb_tx_mono_ch_value[] = {
@@ -27293,6 +27317,9 @@ static const struct snd_soc_dapm_route intercon[] = {
 	{"WSA_CDC_DMA_RX_0_DL_HL", "Switch", "CDC_DMA_DL_HL"},
 	{"WSA_CDC_DMA_RX_0", NULL, "WSA_CDC_DMA_RX_0_DL_HL"},
 	{"CDC_DMA_UL_HL", NULL, "VA_CDC_DMA_TX_0"},
+#if defined ASUS_SAKE_PROJECT
+	{"PRI_MI2S_RX_DL_HL", "Switch", "CDC_DMA_DL_HL"},/*ASUS_BSP add for fm speaker +++*/
+#endif
 	{"RX_CDC_DMA_RX_0_DL_HL", "Switch", "CDC_DMA_DL_HL"},
 	{"RX_CDC_DMA_RX_0", NULL, "RX_CDC_DMA_RX_0_DL_HL"},
 	{"RX_CDC_DMA_RX_1_DL_HL", "Switch", "CDC_DMA_DL_HL"},
@@ -30182,7 +30209,11 @@ static const struct snd_soc_dapm_route intercon_mi2s[] = {
 	{"MultiMedia16 Mixer", "MI2S_TX", "MI2S_TX"},
 	{"MultiMedia1 Mixer", "QUAT_MI2S_TX", "QUAT_MI2S_TX"},
 	{"MultiMedia2 Mixer", "QUAT_MI2S_TX", "QUAT_MI2S_TX"},
+	{"MultiMedia5 Mixer", "QUAT_MI2S_TX", "QUAT_MI2S_TX"}, /* ASUS_BSP Paul +++ */
 	{"MultiMedia6 Mixer", "QUAT_MI2S_TX", "QUAT_MI2S_TX"},
+	{"MultiMedia8 Mixer", "QUAT_MI2S_TX", "QUAT_MI2S_TX"}, /* ASUS_BSP Paul +++ */
+	{"MultiMedia10 Mixer", "QUAT_MI2S_TX", "QUAT_MI2S_TX"}, /* ASUS_BSP Paul +++ */
+	{"MultiMedia16 Mixer", "QUAT_MI2S_TX", "QUAT_MI2S_TX"}, /* ASUS_BSP Paul +++ */
 	{"MultiMedia1 Mixer", "QUIN_MI2S_TX", "QUIN_MI2S_TX"},
 	{"MultiMedia2 Mixer", "QUIN_MI2S_TX", "QUIN_MI2S_TX"},
 	{"MultiMedia1 Mixer", "SENARY_MI2S_TX", "SENARY_MI2S_TX"},
@@ -30561,6 +30592,9 @@ static const struct snd_soc_dapm_route intercon_mi2s[] = {
 #ifndef CONFIG_AUXPCM_DISABLE
 	{"PRI_MI2S_RX Port Mixer", "SEC_AUX_PCM_UL_TX", "SEC_AUX_PCM_TX"},
 #endif
+#if defined ASUS_VODKA_PROJECT/* mei +++ for vodka tfa9874 */
+	{"PRI_MI2S_RX Port Mixer", "TX_CDC_DMA_TX_3", "TX_CDC_DMA_TX_3"},
+#endif
 	{"PRI_MI2S_RX", NULL, "PRI_MI2S_RX Port Mixer"},
 
 	{"SEC_MI2S_RX Port Mixer", "PRI_MI2S_TX", "PRI_MI2S_TX"},
@@ -30662,7 +30696,11 @@ static const struct snd_soc_dapm_route intercon_mi2s[] = {
 	{"SEC_MI2S_TX", NULL, "BE_IN"},
 	{"SENARY_MI2S_TX", NULL, "BE_IN"},
 
+#if defined ASUS_VODKA_PROJECT/* mei +++ for vodka tfa9874 */
+	{"PRI_MI2S_RX_VI_FB_MUX", "PRI_MI2S_TX", "PRI_MI2S_TX"},
+#else
 	{"PRI_MI2S_RX_VI_FB_MUX", "SENARY_TX", "SENARY_TX"},
+#endif
 	{"INT4_MI2S_RX_VI_FB_MONO_CH_MUX", "INT5_MI2S_TX", "INT5_MI2S_TX"},
 	{"INT4_MI2S_RX_VI_FB_STEREO_CH_MUX", "INT5_MI2S_TX", "INT5_MI2S_TX"},
 	{"PRI_MI2S_RX", NULL, "PRI_MI2S_RX_VI_FB_MUX"},

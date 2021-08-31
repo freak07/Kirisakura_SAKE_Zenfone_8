@@ -44,6 +44,24 @@
 							217, void *)
 #define AUDIO_SET_RTAC_AFE_CAL		_IOWR(CAL_IOCTL_MAGIC, \
 							218, void *)
+
+/* ASUS_BSP Paul +++ */
+#define AUDIO_SET_AUDIOWIZARD_FORCE_PRESET	_IOWR(CAL_IOCTL_MAGIC, \
+							221, void *)
+/* ASUS_BSP Paul --- */
+
+/*ASUS_BSP Add for Realtek USB AJ dongle +++*/
+#define AUDIO_SET_EU_NONEU		_IOWR(CAL_IOCTL_MAGIC, \
+							235, void *)
+/*ASUS_BSP Add for Realtek USB AJ dongle ---*/
+
+/*ASUS_BSP for mic intent +++*/
+#define AUDIO_SET_AUDIORECORD_MIC_USING	_IOWR(CAL_IOCTL_MAGIC, \
+							223, void *)
+#define SW_AUDIORECORD_START 0x0c
+#define SW_AUDIORECORD_STOP 0x0d
+/*ASUS_BSP for mic intent ---*/
+
 enum {
 	CVP_VOC_RX_TOPOLOGY_CAL_TYPE = 0,
 	CVP_VOC_TX_TOPOLOGY_CAL_TYPE,
@@ -106,6 +124,15 @@ enum {
 	ADM_LSM_AUDPROC_PERSISTENT_CAL_TYPE,
 	ADM_AUDPROC_PERSISTENT_CAL_TYPE,
 	AFE_FB_SPKR_PROT_V4_EX_VI_CAL_TYPE,
+
+	AUDIOWIZARD_FORCE_PRESET_TYPE, /* ASUS_BSP Paul +++ */
+/*ASUS_BSP Add for Realtek USB AJ dongle +++*/
+	AUDIO_SET_EU_NONEU_TYPE,
+/*ASUS_BSP Add for Realtek USB AJ dongle ---*/
+/*ASUS_BSP for mic intent +++*/
+	AUDIORECORD_MIC_USING_TYPE,
+/*ASUS_BSP for mic intent ---*/
+
 	MAX_CAL_TYPES,
 };
 

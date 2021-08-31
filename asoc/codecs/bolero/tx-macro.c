@@ -8,6 +8,7 @@
 #include <linux/io.h>
 #include <linux/platform_device.h>
 #include <linux/regmap.h>
+#include <linux/regulator/consumer.h>//ASUS_BSP +++ for DMIC TX
 #include <linux/pm_runtime.h>
 #include <sound/soc.h>
 #include <sound/soc-dapm.h>
@@ -163,6 +164,14 @@ struct tx_macro_priv {
 	struct hpf_work tx_hpf_work[NUM_DECIMATORS];
 	struct tx_mute_work tx_mute_dwork[NUM_DECIMATORS];
 	u16 dmic_clk_div;
+//ASUS_BSP +++ for DMIC TX
+#if defined ASUS_VODKA_PROJECT
+	struct regulator *micb_supply;
+	u32 micb_voltage;
+	u32 micb_current;
+	int micb_users;
+#endif
+//ASUS_BSP --- for DMIC TX
 	u32 version;
 	u32 is_used_tx_swr_gpio;
 	unsigned long active_ch_mask[TX_MACRO_MAX_DAIS];
@@ -1251,6 +1260,69 @@ static int tx_macro_enable_dec(struct snd_soc_dapm_widget *w,
 static int tx_macro_enable_micbias(struct snd_soc_dapm_widget *w,
 			struct snd_kcontrol *kcontrol, int event)
 {
+//ASUS_BSP +++ for DMIC TX
+#if defined ASUS_VODKA_PROJECT
+	struct snd_soc_component *component = snd_soc_dapm_to_component(w->dapm);
+	struct device *tx_dev = NULL;
+	struct tx_macro_priv *tx_priv = NULL;
+	int ret = 0;
+
+	if (!tx_macro_get_data(component, &tx_dev, &tx_priv, __func__))
+		return -EINVAL;
+
+	if (!tx_priv->micb_supply) {
+		dev_err(tx_dev,
+			"%s:regulator not provided in dtsi\n", __func__);
+		return -EINVAL;
+	}
+	switch (event) {
+		case SND_SOC_DAPM_PRE_PMU:
+			if (tx_priv->micb_users++ > 0)
+				return 0;
+			ret = regulator_set_voltage(tx_priv->micb_supply,
+									tx_priv->micb_voltage,
+									tx_priv->micb_voltage);
+			if (ret) {
+				dev_err(tx_dev, "%s: Setting voltage failed, err = %d\n",
+					__func__, ret);
+				return ret;
+			}
+			ret = regulator_set_load(tx_priv->micb_supply,
+									tx_priv->micb_current);
+			if (ret) {
+				dev_err(tx_dev, "%s: Setting current failed, err = %d\n",
+						__func__, ret);
+				return ret;
+			}
+			ret = regulator_enable(tx_priv->micb_supply);
+			if (ret) {
+				dev_err(tx_dev, "%s: regulator enable failed, err = %d\n",
+						__func__, ret);
+				return ret;
+			}
+			break;
+		case SND_SOC_DAPM_POST_PMD:
+			if (--tx_priv->micb_users > 0)
+				return 0;
+			if (tx_priv->micb_users < 0) {
+				tx_priv->micb_users = 0;
+				dev_dbg(tx_dev, "%s: regulator already disabled\n",
+						__func__);
+				return 0;
+			}
+			ret = regulator_disable(tx_priv->micb_supply);
+			if (ret) {
+				dev_err(tx_dev, "%s: regulator disable failed, err = %d\n",
+						__func__, ret);
+				return ret;
+			}
+			regulator_set_voltage(tx_priv->micb_supply, 0,
+									tx_priv->micb_voltage);
+			regulator_set_load(tx_priv->micb_supply, 0);
+			break;
+	}
+#endif
+//ASUS_BSP --- for DMIC TX
 	return 0;
 }
 
@@ -3418,9 +3490,21 @@ static int tx_macro_probe(struct platform_device *pdev)
 	struct tx_macro_priv *tx_priv = NULL;
 	u32 tx_base_addr = 0, sample_rate = 0;
 	char __iomem *tx_io_base = NULL;
+//ASUS_BSP +++ for DMIC TX
+#if defined ASUS_VODKA_PROJECT
+	const char *micb_supply_str = "tx-vdd-micb-supply";
+	const char *micb_supply_str1 = "tx-vdd-micb";
+	const char *micb_voltage_str = "qcom,tx-vdd-micb-voltage";
+	const char *micb_current_str = "qcom,tx-vdd-micb-current";
+#endif
+//ASUS_BSP --- for DMIC TX
 	int ret = 0;
 	const char *dmic_sample_rate = "qcom,tx-dmic-sample-rate";
+#if defined ASUS_VODKA_PROJECT
+	u32 is_used_tx_swr_gpio = 0;
+#else
 	u32 is_used_tx_swr_gpio = 1;
+#endif
 	const char *is_used_tx_swr_gpio_dt = "qcom,is-used-swr-gpio";
 	u32 disable_afe_wakeup_event_listener = 0;
 	const char *disable_afe_wakeup_event_listener_dt =
@@ -3455,7 +3539,11 @@ static int tx_macro_probe(struct platform_device *pdev)
 		if (ret) {
 			dev_err(&pdev->dev, "%s: error reading %s in dt\n",
 				__func__, is_used_tx_swr_gpio_dt);
+#if defined ASUS_VODKA_PROJECT
+			is_used_tx_swr_gpio = 0;
+#else
 			is_used_tx_swr_gpio = 1;
+#endif
 		}
 	}
 	tx_priv->tx_swr_gpio_p = of_parse_phandle(pdev->dev.of_node,
@@ -3471,6 +3559,42 @@ static int tx_macro_probe(struct platform_device *pdev)
 			__func__);
 		return -EPROBE_DEFER;
 	}
+
+//ASUS_BSP +++ for DMIC TX
+#if defined ASUS_VODKA_PROJECT
+	if (of_parse_phandle(pdev->dev.of_node, micb_supply_str, 0)) {
+		tx_priv->micb_supply = devm_regulator_get(&pdev->dev,
+										micb_supply_str1);
+		if (IS_ERR(tx_priv->micb_supply)) {
+			ret = PTR_ERR(tx_priv->micb_supply);
+			dev_err(&pdev->dev,
+					"%s:Failed to get micbias supply for VA Mic %d\n",
+					__func__, ret);
+			return ret;
+		}
+		ret = of_property_read_u32(pdev->dev.of_node,
+									micb_voltage_str,
+									&tx_priv->micb_voltage);
+		if (ret) {
+			dev_err(&pdev->dev,
+					"%s:Looking up %s property in node %s failed\n",
+					__func__, micb_voltage_str,
+					pdev->dev.of_node->full_name);
+			return ret;
+		}
+		ret = of_property_read_u32(pdev->dev.of_node,
+									micb_current_str,
+									&tx_priv->micb_current);
+		if (ret) {
+			dev_err(&pdev->dev,
+					"%s:Looking up %s property in node %s failed\n",
+					__func__, micb_current_str,
+					pdev->dev.of_node->full_name);
+			return ret;
+		}
+	}
+#endif
+//ASUS_BSP --- for DMIC TX
 
 	tx_io_base = devm_ioremap(&pdev->dev,
 				   tx_base_addr, TX_MACRO_MAX_OFFSET);

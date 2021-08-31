@@ -13,6 +13,13 @@
 #include <dsp/audio_calibration.h>
 #include <dsp/audio_cal_utils.h>
 
+//ASUS_BSP Add for Realtek USB AJ dongle +++
+extern void set_asus_eu_type(int eu_type);
+//ASUS_BSP Add for Realtek USB AJ dongle ---
+
+//ASUS_BSP for mic intent +++
+#include <linux/input.h>
+//ASUS_BSP for mic intent ---
 struct audio_cal_client_info {
 	struct list_head		list;
 	struct audio_cal_callbacks	*callbacks;
@@ -27,6 +34,12 @@ struct audio_cal_info {
 
 static struct audio_cal_info	audio_cal;
 
+/* ASUS_BSP Paul +++ */
+static struct kset *aw_uevent_kset;
+static struct kobject *aw_force_preset_kobj;
+static int audiowizard_force_preset_state = 0;
+static void send_aw_force_preset_uevent(int state);
+/* ASUS_BSP Paul --- */
 
 static bool callbacks_are_equal(struct audio_cal_callbacks *callback1,
 				struct audio_cal_callbacks *callback2)
@@ -386,12 +399,36 @@ static int audio_cal_release(struct inode *inode, struct file *f)
 	return ret;
 }
 
+//ASUS_BSP for mic intent +++
+struct input_dev *audiorecord_mic_using_dev;
+static void send_audiorecord_mic_using(struct input_dev *dev, int state){
+    if(state == 1){
+        input_report_switch(dev, SW_AUDIORECORD_START, 1);
+    } else{
+        input_report_switch(dev, SW_AUDIORECORD_STOP, 1);
+    }
+    input_sync(dev);
+	
+    //clear start/stop switch for next event
+    input_report_switch(dev, SW_AUDIORECORD_START, 0);
+    input_report_switch(dev, SW_AUDIORECORD_STOP, 0);
+    input_sync(dev);
+}
+//ASUS_BSP for mic intent ---
+
 static long audio_cal_shared_ioctl(struct file *file, unsigned int cmd,
 							void __user *arg)
 {
 	int ret = 0;
 	int32_t size;
 	struct audio_cal_basic *data = NULL;
+	int state = 0; /* ASUS_BSP Paul +++ */
+//ASUS_BSP Add for Realtek USB AJ dongle +++
+	int is_non_eu = 0;
+//ASUS_BSP Add for Realtek USB AJ dongle ---
+//ASUS_BSP for mic intent +++
+	int audiorecord_mic_using = 0;
+//ASUS_BSP for mic intent ---
 
 	pr_debug("%s\n", __func__);
 
@@ -403,6 +440,42 @@ static long audio_cal_shared_ioctl(struct file *file, unsigned int cmd,
 	case AUDIO_GET_CALIBRATION:
 	case AUDIO_POST_CALIBRATION:
 		break;
+	/* ASUS_BSP Paul +++ */
+	case AUDIO_SET_AUDIOWIZARD_FORCE_PRESET:
+		mutex_lock(&audio_cal.cal_mutex[AUDIOWIZARD_FORCE_PRESET_TYPE]);
+		if (copy_from_user(&state, (void *)arg, sizeof(state))) {
+			pr_err("%s: Could not copy state from user\n", __func__);
+			ret = -EFAULT;
+		}
+		send_aw_force_preset_uevent(state);
+		mutex_unlock(&audio_cal.cal_mutex[AUDIOWIZARD_FORCE_PRESET_TYPE]);
+		goto done;
+	/* ASUS_BSP Paul --- */
+//ASUS_BSP Add for Realtek USB AJ dongle +++
+	case AUDIO_SET_EU_NONEU:
+		mutex_lock(&audio_cal.cal_mutex[AUDIO_SET_EU_NONEU_TYPE]);
+		if (copy_from_user(&is_non_eu, (void *)arg, sizeof(is_non_eu))) {
+			pr_err("%s: Could not copy EU/nonEU info from user\n", __func__);
+			ret = -EFAULT;
+		}
+		printk("%s: EU_or_nonEU=%d (EU:0, nonEU:1)\n", __func__, is_non_eu);
+		set_asus_eu_type(is_non_eu);
+		mutex_unlock(&audio_cal.cal_mutex[AUDIO_SET_EU_NONEU_TYPE]);
+		goto done;
+//ASUS_BSP Add for Realtek USB AJ dongle ---
+//ASUS_BSP for mic intent +++
+    case AUDIO_SET_AUDIORECORD_MIC_USING:
+        mutex_lock(&audio_cal.cal_mutex[AUDIORECORD_MIC_USING_TYPE]);
+        if(copy_from_user(&audiorecord_mic_using, (void *)arg, sizeof(audiorecord_mic_using))){
+            pr_err("%s: Could not copy audiorecord_mic_using from user\n", __func__);
+            ret = -EFAULT;
+        }
+        pr_err("%s: AUDIO_SET_AUDIORECORD_MIC_USING audiorecord_mic_using %d\n", __func__, audiorecord_mic_using);
+        send_audiorecord_mic_using(audiorecord_mic_using_dev,audiorecord_mic_using);
+        mutex_unlock(&audio_cal.cal_mutex[AUDIORECORD_MIC_USING_TYPE]);
+	
+        goto done;
+//ASUS_BSP for mic intent ---
 	default:
 		pr_err("%s: ioctl not found!\n", __func__);
 		ret = -EFAULT;
@@ -531,7 +604,20 @@ static long audio_cal_ioctl(struct file *f,
 							204, compat_uptr_t)
 #define AUDIO_POST_CALIBRATION32	_IOWR(CAL_IOCTL_MAGIC, \
 							205, compat_uptr_t)
+/* ASUS_BSP Paul +++ */
+#define AUDIO_SET_AUDIOWIZARD_FORCE_PRESET32	_IOWR(CAL_IOCTL_MAGIC, \
+							221, compat_uptr_t)
+/* ASUS_BSP Paul --- */
 
+//ASUS_BSP Add for Realtek USB AJ dongle +++
+#define AUDIO_SET_EU_NONEU32	_IOWR(CAL_IOCTL_MAGIC, \
+							235, compat_uptr_t)
+//ASUS_BSP Add for Realtek USB AJ dongle ---
+//ASUS_BSP for mic intent +++
+#define AUDIO_SET_AUDIORECORD_MIC_USING32	_IOWR(CAL_IOCTL_MAGIC, \
+							223, compat_uptr_t)
+//ASUS_BSP for mic intent ---
+							
 static long audio_cal_compat_ioctl(struct file *f,
 		unsigned int cmd, unsigned long arg)
 {
@@ -557,6 +643,21 @@ static long audio_cal_compat_ioctl(struct file *f,
 	case AUDIO_POST_CALIBRATION32:
 		cmd64 = AUDIO_POST_CALIBRATION;
 		break;
+	/* ASUS_BSP Paul +++ */
+	case AUDIO_SET_AUDIOWIZARD_FORCE_PRESET32:
+		cmd64 = AUDIO_SET_AUDIOWIZARD_FORCE_PRESET;
+		break;
+	/* ASUS_BSP Paul --- */
+//ASUS_BSP Add for Realtek USB AJ dongle +++
+	case AUDIO_SET_EU_NONEU32:
+		cmd64 = AUDIO_SET_EU_NONEU;
+		break;
+//ASUS_BSP Add for Realtek USB AJ dongle ---
+//ASUS_BSP for mic intent +++
+    case AUDIO_SET_AUDIORECORD_MIC_USING32:
+        cmd64 = AUDIO_SET_AUDIORECORD_MIC_USING;
+        break;
+//ASUS_BSP for mic intent ---
 	default:
 		pr_err("%s: ioctl not found!\n", __func__);
 		ret = -EFAULT;
@@ -585,11 +686,81 @@ struct miscdevice audio_cal_misc = {
 	.fops	= &audio_cal_fops,
 };
 
+/* ASUS_BSP Paul +++ */
+static void send_aw_force_preset_uevent(int state)
+{
+	if (state == audiowizard_force_preset_state)
+		return;
+
+	audiowizard_force_preset_state = state;
+
+	if (aw_force_preset_kobj) {
+		char uevent_buf[512];
+		char *envp[] = { uevent_buf, NULL };
+		snprintf(uevent_buf, sizeof(uevent_buf), "AUDIOWIZARD_FORCE_PRESET=%d", state);
+		kobject_uevent_env(aw_force_preset_kobj, KOBJ_CHANGE, envp);
+	}
+}
+
+static void aw_uevent_release(struct kobject *kobj)
+{
+	kfree(kobj);
+}
+
+static struct kobj_type aw_uevent_ktype = {
+	.release = aw_uevent_release,
+};
+
+static int aw_uevent_init(void)
+{
+	int ret;
+
+	aw_uevent_kset = kset_create_and_add("audiowizard_uevent", NULL, kernel_kobj);
+	if (!aw_uevent_kset) {
+		pr_err("%s: failed to create aw_uevent_kset", __func__);
+		return -ENOMEM;
+	}
+
+	aw_force_preset_kobj = kzalloc(sizeof(*aw_force_preset_kobj), GFP_KERNEL);
+	if (!aw_force_preset_kobj) {
+		pr_err("%s: failed to create aw_force_preset_kobj", __func__);
+		return -ENOMEM;
+	}
+
+	aw_force_preset_kobj->kset = aw_uevent_kset;
+
+	ret = kobject_init_and_add(aw_force_preset_kobj, &aw_uevent_ktype, NULL, "audiowizard_force_preset");
+	if (ret) {
+		pr_err("%s: failed to init aw_force_preset_kobj", __func__);
+		kobject_put(aw_force_preset_kobj);
+		return -EINVAL;
+	}
+
+	kobject_uevent(aw_force_preset_kobj, KOBJ_ADD);
+
+	return 0;
+}
+/* ASUS_BSP Paul --- */
+
 int __init audio_cal_init(void)
 {
 	int i = 0;
+//ASUS_BSP for mic intent +++
+	int ret = 0;
+    audiorecord_mic_using_dev = input_allocate_device();
+    if(!audiorecord_mic_using_dev)
+        pr_err("%s: [Inputevent]failed to allocate inputevent audiorecord_mic_using_dev\n", __func__);
+    audiorecord_mic_using_dev->name = "audiorecord_mic_using";
+    input_set_capability(audiorecord_mic_using_dev, EV_SW, SW_AUDIORECORD_START);
+    input_set_capability(audiorecord_mic_using_dev, EV_SW, SW_AUDIORECORD_STOP);
+    ret = input_register_device(audiorecord_mic_using_dev);
+    if(ret < 0)
+        pr_err("%s: [Inputevent]failed to register inputevent audiorecord_mic_using_dev\n", __func__);
+//ASUS_BSP for mic intent ---
 
 	pr_debug("%s\n", __func__);
+
+	aw_uevent_init(); /* ASUS_BSP Paul +++ */
 
 	cal_utils_init();
 	memset(&audio_cal, 0, sizeof(audio_cal));
@@ -608,6 +779,9 @@ void audio_cal_exit(void)
 	struct list_head *ptr, *next;
 	struct audio_cal_client_info *client_info_node;
 
+//ASUS_BSP for mic intent +++
+	input_free_device(audiorecord_mic_using_dev);
+//ASUS_BSP for mic intent ---
 	for (; i < MAX_CAL_TYPES; i++) {
 		list_for_each_safe(ptr, next,
 			&audio_cal.client_info[i]) {

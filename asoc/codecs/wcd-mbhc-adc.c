@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  */
+#define DEBUG
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/slab.h>
@@ -35,7 +36,7 @@ static int wcd_mbhc_get_micbias(struct wcd_mbhc *mbhc)
 
 	if (mbhc->mbhc_cb->get_micbias_val) {
 		mbhc->mbhc_cb->get_micbias_val(mbhc, &micbias);
-		pr_debug("%s: micbias: %d\n",  __func__, micbias);
+		//pr_debug("%s: micbias: %d\n",  __func__, micbias);
 	} else {
 		/* Read MBHC Micbias (Mic Bias2) voltage */
 		WCD_MBHC_REG_READ(WCD_MBHC_MICB2_VOUT, vout_ctl);
@@ -44,8 +45,8 @@ static int wcd_mbhc_get_micbias(struct wcd_mbhc *mbhc)
 		 * micbias = 1.0V + VOUT_CTL * 50mV
 		 */
 		micbias = 1000 + (vout_ctl * 50);
-		pr_debug("%s: vout_ctl: %d, micbias: %d\n",
-			 __func__, vout_ctl, micbias);
+		//pr_debug("%s: vout_ctl: %d, micbias: %d\n",
+		//	 __func__, vout_ctl, micbias);
 	}
 	return micbias;
 }
@@ -128,7 +129,7 @@ static int wcd_measure_adc_once(struct wcd_mbhc *mbhc, int mux_ctl)
 	int output_mv = 0;
 	u8 adc_en = 0;
 
-	pr_debug("%s: enter\n", __func__);
+	//pr_debug("%s: enter\n", __func__);
 
 	WCD_MBHC_REG_UPDATE_BITS(WCD_MBHC_ADC_MODE, 0);
 	/* Read ADC Enable bit to restore after adc measurement */
@@ -158,7 +159,7 @@ static int wcd_measure_adc_once(struct wcd_mbhc *mbhc, int mux_ctl)
 		/* Read ADC result */
 		WCD_MBHC_REG_READ(WCD_MBHC_ADC_RESULT, adc_result);
 
-		pr_debug("%s: ADC result: 0x%x\n", __func__, adc_result);
+		//pr_debug("%s: ADC result: 0x%x\n", __func__, adc_result);
 		/* Get voltage from ADC result */
 		output_mv = wcd_get_voltage_from_adc(adc_result,
 						wcd_mbhc_get_micbias(mbhc));
@@ -173,12 +174,12 @@ static int wcd_measure_adc_once(struct wcd_mbhc *mbhc, int mux_ctl)
 			__func__, adc_complete, adc_timeout);
 		ret = -EINVAL;
 	} else {
-		pr_debug("%s: adc complete: %d, adc timeout: %d output_mV: %d\n",
-			__func__, adc_complete, adc_timeout, output_mv);
+		//pr_debug("%s: adc complete: %d, adc timeout: %d output_mV: %d\n",
+		//	__func__, adc_complete, adc_timeout, output_mv);
 		ret = output_mv;
 	}
 
-	pr_debug("%s: leave\n", __func__);
+	//pr_debug("%s: leave\n", __func__);
 
 	return ret;
 }
@@ -280,7 +281,8 @@ done:
 
 	return anc_mic_found;
 }
-
+/* ASUS_BSP +++ Fix OMTP headset issue */
+#if 0
 /* To determine if cross connection occurred */
 static int wcd_check_cross_conn(struct wcd_mbhc *mbhc)
 {
@@ -373,6 +375,8 @@ done:
 
 	return (plug_type == MBHC_PLUG_TYPE_GND_MIC_SWAP) ? true : false;
 }
+#endif
+/* ASUS_BSP --- Fix OMTP headset issue */
 
 static int wcd_mbhc_adc_get_spl_hs_thres(struct wcd_mbhc *mbhc)
 {
@@ -663,7 +667,7 @@ static void wcd_correct_swch_plug(struct work_struct *work)
 	int ret = 0;
 	int spl_hs_count = 0;
 	int output_mv = 0;
-	int cross_conn;
+	int cross_conn = 0;/* ASUS_BSP +++ Fix OMTP headset issue */
 	int try = 0;
 	int hs_threshold, micbias_mv;
 
@@ -682,7 +686,7 @@ static void wcd_correct_swch_plug(struct work_struct *work)
 
 	/* Check for cross connection */
 	do {
-		cross_conn = wcd_check_cross_conn(mbhc);
+		//cross_conn = wcd_check_cross_conn(mbhc);/* ASUS_BSP +++ Fix OMTP headset issue */
 		try++;
 	} while (try < mbhc->swap_thr);
 
@@ -780,7 +784,7 @@ correct_plug_type:
 		if ((output_mv <= hs_threshold) &&
 		    (!is_pa_on)) {
 			/* Check for cross connection*/
-			ret = wcd_check_cross_conn(mbhc);
+			//ret = wcd_check_cross_conn(mbhc); /* ASUS_BSP +++ Fix OMTP headset issue */
 			if (ret < 0)
 				continue;
 			else if (ret > 0) {
@@ -937,8 +941,16 @@ enable_supply:
 exit:
 	if (mbhc->mbhc_cb->mbhc_micbias_control &&
 	    !mbhc->micbias_enable)
-		mbhc->mbhc_cb->mbhc_micbias_control(component, MIC_BIAS_2,
+	{/* #ASUS_BSP +++ Enable MIC bias always if HEADSET inserted for ASUS Design */
+		if (plug_type == MBHC_PLUG_TYPE_HEADSET) {
+			mbhc->mbhc_cb->mbhc_micbias_control(component, MIC_BIAS_2,
+							    MICB_ENABLE);
+			mbhc->micbias_enable = true;
+		} else {/* #ASUS_BSP --- */
+			mbhc->mbhc_cb->mbhc_micbias_control(component, MIC_BIAS_2,
 						    MICB_DISABLE);
+		}
+	}
 
 	/*
 	 * If plug type is corrected from special headset to headphone,

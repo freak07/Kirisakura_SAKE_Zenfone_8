@@ -258,6 +258,13 @@ ifeq ($(KERNEL_BUILD), 1)
 	obj-y	+= bolero/
 	obj-y	+= wsa883x/
 	obj-y	+= rouleur/
+ifeq ($(CONFIG_MACH_ASUS_SAKE),y)
+	obj-y	+= cs35l45/
+	obj-y	+= es928x/
+endif
+ifeq ($(CONFIG_MACH_ASUS_VODKA),y)
+	obj-y	+= tfa9874/
+endif
 endif
 # Module information used by KBuild framework
 obj-$(CONFIG_WCD9XXX_CODEC_CORE) += wcd_core_dlkm.o
