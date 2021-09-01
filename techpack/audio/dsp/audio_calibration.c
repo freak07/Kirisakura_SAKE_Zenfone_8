@@ -13,9 +13,11 @@
 #include <dsp/audio_calibration.h>
 #include <dsp/audio_cal_utils.h>
 
+#if defined ASUS_SAKE_PROJECT || defined ASUS_VODKA_PROJECT
 //ASUS_BSP Add for Realtek USB AJ dongle +++
 extern void set_asus_eu_type(int eu_type);
 //ASUS_BSP Add for Realtek USB AJ dongle ---
+#endif
 
 //ASUS_BSP for mic intent +++
 #include <linux/input.h>
@@ -459,7 +461,9 @@ static long audio_cal_shared_ioctl(struct file *file, unsigned int cmd,
 			ret = -EFAULT;
 		}
 		printk("%s: EU_or_nonEU=%d (EU:0, nonEU:1)\n", __func__, is_non_eu);
+#if defined ASUS_SAKE_PROJECT || defined ASUS_VODKA_PROJECT
 		set_asus_eu_type(is_non_eu);
+#endif
 		mutex_unlock(&audio_cal.cal_mutex[AUDIO_SET_EU_NONEU_TYPE]);
 		goto done;
 //ASUS_BSP Add for Realtek USB AJ dongle ---
