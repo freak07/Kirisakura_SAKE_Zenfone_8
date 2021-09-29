@@ -13,6 +13,15 @@
 
 #define TOTAL_SLOT 10
 
+#define ASUS_TOUCH_X_1_POS                  3
+#define ASUS_TOUCH_X_2_POS                  4
+#define ASUS_TOUCH_X_3_POS                  7  // high 4 bits
+#define ASUS_TOUCH_Y_1_POS                  5
+#define ASUS_TOUCH_Y_2_POS                  6
+#define ASUS_TOUCH_Y_3_POS                  7  // low 4 bits
+#define ASUS_TOUCH_Y_AREA_POS               8  // FP area, high 4 bits
+#define ASUS_TOUCH_Y_RATE_POS               8  // report rate, low 4 bits
+
 /*****************************************************************************
 * 1. Global variable or extern global variabls/functions
 *****************************************************************************/

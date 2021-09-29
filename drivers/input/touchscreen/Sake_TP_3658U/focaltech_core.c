@@ -84,7 +84,7 @@ bool tp3518u = false;
 extern int g_SAKE_Panel_ID;
 extern int g_ASUS_hwID;
 //fod
-static int fts_fp_position[4] = {410,670, 1631, 1891};
+static int fts_fp_position[4] = {6560, 10720, 26096, 30256};
 static int *fp_position = NULL;
 int fp_key_i= -1;
 int fp_press = 0; // 0 : up , 1 : O , 2 : F
@@ -513,7 +513,7 @@ static int fts_input_report_b(struct fts_ts_data *data)
                     fp_position[2] <= events[i].y && events[i].y <= fp_position[3]) {
                     FTS_DEBUG("[B](id,x,y,p,rate)(%d,%d,%d,%d,%d) DOWN!",
                           events[i].id,
-                          events[i].x, events[i].y,
+                          events[i].x/16, events[i].y/16,
                           events[i].p, events[i].rate);
                     if (events[i].p < data->fp_mini) {
                         FTS_INFO("Finger %d area %d too small , KEY O",events[i].id,events[i].p);
@@ -593,7 +593,7 @@ static int fts_input_report_b(struct fts_ts_data *data)
                 ((1 == data->log_level) && (FTS_TOUCH_DOWN == events[i].flag))) {
                 FTS_DEBUG("[B](id,x,y,area,rate,touchs)(%d,%d,%d,%d,%d,%d) DOWN!",
                       events[i].id,
-                      events[i].x, events[i].y,
+                      events[i].x/16, events[i].y/16,
                       events[i].p, events[i].rate, touchs);
             }
         } else {
@@ -818,14 +818,23 @@ static int fts_read_parse_touchdata(struct fts_ts_data *data)
         }
 
         data->touch_point++;
-        events[i].x = ((buf[FTS_TOUCH_X_H_POS + base] & 0x0F) << 8) +
-                      (buf[FTS_TOUCH_X_L_POS + base] & 0xFF);
-        events[i].y = ((buf[FTS_TOUCH_Y_H_POS + base] & 0x0F) << 8) +
-                      (buf[FTS_TOUCH_Y_L_POS + base] & 0xFF);
+        if (data->resize) {
+        events[i].x = ((buf[ASUS_TOUCH_X_1_POS + base] & 0x0F) << 12) +
+                      ((buf[ASUS_TOUCH_X_2_POS + base] & 0xFF) << 4);
+        events[i].y = ((buf[ASUS_TOUCH_Y_1_POS + base] & 0x0F) << 12) +
+                      ((buf[ASUS_TOUCH_Y_2_POS + base] & 0xFF) << 4);
+        } else {
+        events[i].x = ((buf[ASUS_TOUCH_X_1_POS + base] & 0x0F) << 12) +
+                      ((buf[ASUS_TOUCH_X_2_POS + base] & 0xFF) << 4) +
+                      (buf[ASUS_TOUCH_X_3_POS + base] >> 4);
+        events[i].y = ((buf[ASUS_TOUCH_Y_1_POS + base] & 0x0F) << 12) +
+                      ((buf[ASUS_TOUCH_Y_2_POS + base] & 0xFF) << 4) +
+                      (buf[ASUS_TOUCH_Y_3_POS + base] & 0x0F);
+        }
         events[i].flag = buf[FTS_TOUCH_EVENT_POS + base] >> 6;
         events[i].id = buf[FTS_TOUCH_ID_POS + base] >> 4;
-        events[i].p =  buf[FTS_TOUCH_PRE_POS + base];  // FP area
-        events[i].rate = buf[FTS_TOUCH_AREA_POS + base];  // report rate
+        events[i].p =  buf[ASUS_TOUCH_Y_AREA_POS + base] >> 4;  // FP area
+        events[i].rate = buf[ASUS_TOUCH_Y_RATE_POS + base] & 0x0F;  // report rate
 
         if (EVENT_DOWN(events[i].flag) && (data->point_num == 0)) {
             FTS_INFO("abnormal touch data from fw");
@@ -1405,8 +1414,8 @@ static int fts_get_dt_coords(struct device *dev, char *name,
     } else {
         pdata->x_min = coords[0];
         pdata->y_min = coords[1];
-        pdata->x_max = coords[2];
-        pdata->y_max = coords[3];
+        pdata->x_max = coords[2]*16 - 1;
+        pdata->y_max = coords[3]*16 - 1;
     }
 
     FTS_INFO("display x(%d %d) y(%d %d)", pdata->x_min, pdata->x_max,

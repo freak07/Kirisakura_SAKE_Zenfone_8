@@ -37,6 +37,9 @@
 
 bool g_once_usb_thermal = false;
 bool g_asuslib_init = false;
+bool g_cos_over_full_flag = false;
+volatile int g_ultra_cos_spec_time = 2880;
+int  g_charger_mode_full_time = 0;
 
 struct iio_channel *usb_conn_temp_vadc_chan;
 static int asus_usb_online = 0;
@@ -120,6 +123,7 @@ static struct CYCLE_COUNT_DATA g_cycle_count_data = {
     .reload_condition = 0
 };
 struct delayed_work battery_safety_work;
+struct delayed_work asus_min_check_work;
 
 #if defined ASUS_VODKA_PROJECT
 #define INIT_FV 4360
@@ -2014,6 +2018,48 @@ void asus_monitor_start(int status){
 }
 //start plugin work ---
 
+void monitor_charging_enable(void)
+{
+    union power_supply_propval prop = {};
+    int bat_capacity;
+    u32 tmp = 0;
+    int rc;
+
+    rc = power_supply_get_property(qti_phy_bat, POWER_SUPPLY_PROP_CAPACITY, &prop);
+    if (rc < 0)
+	pr_err("Failed to get battery SOC, rc=%d\n", rc);
+    bat_capacity = prop.intval;
+
+    if (g_Charger_mode) {
+        CHG_DBG("%s. Charger mode battery protetction monitor", __func__);
+	if (bat_capacity == 100 && !g_cos_over_full_flag) {
+		g_charger_mode_full_time ++;
+		 CHG_DBG("%s. Charger mode battery g_charger_mode_full_time  : %d", __func__, g_charger_mode_full_time);
+		if (g_charger_mode_full_time >= g_ultra_cos_spec_time) {
+                        tmp = 1;
+                        ChgPD_Info.ultra_bat_life = tmp;
+               		tmp = ChgPD_Info.ultra_bat_life||ChgPD_Info.demo_app_status;
+    			CHG_DBG("%s. set BATTMAN_OEM_Batt_Protection : %d", __func__, tmp);
+
+			rc = oem_prop_write(BATTMAN_OEM_Batt_Protection, &tmp, 1);
+			if (rc < 0) {
+				pr_err("Failed to set BATTMAN_OEM_Batt_Protection rc=%d\n", rc);
+				g_cos_over_full_flag = false;
+			} else {
+				g_cos_over_full_flag = true;
+			}
+		}
+	}
+    }
+}
+
+void asus_min_check_worker(struct work_struct *work)
+{
+    monitor_charging_enable();//Always TRUE, JEITA is decided on ADSP
+
+    schedule_delayed_work(&asus_min_check_work, msecs_to_jiffies(60000));
+}
+
 //ASUS_BSP battery safety upgrade +++
 static void init_battery_safety(struct bat_safety_condition *cond)
 {
@@ -3439,6 +3485,13 @@ int asuslib_init(void) {
     INIT_DELAYED_WORK(&battery_health_work, battery_health_worker);
     battery_health_data_reset();
     schedule_delayed_work(&battery_health_work, 30 * HZ);
+
+    //cos battery 48hours protect
+    INIT_DELAYED_WORK(&asus_min_check_work, asus_min_check_worker);
+    if(g_Charger_mode) {
+	CHG_DBG_E("Charger mode , start asus timer monitor\n");
+    	schedule_delayed_work(&asus_min_check_work, msecs_to_jiffies(60000));
+    }
 
     CHG_DBG_E("Load the asuslib_init Succesfully\n");
     g_asuslib_init = true;

@@ -235,6 +235,7 @@ struct fts_ts_data {
     bool atr_press;
     bool finger_press;
     int report_rate;
+    bool resize;
 //charger_mode    
     struct notifier_block charge_notify;
     bool charge_notify_charge;
