@@ -339,8 +339,13 @@ static void display_exit_idle_mode()
 	DSI_LOG("power_mode/aod_state are (%d, %d)\n",
 			g_display->panel->power_mode, g_display->panel->aod_state);
 	
-	if ((g_display->panel->power_mode != 1 && g_display->panel->power_mode != 2) && !g_display->panel->aod_state && !g_display->panel->has_enter_aod_before ) {
+	if ((g_display->panel->power_mode != 1 && g_display->panel->power_mode != 2) && !g_display->panel->aod_state) {
 		DSI_LOG("return display_exit_idle_mode!\n");
+		return;
+	}
+
+	if (!g_display->panel->has_enter_aod_before) {
+		DSI_LOG("has_enter_aod_before return display_exit_idle_mode!\n");
 		return;
 	}
 	
@@ -379,7 +384,11 @@ static void display_exit_idle_mode()
 		DSI_LOG("[%s] failed to send DSI_CMD_SET_NOLP cmd, rc=%d\n",
 			   g_display->panel->name, rc);
 		g_display->panel->has_enter_aod_before = true;
-	} 
+	}  else {
+		DSI_LOG("enter NOLP mode sucess , set fod_in_doze true \n");
+		g_display->panel->fod_in_doze = true;
+		g_display->panel->aod_state = false;
+	}
 }
 
 // send Fod HBM command to panel
@@ -395,27 +404,34 @@ static int dsi_zf8_set_fod_hbm(struct dsi_panel *panel, bool enable)
 	mutex_lock(&panel->panel_lock);
 	if (!panel->panel_initialized)
 		goto exit;
-
-	DSI_LOG("Will Set FOD HBM ON\n");
 	
 	if (enable) {
 		// exit idle mode if enter doze before
 		display_exit_idle_mode();
 
 	DSI_LOG("Will Set FOD HBM ON\n");
-	
-#if defined ASUS_SAKE_PROJECT
-	if(1 == g_lcd_stage_id) {
-		rc = dsi_zf8_tx_cmd_set(panel, DSI_CMD_SET_FOD_HBM_ON);
+
+	// to aviod ghbm without mask
+	if (panel->fod_in_doze) {
+		DSI_LOG("set display off first\n");
+		rc = dsi_zf8_tx_cmd_set(panel, DSI_CMD_AOD_OFF);
+		if (rc)
+			DSI_LOG("[%s] failed to send DSI_CMD_SET_LP1 cmd, rc=%d\n",
+					   panel->name, rc);
 	}else {
-		rc = dsi_zf8_tx_cmd_set(panel, DSI_CMD_SET_FOD_ER2_HBM_ON);
+		DSI_LOG("set display on directly\n");
+#if defined ASUS_SAKE_PROJECT	
+		if(1 == g_lcd_stage_id) {
+			rc = dsi_zf8_tx_cmd_set(panel, DSI_CMD_SET_FOD_HBM_ON);
+		}else {
+			rc = dsi_zf8_tx_cmd_set(panel, DSI_CMD_SET_FOD_ER2_HBM_ON);
+		}
+
+#else
+		rc = dsi_zf8_tx_cmd_set(panel, DSI_CMD_SET_FOD_HBM_ON);
+#endif
 	}
-#endif
-
-#if defined ASUS_VODKA_PROJECT
-	rc = dsi_zf8_tx_cmd_set(panel, DSI_CMD_SET_FOD_HBM_ON);
-#endif
-
+	
 	if (rc)
 		pr_err("[Display][%s] failed to send DSI_CMD_SET_FOD_HBM_ON cmd, rc=%d\n",
 			panel->name, rc);
@@ -428,7 +444,7 @@ static int dsi_zf8_set_fod_hbm(struct dsi_panel *panel, bool enable)
 			pr_err("[Display][%s] failed to send DSI_CMD_SET_FOD_HBM_OFF cmd, rc=%d\n",
 				   panel->name, rc);
 
-		panel->allow_dimming_smooth = true;
+		//panel->allow_dimming_smooth = true;
 	}
 
 exit:
@@ -470,29 +486,36 @@ static void display_set_fod_hbm(void)
 }
 
 //send Dimming Smooth command to panel
-static int dsi_zf8_set_dimming_smooth(struct dsi_panel *panel)
+void dsi_zf8_set_dimming_smooth(struct dsi_panel *panel, u32 backlight)
 {
 	int rc = 0;
 
-	if (!panel) {
-		DSI_LOG("invalid params\n");
-		return -EINVAL;
+	// don't allow in fod hbm
+	if (panel->allow_panel_fod_hbm == 1)
+		return;
+
+	if (panel->aod_state ||panel->allow_fod_hbm_process || backlight == 0) {
+		panel->panel_bl_count = 0;
+		return;
 	}
 
-	mutex_lock(&panel->panel_lock);
-	if (!panel->panel_initialized)
-		goto exit;
+	if (panel->panel_bl_count == 1) {
+		
+		if(!panel->dc_fps_change) {
+			DSI_LOG("restore dimming smooth\n");
+			rc = dsi_zf8_tx_cmd_set(panel, DSI_CMD_SET_DIMMING_SMOOTH);
+			if (rc)
+			DSI_LOG("[%s] failed to send DSI_CMD_SET_DIMMING_SMOOTH cmd, rc=%d\n",
+				   panel->name, rc);
+		}else {
+			panel->dc_fps_change = false;
+		}
+		
+		return;
+	}
+	
+	panel->panel_bl_count++;
 
-	rc = dsi_zf8_tx_cmd_set(panel, DSI_CMD_SET_DIMMING_SMOOTH);
-	if (rc)
-		DSI_LOG("[%s] failed to send DSI_CMD_SET_DIMMING_SMOOTH cmd, rc=%d\n",
-			   panel->name, rc);
-
-	panel->allow_dimming_smooth = false;
-
-exit:
-	mutex_unlock(&panel->panel_lock);
-	return rc;
 }
 
 // panel_reg_rw_ops() - read/write/show panel register
@@ -759,6 +782,14 @@ static ssize_t lcd_brightness_write(struct file *filp, const char *buff, size_t 
 	DSI_LOG("dc lcd brightess need change backlightnes : %d\n",backlight_lvl);
 	// restrict backlight range 1 - 1023
 	if (g_display->panel->panel_is_on && backlight_lvl > 0 && backlight_lvl < 1024) {
+		if(backlight_lvl < 248) {
+			DSI_LOG("FPS Change restore brightness < 248!\n");
+			g_display->panel->dc_fps_change = true ;
+		}else {
+			DSI_LOG("FPS Change restore brightness >= 248!\n");
+			g_display->panel->dc_fps_change = false;
+		}
+		
 		rc =  dsi_panel_set_backlight(g_display->panel,backlight_lvl);
 		if(rc < 0)
 			DSI_LOG("dsi_panel_update_backlight error! \n");
@@ -833,9 +864,9 @@ static struct file_operations global_hbm_mode_ops = {
 };
 
 #if defined ASUS_VODKA_PROJECT
-int hbm_mode_delay_num = 4000;
-#else
 int hbm_mode_delay_num = 10000;
+#else
+int hbm_mode_delay_num = 0;
 #endif
 
 static ssize_t global_hbm_mode_delay_read(struct file *file, char __user *user_buf,
@@ -990,7 +1021,7 @@ void dsi_zf8_clear_commit_cnt(void)
 
 void dsi_zf8_frame_commit_cnt(struct drm_crtc *crtc)
 {
-	static int fod_off_frame_cnt = 0;
+	//static int fod_off_frame_cnt = 0;
 
 	if (display_commit_cnt > 0 && !strcmp(crtc->name, "crtc-0")) {
 		DSI_LOG("fbc%d\n", display_commit_cnt);
@@ -998,7 +1029,7 @@ void dsi_zf8_frame_commit_cnt(struct drm_crtc *crtc)
 	}
 
 
-	if (g_display->panel->allow_dimming_smooth && fod_off_frame_cnt <= 2) {
+	/*if (g_display->panel->allow_dimming_smooth && fod_off_frame_cnt <= 2) {
 		fod_off_frame_cnt++;
 
 		if (fod_off_frame_cnt == 2) {
@@ -1006,7 +1037,7 @@ void dsi_zf8_frame_commit_cnt(struct drm_crtc *crtc)
 			dsi_zf8_set_dimming_smooth(g_display->panel);
 			fod_off_frame_cnt = 0;
 		}
-	}
+	}*/
 
 	if(g_display->panel->aod_state && display_commit_cnt < 1 && g_display->panel->aod_first_time) {
 		DSI_LOG("AOD notification case restore bl = %d\n", g_display->panel->panel_last_backlight);
@@ -1026,13 +1057,17 @@ void dsi_zf8_display_init(struct dsi_display *display)
 	g_display->panel->panel_fod_hbm_mode = 0;
 	g_display->panel->allow_panel_fod_hbm = 0;
 	g_display->panel->allow_fod_hbm_process = false;
-	g_display->panel->allow_dimming_smooth = false;
+	//g_display->panel->allow_dimming_smooth = false;
 	g_display->panel->panel_is_on = false;
 	g_display->panel->panel_last_backlight = 0;
 	g_display->panel->aod_state = false;
 	g_display->panel->aod_first_time = false;
 	g_display->panel->has_enter_aod_before = false;
-
+	g_display->panel->fod_in_doze = false;
+	g_display->panel->panel_bl_count = 0;
+	g_display->panel->aod_mode = 0;
+	g_display->panel->dc_fps_change = false;
+	
 	proc_create(PANEL_REGISTER_RW, 0640, NULL, &panel_reg_rw_ops);
 	proc_create(PANEL_VENDOR_ID, 0640, NULL, &panel_vendor_id_ops);
 	proc_create(PANEL_FPS, 0660, NULL, &panel_fps_ops);
@@ -1063,12 +1098,20 @@ void dsi_zf8_set_panel_is_on(bool on)
 	g_display->panel->panel_is_on = on;
 
 	if (on == false) {
+		DSI_LOG("dsi_zf8_set_panel_is_on  false !\n ");
 		g_display->panel->panel_hbm_mode = 0;
 		g_display->panel->panel_fod_hbm_mode = 0;
 		g_display->panel->allow_panel_fod_hbm = 0;
 		g_display->panel->allow_fod_hbm_process = false;
-		g_display->panel->allow_dimming_smooth = false;
+		//g_display->panel->allow_dimming_smooth = false;
+		g_display->panel->fod_in_doze = false;
+		g_display->panel->aod_state = false;
+		g_display->panel->panel_bl_count = 0;
+		has_fod_masker = false;
 		old_has_fod_masker = false;
+		has_fod_spot = false;
+		old_has_fod_spot = false;
+		g_display->panel->dc_fps_change = false;
 		zf8_drm_notify(ASUS_NOTIFY_SPOT_READY, 0);
 		zf8_drm_notify(ASUS_NOTIFY_GHBM_ON_READY, 0);
 		zf8_drm_notify(ASUS_NOTIFY_GHBM_ON_REQ, 0);
@@ -1085,7 +1128,17 @@ void dsi_zf8_record_backlight(u32 bl_lvl)
 	g_display->panel->panel_last_backlight = bl_lvl;
 	//#define SDE_MODE_DPMS_LP1	1      sde_drm.h
 	// skip if fod hbm is processing
-	if (g_display->panel->power_mode == 1 && !g_display->panel->allow_panel_fod_hbm) {
+	if ((g_display->panel->power_mode == 1  || g_display->panel->power_mode == 2)&& !g_display->panel->allow_panel_fod_hbm) {
+		
+		if(g_display->panel->panel_last_backlight == 248) {
+			if(g_display->panel->aod_mode == 1)
+				g_display->panel->panel_last_backlight = 4;
+			else if(g_display->panel->aod_mode == 2)
+				g_display->panel->panel_last_backlight = 64;
+			else 
+				DSI_LOG("Can not run here , This is a Bug!\n");
+		}
+		
 		//DSI_LOG("AOD last_backlight = %d \n", g_display->panel->panel_last_backlight);
 		DSI_LOG("Will enter AOD Mode !\n");
 		if(g_display->panel->panel_last_backlight > 4) {
@@ -1102,7 +1155,8 @@ void dsi_zf8_record_backlight(u32 bl_lvl)
 			rc = dsi_zf8_tx_cmd_set(g_display->panel, DSI_CMD_SET_AOD_HIGH);
 			g_display->panel->has_enter_aod_before = true;
 #endif
-			
+			DSI_LOG("set aod_mode 2 \n");
+			g_display->panel->aod_mode = 2;
 #if 1
 	     } else if (g_display->panel->panel_last_backlight <= 4) { // temp fix for aod issues
 #endif
@@ -1121,17 +1175,21 @@ void dsi_zf8_record_backlight(u32 bl_lvl)
 			rc = dsi_zf8_tx_cmd_set(g_display->panel, DSI_CMD_SET_AOD_LOW);
 			g_display->panel->has_enter_aod_before = true;
 #endif
+			DSI_LOG("set aod_mode 1 \n");
+			g_display->panel->aod_mode = 1;
 	    }
 		// for non 4 / 64 bl && aod on state, prevent display keep off
 		else if(g_display->panel->aod_state){
 			DSI_LOG("Send DSI_CMD_SET_AOD_OTHER !\n");
 			rc = dsi_zf8_tx_cmd_set(g_display->panel, DSI_CMD_SET_AOD_OTHER);
 			g_display->panel->has_enter_aod_before = false;
+			g_display->panel->aod_mode = 0;
 		}
 		
 		if(rc) {
 			DSI_LOG("unable to set AOD command\n");
 			g_display->panel->has_enter_aod_before = false;
+			g_display->panel->aod_mode = 0;
 		} else {    // if AOD cmd set sucess, set up first_time as true
 			g_display->panel->aod_first_time = true;
 		}
@@ -1224,11 +1282,33 @@ bool zf8_atomic_get_spot_status(int type)
 
 void zf8_atomic_set_spot_status(int type)
 {
+	int rc = 0;
+	
 	if (type == 0) {
-		//int period_ms = 1000000 / g_display->panel->cur_mode->timing.refresh_rate;
 		DSI_LOG("commit FOD spot to panel --- \n");
-		//udelay(period_ms);
-		zf8_drm_notify(ASUS_NOTIFY_SPOT_READY, 1);
+
+		if (g_display->panel->fod_in_doze) {
+				rc = dsi_zf8_tx_cmd_set(g_display->panel, DSI_CMD_SET_AOD_OTHER);		
+#if defined ASUS_SAKE_PROJECT
+				if(1 == g_lcd_stage_id) {
+					rc = dsi_zf8_tx_cmd_set(g_display->panel, DSI_CMD_SET_FOD_HBM_ON);
+				}else {
+					rc = dsi_zf8_tx_cmd_set(g_display->panel, DSI_CMD_SET_FOD_ER2_HBM_ON);
+				}
+				
+				if (rc) {
+					DSI_LOG("[%s] failed to send DSI_CMD_SET_POST_FOD_HBM_ON cmd, rc=%d\n",
+					  	 g_display->panel->name, rc);
+				} else {
+					g_display->panel->fod_in_doze = false;
+					zf8_drm_notify(ASUS_NOTIFY_SPOT_READY, 1);
+				}
+#else
+			zf8_drm_notify(ASUS_NOTIFY_SPOT_READY, 1);
+#endif
+		} else {
+			zf8_drm_notify(ASUS_NOTIFY_SPOT_READY, 1);
+		}
 	} else if (type == 1) {
 		zf8_drm_notify(ASUS_NOTIFY_SPOT_READY, 0);
 		DSI_LOG("removed fod spot \n");

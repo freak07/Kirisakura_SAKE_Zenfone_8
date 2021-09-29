@@ -1802,15 +1802,21 @@ static const struct file_operations ois_af_state_proc_fops = {
 	.write		= ois_af_state_write,
 };
 
+#if defined ASUS_SAKE_PROJECT
+void update_OIS_gyro_gain_XY(void);
+#endif
+
 void track_mode_change_from_i2c_write(struct cam_sensor_i2c_reg_setting * setting)
 {
 	uint32_t data[2];
 	bool     ret[2];
+
 #if defined ASUS_ZS673KS_PROJECT || defined ASUS_PICASSO_PROJECT || defined ASUS_SAKE_PROJECT || defined ASUS_VODKA_PROJECT	
 	uint16_t index[2];
 	ret[0] = i2c_setting_contain_address(setting,0xF013, &data[0], &index[0]);//movie/still mode
 	ret[1] = i2c_setting_contain_address(setting,0xF012, &data[1], &index[1]);//ois on/off
 #endif
+
 	if(ret[1] && data[1] == 0x0)
 	{
 		g_ois_mode = 0;
@@ -1833,6 +1839,10 @@ void track_mode_change_from_i2c_write(struct cam_sensor_i2c_reg_setting * settin
 			CAM_INFO(CAM_OIS, "ois mode set val 0x%x not valid",data[0]);
 		}
 	}
+#if defined ASUS_SAKE_PROJECT
+			update_OIS_gyro_gain_XY();
+#endif
+
 }
 static int ois_get_lens_info_read(struct seq_file *buf, void *v)
 {
@@ -2330,6 +2340,88 @@ static void set_ssc_gain_if_need(uint32_t ois_index,uint32_t af_state,int32_t di
 }
 #endif
 
+#if defined ASUS_SAKE_PROJECT
+extern bool checkForNewBoard(uint8_t );
+#define Sake_IMX686_Camera_ID 0x76
+#define OIS_GYRO_GAIN_RECAL ""FACTORYDIR"ois_gyro_gain_cali.txt"
+#define OIS_STATUS_INITIALIZE 255
+void update_OIS_gyro_gain_XY() {
+	static uint8_t updated_OIS_gyro_gain=OIS_STATUS_INITIALIZE;
+	if ( updated_OIS_gyro_gain==OIS_STATUS_INITIALIZE && g_ois_mode!=OIS_STATUS_INITIALIZE) {
+		pr_info("OIS recal gyro gain apply patch\n");
+		} else {
+		pr_info("OIS recal gyro gain already patched, skip\n");
+		if (g_ois_mode==OIS_STATUS_INITIALIZE)  updated_OIS_gyro_gain=OIS_STATUS_INITIALIZE;
+		return;
+	}
+	updated_OIS_gyro_gain=g_ois_mode;
+	if (checkForNewBoard(Sake_IMX686_Camera_ID)) {
+		pr_err("New/NO board detected, will not update OIS gyro gain");
+	} else {
+		uint64_t size;
+		struct cam_ois_ctrl_t *oisCtrl = NULL;
+		uint32_t ois_gryo_cal_data[] = {0, 0};
+		const uint16_t ois_gryo_cal_reg[]= { 0x8890,0x88C4 }; 
+		int32_t ois_index = get_ois_ctrl(&oisCtrl);
+
+		if(oisCtrl == NULL) return;
+		// read gyro gain from vendor/factory/ois_gyro_gain_cali.txt
+		//GyroGainX:0x1d500000
+		//GyroGainY:0xdad00000
+		if(get_file_size(OIS_GYRO_GAIN_RECAL,&size) == 0 && size > 0 && size<255)
+		{
+			uint8_t* pText = kzalloc(sizeof(uint8_t)*size,GFP_KERNEL);
+			uint8_t parseCount=0;
+
+			if (!pText)
+			{
+				pr_err("no memory!\n");
+				return;
+			}
+			read_file_into_buffer(OIS_GYRO_GAIN_RECAL,pText,size);//Text File
+			parseCount=sscanf(pText, "\
+GyroGainX:0x%X\n\
+GyroGainY:0x%X\n\
+", &ois_gryo_cal_data[0],&ois_gryo_cal_data[1]);
+			pr_info("OIS recal gyro gain read from %s:(x=0x%X, y=0x%X)\n", OIS_GYRO_GAIN_RECAL, ois_gryo_cal_data[0], ois_gryo_cal_data[1]);
+			kfree(pText);
+
+			if (parseCount!=2) {
+				pr_err("OIS recal gyro gain parse %s fail, parse count=%d\n", OIS_GYRO_GAIN_RECAL, parseCount);
+				return;				
+			}
+		}
+		else
+		{
+			pr_err("OIS recal gyro gain open %s fail, size=%d\n", OIS_GYRO_GAIN_RECAL, size);
+			return;
+		}
+		
+		if(g_ois_power_state[ois_index])
+		{
+			int i=0;
+			uint32_t ois_gryo_cal_r_data_x = 0;
+			uint32_t ois_gryo_cal_r_data_y = 0;
+			
+			ZF7_WaitProcess(oisCtrl,0,__func__);
+			oisCtrl->io_master_info.cci_client->sid = g_slave_id;
+
+			onsemi_read_dword(oisCtrl, ois_gryo_cal_reg[0], &ois_gryo_cal_r_data_x);
+			onsemi_read_dword(oisCtrl, ois_gryo_cal_reg[1], &ois_gryo_cal_r_data_y);			
+			pr_info("OIS recal gyro gain[%d] XX  x,y before=0x%X, 0x%X\n", ois_index, ois_gryo_cal_r_data_x, ois_gryo_cal_r_data_y);
+
+			for (i=0;i<sizeof(ois_gryo_cal_data)/sizeof(ois_gryo_cal_data[0]);i++) 
+				onsemi_write_dword(oisCtrl, ois_gryo_cal_reg[i], ois_gryo_cal_data[i]);
+//Enable for double-confirm:
+//			onsemi_read_dword(oisCtrl, ois_gryo_cal_reg[0], &ois_gryo_cal_r_data_x);
+//			onsemi_read_dword(oisCtrl, ois_gryo_cal_reg[1], &ois_gryo_cal_r_data_y);			
+//			pr_err("OIS recal gyro gain[%d] XX  x,y after=0x%X, 0x%X\n", ois_index, ois_gryo_cal_r_data_x, ois_gryo_cal_r_data_y);
+		}
+		else
+			pr_err("OIS recal gyro OIS[%d] POWER DOWN\n", ois_index);
+	}
+}
+#endif
 void asus_ois_init_config(uint32_t ois_index)
 {
 	pr_info("ois_index = %d\n",ois_index);

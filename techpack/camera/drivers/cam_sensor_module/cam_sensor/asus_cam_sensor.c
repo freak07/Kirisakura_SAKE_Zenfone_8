@@ -1260,6 +1260,15 @@ static void compareCameraSN (uint8_t moduleGroupIndex)
 
 }
 
+bool checkForNewBoard(uint8_t  eeprom_module_Id) {
+uint8_t i;
+for(i=0;i<EEPROM_GROUP_SIZE;i++) {
+	if(g_eeprom_group[i].eeprom_module_Id==eeprom_module_Id) {
+		return g_eeprom_group[i].module_changed;
+	}
+}
+	return 1;
+}
 void getAddrMapByMoudleID(uint8_t module_Id, uint8_t moduleGroupIndex, eeprom_addrMap *map) {
 
 	// 1. AF (infinity & macro)

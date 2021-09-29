@@ -42,6 +42,7 @@ void zf8_crtc_display_commit(struct drm_crtc *crtc);
 bool zf8_atomic_get_spot_status(int type);
 void zf8_atomic_set_spot_status(int type);
 void dsi_zf8_sake_power_on_delay(void);
+void dsi_zf8_set_dimming_smooth(struct dsi_panel *panel, u32 backlight);
 #else
 
 static inline u32 dsi_zf8_support_cmd_read_flags(u32 flags) { return 0; }
@@ -58,6 +59,7 @@ static inline void zf8_crtc_display_commit(struct drm_crtc *crtc) {}
 static inline bool zf8_atomic_get_spot_status(int type) { return false; }
 static inline void zf8_atomic_set_spot_status(int type) {}
 static inline void dsi_zf8_sake_power_on_delay(void) {}
+static inline void dsi_zf8_set_dimming_smooth(struct dsi_panel *panel, u32 backlight) {}
 #endif
 
 #endif /* _DSI_ZF8_H_ */
