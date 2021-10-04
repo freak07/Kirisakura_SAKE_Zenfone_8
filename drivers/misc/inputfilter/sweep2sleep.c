@@ -577,7 +577,11 @@ static int frozen_rand = 0;
 static bool freeze_touch_area_detected = false;
 static unsigned long last_outside_area_touch_time = 0;
 
-bool s2s_freeze_coords(int *x, int *y, int r_x, int r_y) {
+bool s2s_freeze_coords(int *x, int *y, int r_x2, int r_y2) {
+#if 1
+	int r_x = r_x2/16;
+	int r_y = r_y2/16;
+#endif
 	real_x = r_x;
 	real_y = r_y;
 	if (get_s2s_switch() && get_s2s_filter_mode() && filter_coords_status) {
@@ -781,7 +785,7 @@ static bool __s2s_input_filter(struct input_handle *handle, unsigned int type,
 		if (get_s2s_switch() && get_s2s_filter_mode() && (filter_coords_status||freeze_touch_area_detected)) {
 			touch_x = real_x;
 		} else {
-			touch_x = value;
+			touch_x = value / 16; //
 		}
 		touch_x_called = true;
 	}
@@ -790,7 +794,7 @@ static bool __s2s_input_filter(struct input_handle *handle, unsigned int type,
 		if (get_s2s_switch() && get_s2s_filter_mode() && (filter_coords_status||freeze_touch_area_detected)) {
 			touch_y = real_y;
 		} else {
-			touch_y = value;
+			touch_y = value / 16; //
 		}
 		touch_y_called = true;
 	}
@@ -801,7 +805,7 @@ static bool __s2s_input_filter(struct input_handle *handle, unsigned int type,
 		touch_x_called = false;
 		touch_y_called = false;
 #ifdef CONFIG_DEBUG_S2S
-		pr_info("%s touch x/y gathered.\n",__func__);
+		pr_info("%s touch x/y gathered. x %d y %d - limit: %d above %d \n",__func__, touch_x,touch_y, s2s_y_limit, s2s_y_above);
 #endif
 		if (
 			// if ... first touch was not registered (filter_coords_status = false) && register only in corner area, and X is outside cordner area,
