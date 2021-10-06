@@ -3716,20 +3716,20 @@ static void dwc3_ext_event_notify(struct dwc3_msm *mdwc)
 	/* Flush processing any pending events before handling new ones */
 	flush_delayed_work(&mdwc->sm_work);
 
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
 	dev_info(mdwc->dev, "[USB] %s enter: mdwc->inputs:%x hs_phy_flags:%x\n", __func__,
 				mdwc->inputs, mdwc->hs_phy->flags);
 #endif
 	dbg_log_string("enter: mdwc->inputs:%x hs_phy_flags:%x\n",
 				mdwc->inputs, mdwc->hs_phy->flags);
 	if (mdwc->id_state == DWC3_ID_FLOAT) {
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
 		dev_info(mdwc->dev, "[USB] XCVR: ID set\n");
 #endif
 		dbg_log_string("XCVR: ID set\n");
 		set_bit(ID, &mdwc->inputs);
 	} else {
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
 		dev_info(mdwc->dev, "[USB] XCVR: ID clear\n");
 #endif
 		dbg_log_string("XCVR: ID clear\n");
@@ -3738,20 +3738,20 @@ static void dwc3_ext_event_notify(struct dwc3_msm *mdwc)
 
 	if (mdwc->vbus_active && !mdwc->in_restart) {
 		if (mdwc->hs_phy->flags & EUD_SPOOF_DISCONNECT) {
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
 			dev_info(mdwc->dev, "[USB] XCVR: BSV clear\n");
 #endif
 			dbg_log_string("XCVR: BSV clear\n");
 			clear_bit(B_SESS_VLD, &mdwc->inputs);
 		} else {
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
 			dev_info(mdwc->dev, "[USB] XCVR: BSV set\n");
 #endif
 			dbg_log_string("XCVR: BSV set\n");
 			set_bit(B_SESS_VLD, &mdwc->inputs);
 		}
 	} else {
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
 		dev_info(mdwc->dev, "[USB] XCVR: BSV clear\n");
 #endif
 		dbg_log_string("XCVR: BSV clear\n");
@@ -3759,13 +3759,13 @@ static void dwc3_ext_event_notify(struct dwc3_msm *mdwc)
 	}
 
 	if (mdwc->suspend) {
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
 		dev_info(mdwc->dev, "[USB] XCVR: SUSP set\n");
 #endif
 		dbg_log_string("XCVR: SUSP set\n");
 		set_bit(B_SUSPEND, &mdwc->inputs);
 	} else {
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
 		dev_info(mdwc->dev, "[USB] XCVR: SUSP clear\n");
 #endif
 		dbg_log_string("XCVR: SUSP clear\n");
@@ -3795,13 +3795,13 @@ static void dwc3_ext_event_notify(struct dwc3_msm *mdwc)
 		mdwc->check_eud_state, mdwc->eud_active, mdwc->hs_phy->flags);
 #if defined ASUS_ZS673KS_PROJECT
 	if (mdwc->vbus_active == true && mdwc->id_state == DWC3_ID_FLOAT) {
-		dev_info(mdwc->dev, "[USB] %s, device mode\n", __func__);
+		dev_debug(mdwc->dev, "[USB] %s, device mode\n", __func__);
 		if (!strcmp("a800000.ssusb", dev_name(mdwc->dev))) {
 			dev_info(mdwc->dev, "[USB] %s, usb2 redriver enable\n", __func__);
 			redriver_enable(1);
 		}
 	} else if (mdwc->vbus_active == false && mdwc->id_state == DWC3_ID_GROUND) {
-		dev_info(mdwc->dev, "[USB] %s, host mode\n", __func__);
+		dev_debug(mdwc->dev, "[USB] %s, host mode\n", __func__);
 		if (!strcmp("a800000.ssusb", dev_name(mdwc->dev))) {
 			if (current_hub_mode != 0) {
 				dev_info(mdwc->dev, "[USB] %s, usb2 not in hub mode, usb2 redriver enable\n", __func__);
@@ -3809,7 +3809,7 @@ static void dwc3_ext_event_notify(struct dwc3_msm *mdwc)
 			}
 		}
 	} else {
-		dev_info(mdwc->dev, "[USB] %s, none mode\n", __func__);
+		dev_debug(mdwc->dev, "[USB] %s, none mode\n", __func__);
 		if (!strcmp("a800000.ssusb", dev_name(mdwc->dev))) {
 			dev_info(mdwc->dev, "[USB] %s, usb2 redriver disable\n", __func__);
 			redriver_enable(0);
@@ -3825,8 +3825,8 @@ static void dwc3_ext_event_notify(struct dwc3_msm *mdwc)
 		mdwc->hs_phy->flags &= ~PHY_SUS_OVERRIDE;
 		return;
 	}
-#ifdef CONFIG_MACH_ASUS
-	dev_info(mdwc->dev, "[USB] %s exit: mdwc->inputs:%x\n", __func__, mdwc->inputs);
+#ifdef CONFIG_ASUS_POWER_DEBUG
+	dev_debug(mdwc->dev, "[USB] %s exit: mdwc->inputs:%x\n", __func__, mdwc->inputs);
 #endif
 	dbg_log_string("exit: mdwc->inputs:%x\n", mdwc->inputs);
 	queue_delayed_work(mdwc->sm_usb_wq, &mdwc->sm_work, 0);
@@ -3843,7 +3843,7 @@ static void dwc3_resume_work(struct work_struct *w)
 	char *eud_str;
 	int ret = 0;
 
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
 	dev_info(mdwc->dev, "[USB] %s: dwc3 resume work\n", __func__);
 #else
 	dev_dbg(mdwc->dev, "%s: dwc3 resume work\n", __func__);
@@ -3868,7 +3868,7 @@ static void dwc3_resume_work(struct work_struct *w)
 	}
 
 	dwc->maximum_speed = dwc->max_hw_supp_speed;
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
 	dev_info(mdwc->dev, "[USB] %s: max_hw_supp_speed=%d\n", __func__, dwc->maximum_speed);
 #endif
 
@@ -3877,7 +3877,7 @@ static void dwc3_resume_work(struct work_struct *w)
 				EXTCON_PROP_USB_SS, &val);
 
 #ifdef CONFIG_MACH_ASUS
-		dev_info(mdwc->dev, "[USB] %s: ret=%d, val.intval=%d\n", __func__, ret, val.intval);
+		dev_dbg(mdwc->dev, "[USB] %s: ret=%d, val.intval=%d\n", __func__, ret, val.intval);
 		if (!ret && val.intval == 0) {
 			dev_info(mdwc->dev, "[USB] %s: maximum_speed: USB_SPEED_HIGH\n", __func__);
 			dwc->maximum_speed = USB_SPEED_HIGH;
@@ -3892,7 +3892,7 @@ static void dwc3_resume_work(struct work_struct *w)
 		dwc3_set_ssphy_orientation_flag(mdwc);
 
 skip_update:
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
 	dev_info(mdwc->dev, "[USB] %s: override_usb_speed=%d, max_speed=%d\n", __func__, mdwc->override_usb_speed, dwc->maximum_speed);
 #endif
 	dbg_log_string("max_speed:%d hw_supp_speed:%d override_speed:%d",

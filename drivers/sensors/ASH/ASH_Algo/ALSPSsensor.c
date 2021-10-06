@@ -3276,7 +3276,7 @@ static void mALSPS_algo_suspend(void)
 		return;
 	}
 	
-	log("Driver SUSPEND +++\n");
+//	log("Driver SUSPEND +++\n");
 #ifdef CONFIG_TMD2755_FLAG
 	tmd2755_suspend();
 #endif
@@ -3298,7 +3298,7 @@ mutex_lock(&g_alsps_lock);
 	cancel_delayed_work(&proximity_polling_adc_work);
 	g_psensor_polling_cancel_flag = true;
 
-	log("Driver SUSPEND ---\n");
+//	log("Driver SUSPEND ---\n");
 
 mutex_unlock(&g_alsps_lock);
 
@@ -3313,7 +3313,7 @@ static void mALSPS_algo_resume(void)
 		return;
 	}
 
-	log("Driver RESUME +++\n");
+//	log("Driver RESUME +++\n");
 
 	g_alsps_power_status = ALSPS_RESUME;
 #ifdef CONFIG_TMD2755_FLAG
@@ -3347,7 +3347,7 @@ mutex_unlock(&g_alsps_lock);
 		}
 	}
 	
-	log("Driver RESUME ---\n");
+//	log("Driver RESUME ---\n");
 	
 	return;
 }

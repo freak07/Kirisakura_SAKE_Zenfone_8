@@ -656,7 +656,7 @@ static int aw8697_haptic_stop_delay(struct aw8697 *aw8697)
 
 static int aw8697_haptic_stop(struct aw8697 *aw8697)
 {
-	pr_info("%s enter\n", __func__);
+//	pr_debug("%s enter\n", __func__);
 
 	aw8697_haptic_play_go(aw8697, false);
 	aw8697_haptic_stop_delay(aw8697);

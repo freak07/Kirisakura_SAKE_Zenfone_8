@@ -1751,7 +1751,7 @@ void tmd2755_suspend(void){
 	struct tmd2755_chip *chip = g_tmd2755_chip;
 	AMS_MUTEX_LOCK(&chip->lock);
 	chip->in_suspend = 1;
-	log("in_suspend = %d", chip->in_suspend);
+//	log("in_suspend = %d", chip->in_suspend);
 	if(chip->prox_enable){
 		enable_irq_wake(ALSPS_SENSOR_IRQ);
 		dbg("set irq wake enable");
