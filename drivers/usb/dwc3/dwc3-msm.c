@@ -3481,7 +3481,7 @@ static int dwc3_msm_suspend(struct dwc3_msm *mdwc, bool force_power_collapse,
 	if (mdwc->lpm_flags & MDWC3_USE_PWR_EVENT_IRQ_FOR_WAKEUP)
 		enable_irq(mdwc->wakeup_irq[PWR_EVNT_IRQ].irq);
 
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
 	dev_info(mdwc->dev, "[USB] DWC3 in low power mode\n");
 #else
 	dev_info(mdwc->dev, "DWC3 in low power mode\n");
@@ -3505,7 +3505,7 @@ static int dwc3_msm_resume(struct dwc3_msm *mdwc)
 	struct dwc3 *dwc = platform_get_drvdata(mdwc->dwc3);
 
 	struct usb_irq *uirq;
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
 	dev_info(mdwc->dev, "[USB] %s\n", __func__);
 #endif
 	dev_dbg(mdwc->dev, "%s: exiting lpm\n", __func__);
@@ -3518,7 +3518,7 @@ static int dwc3_msm_resume(struct dwc3_msm *mdwc)
 		set_bit(WAIT_FOR_LPM, &mdwc->inputs);
 
 	mutex_lock(&mdwc->suspend_resume_mutex);
-#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_ASUS_POWER_DEBUG
 	dev_info(mdwc->dev, "[USB] %s usb_speed=%d \n", __func__, dwc->maximum_speed);
 #endif
 	if (!atomic_read(&dwc->in_lpm)) {
@@ -3905,8 +3905,8 @@ skip_update:
 	}
 
 	dbg_event(0xFF, "speed", dwc->maximum_speed);
-#ifdef CONFIG_MACH_ASUS
-	dev_info(mdwc->dev, "[USB] %s: speed=%d\n", __func__, dwc->maximum_speed);
+#ifdef CONFIG_ASUS_POWER_DEBUG
+	dev_debug(mdwc->dev, "[USB] %s: speed=%d\n", __func__, dwc->maximum_speed);
 #endif
 
 	/*
@@ -4920,8 +4920,9 @@ void battery_role_switch(bool on)
 
 	if (!mdwc)
 		pr_err("%s dwc3 prode not completed\n");
-
-	dev_info(mdwc->dev, "[USB] %s %d\n", __func__, on);
+#ifdef CONFIG_ASUS_POWER_DEBUG
+	dev_debug(mdwc->dev, "[USB] %s %d\n", __func__, on);
+#endif
 	if (on) {
 		mdwc->vbus_active = true;
 		mdwc->id_state = DWC3_ID_FLOAT;
@@ -6255,7 +6256,9 @@ static int dwc3_msm_gadget_vbus_draw(struct dwc3_msm *mdwc, unsigned int mA)
 	pval.intval = 1000 * mA;
 
 set_prop:
-	dev_info(mdwc->dev, "Avail curr from USB = %u\n", mA);
+#ifdef CONFIG_ASUS_POWER_DEBUG
+	dev_debug(mdwc->dev, "Avail curr from USB = %u\n", mA);
+#endif
 	ret = power_supply_set_property(mdwc->usb_psy,
 				POWER_SUPPLY_PROP_INPUT_CURRENT_LIMIT, &pval);
 	if (ret) {
@@ -6292,8 +6295,8 @@ static void dwc3_otg_sm_work(struct work_struct *w)
 	}
 
 	state = dwc3_drd_state_string(mdwc->drd_state);
-#ifdef CONFIG_MACH_ASUS
-	dev_info(mdwc->dev, "[USB] %s state\n", state);
+#ifdef CONFIG_ASUS_POWER_DEBUG
+	dev_debug(mdwc->dev, "[USB] %s state\n", state);
 #else
 	dev_dbg(mdwc->dev, "%s state\n", state);
 #endif

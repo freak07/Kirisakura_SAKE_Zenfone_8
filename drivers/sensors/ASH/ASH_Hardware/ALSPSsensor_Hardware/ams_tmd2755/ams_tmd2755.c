@@ -1764,7 +1764,7 @@ void tmd2755_resume(void){
 	struct tmd2755_chip *chip = g_tmd2755_chip;
 	AMS_MUTEX_LOCK(&chip->lock);
 	chip->in_suspend = 0;
-	log("in_suspend = %d", chip->in_suspend);
+	//log("in_suspend = %d", chip->in_suspend);
 	AMS_MUTEX_UNLOCK(&chip->lock);
 }
 EXPORT_SYMBOL(tmd2755_resume);
