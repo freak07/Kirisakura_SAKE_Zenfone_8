@@ -3156,6 +3156,9 @@
 		qcom,iommu-dma = "fastmap";
 		dma-coherent;
 
+		rpm-level = <3>;
+		spm-level = <3>;
+
 		status = "disabled";
 		qos0 {
 			mask = <0xf0>;
