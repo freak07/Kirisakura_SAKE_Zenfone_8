@@ -1345,27 +1345,6 @@ static int qpnp_pon_input_dispatch(struct qpnp_pon *pon, u32 pon_type)
 		pon_rt_bit = is_pon_gen3(pon)
 				? QPNP_PON_GEN3_KPDPWR_N_SET
 				: QPNP_PON_KPDPWR_N_SET;
-#ifdef CONFIG_MACH_ASUS
-	/* for phone hang debug */
-		pon_for_powerkey = pon;
-			if (is_holding_power_key()) {
-				press_time = jiffies;
-			/*	if ((g_ASUS_hwID < ZS660KL_PR1) ||
-					(g_ASUS_hwID >= ZS660KL_CN_EVB && g_ASUS_hwID <= ZS660KL_CN_ER2)) {
-					schedule_work(&__wait_for_slowlog_work);
-					schedule_work(&__wait_for_power_key_6s_work);
-				}else*/
-					mod_timer(&pwr_press_timer, jiffies + msecs_to_jiffies(3000));
-				if(b_press == 3) {
-					schedule_work(&__dump_log_work);
-				}
-			} else {
-				power_key_6s_running = 0;
-				power_key_3s_running = 0;
-				del_timer(&pwr_press_timer);
-				press_time = 0xFFFFFFFF;
-			}
-#endif
 		break;
 	case PON_RESIN:
 		pon_rt_bit = is_pon_gen3(pon)
@@ -1385,39 +1364,6 @@ static int qpnp_pon_input_dispatch(struct qpnp_pon *pon, u32 pon_type)
 	pr_debug("PMIC input: code=%d, status=0x%02X\n", cfg->key_code,
 		pon_rt_sts);
 	key_status = pon_rt_sts & pon_rt_bit;
-
-#ifdef CONFIG_MACH_ASUS
-	printk("[keypad][qpnp-power-on.c] keycode=%d, state=%s\n", cfg->key_code, key_status?"press":"release");//ASUS BSP +++
-	if(cfg->key_code == 114) { //volume down
-		if (vol_up_press) {
-			if (key_status > 0)
-				vol_down_press_count++;
-			pr_info("[ABSP][Debug] vol_down_press_count = %d\r\n",vol_down_press_count);
-			if (vol_down_press_count == 10) {
-			#ifdef ASUS_USER_BUILD
-				printk("[ABSP][keypad][qpnp-power-on.c] asus_dump_type is 0x%02x\n", asus_dump_type);
-				if( asus_dump_type == QCOM_DOWNLOAD_FULLDUMP) {
-					panic("special panic/zf8 in user build...\r\n");
-				} else {
-					printk("[ABSP][keypad][qpnp-power-on.c] not full ramdump and skip user build panic\n");
-				}
-			#else
-				panic("special panic/zf8 in debug build...\r\n");
-			#endif
-			}
-		}
-	}
-
-		if (cfg->key_code == 114) {
-			if (key_status) 
-				mod_timer(&voldown_press_timer, jiffies + msecs_to_jiffies(3000));
-			else {
-				voldown_key_6s_running = 0;
-				voldown_key_3s_running = 0;
-				del_timer(&voldown_press_timer);
-		}
-	}
-#endif
 
 	if (pon->kpdpwr_dbc_enable && cfg->pon_type == PON_KPDPWR) {
 		if (!key_status)
