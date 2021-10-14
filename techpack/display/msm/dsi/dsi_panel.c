@@ -646,6 +646,9 @@ static int dsi_panel_wled_register(struct dsi_panel *panel,
 	return 0;
 }
 
+static int bl_min_stock = 4;
+module_param(bl_min_stock, int, 0644);
+
 #ifdef CONFIG_UCI
 
 struct dsi_panel *g_panel = NULL;
@@ -694,7 +697,7 @@ static int dsi_panel_update_backlight(struct dsi_panel *panel,
 	last_brightness= bl_lvl;
 	first_brightness_set = true;
 	if (g_panel == NULL) g_panel = panel;
-	if ((backlight_dimmer) && (bl_lvl == 4)) {
+	if ((backlight_dimmer) && (bl_lvl == bl_min_stock)) {
 		bl_lvl = backlight_min;
 	}
 #endif
