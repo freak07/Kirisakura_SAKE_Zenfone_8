@@ -344,8 +344,8 @@ static void display_exit_idle_mode()
 		return;
 	}
 
-	if (!g_display->panel->has_enter_aod_before) {
-		DSI_LOG("has_enter_aod_before return display_exit_idle_mode!\n");
+	if (!g_display->panel->has_enter_aod_before && !g_display->panel->allow_panel_fod_hbm) {
+		DSI_LOG("Not has_enter_aod_before return display_exit_idle_mode!\n");
 		return;
 	}
 	
@@ -1244,14 +1244,19 @@ void zf8_crtc_display_commit(struct drm_crtc *crtc)
 {
 	if (g_display->panel->allow_fod_hbm_process && !strcmp(crtc->name, "crtc-0")) {
 		DSI_LOG("FOD HBM setting +++\n");
-		display_set_fod_hbm();
-
 		if (g_display->panel->allow_panel_fod_hbm == 1) {
+			display_set_fod_hbm();
 			// need delay time, waiting for fine tune
 			zf8_drm_notify(ASUS_NOTIFY_GHBM_ON_READY, 1);
 			g_display->panel->panel_fod_hbm_mode = 1;
 			DSI_LOG("panel_fod_hbm_mode set to 1");
 		} else if (g_display->panel->allow_panel_fod_hbm == 0) {
+			if (g_display->panel->cur_mode->timing.refresh_rate == 60) {
+				// need delay time, waiting for fine tune
+				DSI_LOG("Delay 10ms for 60 fps");
+				udelay(10000);
+			}
+			display_set_fod_hbm();
 			// need delay time, waiting for fine tune
 			udelay(hbm_mode_delay_num);
 			zf8_drm_notify(ASUS_NOTIFY_GHBM_ON_READY, 0);

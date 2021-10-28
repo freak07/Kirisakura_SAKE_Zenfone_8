@@ -580,8 +580,10 @@ static void ucsi_handle_connector_change(struct work_struct *work)
 
 		if (con->status.flags & UCSI_CONSTAT_CONNECTED)
 			ucsi_register_partner(con);
-		else
+		else {
 			ucsi_unregister_partner(con);
+			typec_set_data_role(con->port, TYPEC_DEVICE);
+		}
 
 		ret = usb_role_switch_set_role(ucsi->usb_role_sw, u_role);
 		if (ret)
