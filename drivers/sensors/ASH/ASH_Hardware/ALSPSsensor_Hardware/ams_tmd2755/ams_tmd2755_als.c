@@ -37,7 +37,6 @@
 #include "ams_tmd2755.h"
 #include "ams_tmd2755_als.h"
 #include "ams_i2c.h"
-#include <linux/input/ASH.h>
 
 /******************************/
 /* Debug and Log System */
@@ -288,13 +287,13 @@ static int tmd2755_update_als_threshold(struct tmd2755_chip *chip, enum tmd2755_
 	*((__le16 *) &chip->shadow[TMD2755_REG_AILTL]) = cpu_to_le16(from);
 	*((__le16 *) &chip->shadow[TMD2755_REG_AIHTL]) = cpu_to_le16(to);
 
-	if(from != last_from || to != last_to || true == chip->als_info.first_event_log){
+	if(from != last_from || to != last_to || true == g_tmd2755_status_param.log_first_evt){
 		last_from = from;
 		last_to = to;
 		dev_dbg(&chip->client->dev, "%*.*s():%*d --> Low Thresh: %d  High Thresh: : %d  Current Ch0: %d  deltaP: %d  Sat Level: %d\n",
 				MIN_KERNEL_LOG_LEN, MAX_KERNEL_LOG_LEN, __func__, LINE_NUM_KERNEL_LOG_LEN, __LINE__,
 				from, to, cur, deltaP, saturation);
-		chip->als_info.first_event_log = false;
+		g_tmd2755_status_param.log_first_evt = false;
 	}
 
 	ret = ams_i2c_reg_blk_write(chip->client, TMD2755_REG_AILTL, &chip->shadow[TMD2755_REG_AILTL],
@@ -372,7 +371,7 @@ int tmd2755_get_lux(struct tmd2755_chip *chip)
 	}
 
 	if(ch0 != ch0_last){
-		if((ch0_last >= (ch0+ch_data_limit)) || (ch0_last <= (ch0-ch_data_limit)) || chip->als_info.first_event_log == true){
+		if((ch0_last >= (ch0+ch_data_limit)) || (ch0_last <= (ch0-ch_data_limit)) || g_tmd2755_status_param.log_first_evt == true){
 			log("lux=%ld, ch0=%u, ch1=%u, ch0_last=%ld, (ch1*10000/ch0)=%ld, sf=%lld", 
 			lux, ch0, ch1, ch0_last, ch_temp, sf);
 		}
@@ -442,7 +441,7 @@ int tmd2755_configure_als_mode(struct tmd2755_chip *chip, u8 state)
 	u8 *sh = chip->shadow;
 
 	if (state) { /* Enable ALS */
-		chip->als_info.first_event_log = true;
+		g_tmd2755_status_param.log_first_evt = true;
 		dev_info(&chip->client->dev, "%*.*s():%*d --> Enabling and Configuring ALS\n",
 			MIN_KERNEL_LOG_LEN, MAX_KERNEL_LOG_LEN, __func__, LINE_NUM_KERNEL_LOG_LEN, __LINE__);
 
@@ -526,7 +525,7 @@ void tmd2755_report_als(struct tmd2755_chip *chip)
 		lux = chip->als_info.lux;
 		lux = light_get_lux(chip->als_info.lux);
 		lsensor_report_lux(lux);
-		if(chip->als_info.first_event_log == true){
+		if(g_tmd2755_status_param.log_first_evt == true){
 			log("ALS lux First= %d (orig lux=%d)", lux, chip->als_info.lux);
 		}else if(lux != last_lux){
 			log("ALS lux = %d (orig lux=%d), last_lux=%d", lux, chip->als_info.lux, last_lux);

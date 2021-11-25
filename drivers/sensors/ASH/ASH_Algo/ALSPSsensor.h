@@ -82,7 +82,11 @@
 #define PROXIMITY_THDL_ER_DEFAULT    (134)
 #define PROXIMITY_THDH_ER_DEFAULT    (249)
 #define PROXIMITY_POCKET_ER_DEFAULT       (4073)
+#ifdef CONFIG_TMD2755_FLAG
+#define PROXIMITY_POCKET_DEFAULT       (3800)
+#else
 #define PROXIMITY_POCKET_DEFAULT       (4073)
+#endif //CONFIG_TMD2755_FLAG
 #define PROXIMITY_NOISE_PERIOD       (10)
 #define LIGHT_ER_CALIBRATION_DEFAULT (1526)
 /* ASUS BSP +++ Clay: shift lux to mitigate psensor noise when psensor on and lux < offset */

@@ -69,7 +69,7 @@ static bool g_alsps_probe_status = false;
 
 #ifdef CONFIG_TMD2755_FLAG
 static struct wakeup_source			*g_alsps_oil_wake;
-extern bool g_tmd2755_probe_status;
+tmd2755_status_param g_tmd2755_status_param;
 extern void tmd2755_suspend(void);
 extern void tmd2755_resume(void);
 extern enum DEVICE_HWID g_ASUS_hwID;
@@ -1130,12 +1130,21 @@ mutex_lock(&g_alsps_lock);
 		/* Light Sensor Report the first real event*/
 		adc = g_ALSPS_hw_client->mlsensor_hw->light_hw_get_adc();
 #ifdef CONFIG_TMD2755_FLAG
-		adc = g_ALSPS_hw_client->mlsensor_hw->light_hw_get_lux();
+		/* need polling thread to cover first event only when behavior is 0 lux */
+		if (adc > 0 && g_tmd2755_status_param.log_first_evt == true){
+			cancel_delayed_work(&light_polling_lux_work);
+			queue_delayed_work(ALSPS_delay_workqueue, &light_polling_lux_work, msecs_to_jiffies(400));
+			log("skip polling behavior since first event can be reported by chip ist");
+mutex_unlock(&g_alsps_lock);
+			return;
+		}
 #endif
 		if ((0 == adc) && (g_als_data->g_als_retry_count < limit_count)) {
 			g_als_data->g_als_retry_count++;
 			if(g_als_data->g_als_retry_count == limit_count){
-				log("[Polling1] Light Sensor retry for get adc\n");
+				lux = light_get_lux(adc) * g_als_data->dynamic_sensitive;
+				lsensor_report_lux(lux);
+				log("[Polling1] Light Sensor retry for get adc, report lux=%d\n", lux);
 			}
 			log_count = limit_count;
 		}else if (adc < 0){
@@ -1166,6 +1175,7 @@ mutex_lock(&g_alsps_lock);
 				}
 				g_als_last_lux = lux;
 			}
+			g_als_data->g_als_retry_count = limit_count;
 		}
 		/* dynamic sensitive case */
 		switch(g_als_data->dynamic_IT){
@@ -1175,7 +1185,11 @@ mutex_lock(&g_alsps_lock);
 				break;
 			case CS_IT_50MS:
 				limit_count = 5;
-				polling_time = 400;
+				if(g_als_data->g_als_retry_count >= limit_count){
+					polling_time = 400;
+				}else{
+					polling_time = 50;
+				}
 				break;
 			case CS_IT_100MS:
 				limit_count = 10;
@@ -1734,7 +1748,7 @@ extern bool g_Psensor_load_cal_status;
 static int mproximity_store_switch_onoff(bool bOn)
 {
 #ifdef CONFIG_TMD2755_FLAG
-	if(false == g_tmd2755_probe_status){
+	if(false == g_tmd2755_status_param.probe_status){
 		log("tmd2755 probe fail");
 		return 0;
 	}
@@ -1780,7 +1794,7 @@ static bool mlight_show_switch_onoff(void)
 static int mlight_store_switch_onoff(bool bOn)
 {
 #ifdef CONFIG_TMD2755_FLAG
-	if(false == g_tmd2755_probe_status){
+	if(false == g_tmd2755_status_param.probe_status){
 		log("tmd2755 probe fail");
 		return 0;
 	}
@@ -1841,7 +1855,7 @@ static int mlight_show_lux(void)
 
 	
 #ifdef CONFIG_TMD2755_FLAG
-	if(false == g_tmd2755_probe_status){
+	if(false == g_tmd2755_status_param.probe_status){
 		log("tmd2755 probe fail");
 		return -1;
 	}
@@ -2111,8 +2125,7 @@ static int mproximity_store_pocket_en(bool flag){
 #endif
 	g_ps_data->pocket_mode = flag;
 	if(g_ps_data->pocket_mode){
-		g_pocket_mode_threshold = g_pocket_mode_threshold_orig * 
-		PROXIMITY_POCKET_MODE_RATIO / 100;
+		g_pocket_mode_threshold = g_pocket_mode_threshold_orig * PROXIMITY_POCKET_MODE_RATIO / 100;
 	}else{
 		g_pocket_mode_threshold = g_pocket_mode_threshold_orig;
 	}
@@ -2663,7 +2676,7 @@ bool proximityStatus(void)
 	int threshold_high = 0;
 	
 #ifdef CONFIG_TMD2755_FLAG
-		if(false == g_tmd2755_probe_status){
+		if(false == g_tmd2755_status_param.probe_status){
 			log("tmd2755 probe fail");
 			return false;
 		}
@@ -3089,6 +3102,7 @@ static int init_data(void)
 	g_ps_data->g_ps_factory_cal_hi = g_ALSPS_hw_client->mpsensor_hw->proximity_hi_threshold_default;
 	g_ps_data->g_ps_factory_cal_lo = g_ALSPS_hw_client->mpsensor_hw->proximity_low_threshold_default;
 	g_pocket_mode_threshold = PROXIMITY_POCKET_DEFAULT;
+	g_pocket_mode_threshold_orig = PROXIMITY_POCKET_DEFAULT;
 
 	g_ps_data->g_ps_autok_min= g_ALSPS_hw_client->mpsensor_hw->proximity_autok_min;	
 	g_ps_data->g_ps_autok_max = g_ALSPS_hw_client->mpsensor_hw->proximity_autok_max;	
@@ -3365,7 +3379,9 @@ static int __init ALSPS_init(void)
 {
 	int ret = 0;
 	log("Driver INIT +++\n");
-
+#ifdef CONFIG_TMD2755_FLAG
+	g_tmd2755_status_param.probe_status = false;
+#endif
 	/*Record the error message*/
 	g_error_mesg = kzalloc(sizeof(char [ERROR_MESG_SIZE]), GFP_KERNEL);
 	

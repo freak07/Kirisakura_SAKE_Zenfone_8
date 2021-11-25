@@ -60,7 +60,6 @@
 #include "ams_tmd2755_als.h"
 #include "ams_tmd2755_cfg.h"
 #include <linux/gpio.h>
-#include <linux/input/ASH.h>
 #include <linux/regulator/consumer.h>
 
 
@@ -97,7 +96,6 @@ static int ALSPS_SENSOR_IRQ;
 
 struct tmd2755_chip *g_tmd2755_chip;
 static struct i2c_client	*g_i2c_client = NULL;
-bool g_tmd2755_probe_status = false;
 static struct wakeup_source *g_tmd2755_wake_lock;
 static int tmd2755_regulator_enable(void);
 extern void tmd2755_read_prox(struct tmd2755_chip *chip);
@@ -1369,7 +1367,7 @@ static int tmd2755_regulator_disable(void)
 
 static int tmd2755_ALSPS_hw_check_ID(void)
 {
-	if(false == g_tmd2755_probe_status){
+	if(false == g_tmd2755_status_param.probe_status){
 		return -1;
 	}
 	return tmd2755_check_ID(g_tmd2755_chip);;
@@ -1609,7 +1607,7 @@ bypass_als_feature:
 	/* Power up device */
 	ams_i2c_write(chip->client, chip->shadow, TMD2755_REG_ENABLE, 0x01);
 	log("Probe ok.\n");
-	g_tmd2755_probe_status = true;
+	g_tmd2755_status_param.probe_status = true;
 
 	return 0;
 
@@ -1648,7 +1646,7 @@ input_prox_alloc_failed:
  ******************************************************************/
 flush_regs_failed:
 id_failed:
-	g_tmd2755_probe_status = false;
+	g_tmd2755_status_param.probe_status = false;
 	i2c_set_clientdata(client, NULL);
 malloc_failed:
 	if (powered && pdata->platform_power)
@@ -1888,8 +1886,10 @@ static int tmd2755_proximity_hw_set_fac_offset(int offset)
 static int tmd2755_proximity_hw_set_offset_limit(int en, int thresh)
 {
 	if(en == 1){
-		g_tmd2755_chip->params.poffset_limit = 
-		g_tmd2755_chip->params.poffset_fac + thresh;
+		if(thresh < 50)
+			thresh = 50;
+
+		g_tmd2755_chip->params.poffset_limit = g_tmd2755_chip->params.poffset_fac + thresh;
 	}else{
 		g_tmd2755_chip->params.poffset_limit = PROX_OFFSET_MAX;
 	}

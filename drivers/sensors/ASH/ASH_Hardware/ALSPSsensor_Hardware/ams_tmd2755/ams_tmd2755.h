@@ -39,6 +39,7 @@
 #include <linux/workqueue.h>
 #include <linux/wait.h>
 #include <linux/completion.h>
+#include <linux/input/ASH.h>
 
 /***********************************************
  *   Flags for adding/removing code            *
@@ -51,6 +52,7 @@
 extern void psensor_report_abs(int abs);
 extern void lsensor_report_lux(int lux);
 extern struct mutex g_alsps_lock;
+extern tmd2755_status_param g_tmd2755_status_param;
 
 /* Debugging Prox feature - during development */
 #define DEBUG_PROX_FEATURE
@@ -395,7 +397,6 @@ struct tmd2755_als_info {
 	u16 ch0_raw;
 	u16 ch1_raw;
 	u16 lux;
-	bool first_event_log;
 };
 
 struct tmd2755_prox_info {
@@ -459,12 +460,12 @@ struct tmd2755_chip {
 
 
 #define TMD2755_PROXIMITY_INF_DEFAULT     (0)
-#define TMD2755_PROXIMITY_OFFSET_DEFAULT     (0)
-#define TMD2755_PROXIMITY_THDL_DEFAULT    (900)
-#define TMD2755_PROXIMITY_THDH_DEFAULT    (3000)
+#define TMD2755_PROXIMITY_OFFSET_DEFAULT     (76)
+#define TMD2755_PROXIMITY_THDL_DEFAULT    (145)
+#define TMD2755_PROXIMITY_THDH_DEFAULT    (437)
 #define TMD2755_PROXIMITY_AUTOK_MIN       (3)
 #define TMD2755_PROXIMITY_AUTOK_MAX       (300)
-#define TMD2755_LIGHT_CALIBRATION_DEFAULT (1000)
+#define TMD2755_LIGHT_CALIBRATION_DEFAULT (1440)
 #define TMD2755_LIGHT_MAX_THRESHOLD       (65534)
 
 #define TMD2755_WAIT_I2C_DELAY 5

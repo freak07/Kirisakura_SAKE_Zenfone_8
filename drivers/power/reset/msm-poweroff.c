@@ -429,6 +429,8 @@ static void msm_restart_prepare(const char *cmd)
 		// Normal reboot. Clean the printk buffer magic
 		printk_buffer_slot2_addr = (ulong *)PRINTK_BUFFER_SLOT2;
 		*printk_buffer_slot2_addr = 0;
+		printk(KERN_CRIT "msm_restart_prepare Clean asus_global...\n");
+		flush_cache_all();
 	}
 #endif
 	if (force_warm_reboot)

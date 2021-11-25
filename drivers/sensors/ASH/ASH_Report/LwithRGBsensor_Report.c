@@ -122,12 +122,14 @@ EXPORT_SYMBOL(FRGBsensor_report_raw);
 
 void lrgbsensor_report_lux(void)
 {
+	static int count = 0;
 	input_report_abs(input_dev_als, ABS_MISC, report_data[0]);		/* LUX */
-	input_report_abs(input_dev_als, ABS_HAT0X, report_data[1]);	/* R */
+	input_report_abs(input_dev_als, ABS_HAT0X, count);	/* R */
 	input_report_abs(input_dev_als, ABS_HAT0Y, report_data[2]);	/* G */
 	input_report_abs(input_dev_als, ABS_HAT1X, report_data[3]);	/* B */
 	input_report_abs(input_dev_als, ABS_HAT1Y, report_data[4]);	/* IR */
 	input_event(input_dev_als, EV_SYN, SYN_REPORT, 5);
 	input_sync(input_dev_als);
+	count++;
 }
 

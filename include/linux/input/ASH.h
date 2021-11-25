@@ -1090,6 +1090,13 @@ typedef struct ALSPS_hw {
 	lsensor_hw	*mlsensor_hw;
 }ALSPS_hw;
 
+#ifdef CONFIG_TMD2755_FLAG
+typedef struct tmd2755_status_param{
+	  bool probe_status;
+	  bool log_first_evt;
+}tmd2755_status_param;
+#endif
+
  /**
  * ALSPS_FRGB_hw - the i2c control functions for ALSPS FRGB sensor including psensor and lsensor.
  */

@@ -39,7 +39,6 @@
 #include "ams_tmd2755.h"
 #include "ams_tmd2755_prox.h"
 #include "ams_i2c.h"
-#include <linux/input/ASH.h>
 
 /******************************/
 /* Debug and Log System */
