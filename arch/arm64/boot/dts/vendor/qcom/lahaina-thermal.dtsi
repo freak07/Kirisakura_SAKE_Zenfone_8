@@ -798,14 +798,14 @@
 		thermal-sensors = <&tsens0 1>;
 		trips {
 			cpu00_config: cpu00-config {
-				temperature = <110000>;
-				hysteresis = <10000>;
+				temperature = <85000>;
+				hysteresis = <2000>;
 				type = "passive";
 			};
 
 			cpu00_config1: cpu00-config1 {
-				temperature = <112000>;
-				hysteresis = <12000>;
+				temperature = <105000>;
+				hysteresis = <5000>;
 				type = "passive";
 			};
 		};
@@ -830,14 +830,14 @@
 		thermal-sensors = <&tsens0 2>;
 		trips {
 			cpu01_config: cpu01-config {
-				temperature = <110000>;
-				hysteresis = <10000>;
+				temperature = <85000>;
+				hysteresis = <2000>;
 				type = "passive";
 			};
 
 			cpu01_config1: cpu01-config1 {
-				temperature = <112000>;
-				hysteresis = <12000>;
+				temperature = <105000>;
+				hysteresis = <5000>;
 				type = "passive";
 			};
 		};
@@ -862,14 +862,14 @@
 		thermal-sensors = <&tsens0 3>;
 		trips {
 			cpu02_config: cpu02-config {
-				temperature = <110000>;
-				hysteresis = <10000>;
+				temperature = <85000>;
+				hysteresis = <2000>;
 				type = "passive";
 			};
 
 			cpu02_config1: cpu02-config1 {
-				temperature = <112000>;
-				hysteresis = <12000>;
+				temperature = <105000>;
+				hysteresis = <5000>;
 				type = "passive";
 			};
 		};
@@ -894,14 +894,14 @@
 		thermal-governor = "step_wise";
 		trips {
 			cpu03_config: cpu03-config {
-				temperature = <110000>;
-				hysteresis = <10000>;
+				temperature = <85000>;
+				hysteresis = <2000>;
 				type = "passive";
 			};
 
 			cpu03_config1: cpu03-config1 {
-				temperature = <112000>;
-				hysteresis = <12000>;
+				temperature = <105000>;
+				hysteresis = <5000>;
 				type = "passive";
 			};
 		};
@@ -926,14 +926,14 @@
 		thermal-governor = "step_wise";
 		trips {
 			cpu10_config: cpu10-config {
-				temperature = <108000>;
-				hysteresis = <8000>;
+				temperature = <82000>;
+				hysteresis = <2000>;
 				type = "passive";
 			};
 
 			cpu10_config1: cpu10-config1 {
-				temperature = <110000>;
-				hysteresis = <10000>;
+				temperature = <105000>;
+				hysteresis = <5000>;
 				type = "passive";
 			};
 		};
@@ -964,14 +964,14 @@
 		thermal-governor = "step_wise";
 		trips {
 			cpu11_config: cpu11-config {
-				temperature = <108000>;
-				hysteresis = <8000>;
+				temperature = <82000>;
+				hysteresis = <2000>;
 				type = "passive";
 			};
 
 			cpu11_config1: cpu11-config1 {
-				temperature = <110000>;
-				hysteresis = <10000>;
+				temperature = <105000>;
+				hysteresis = <5000>;
 				type = "passive";
 			};
 		};
@@ -1002,14 +1002,14 @@
 		thermal-governor = "step_wise";
 		trips {
 			cpu12_config: cpu12-config {
-				temperature = <108000>;
-				hysteresis = <8000>;
+				temperature = <82000>;
+				hysteresis = <2000>;
 				type = "passive";
 			};
 
 			cpu12_config1: cpu12-config1 {
-				temperature = <110000>;
-				hysteresis = <10000>;
+				temperature = <105000>;
+				hysteresis = <5000>;
 				type = "passive";
 			};
 		};
@@ -1040,14 +1040,14 @@
 		thermal-governor = "step_wise";
 		trips {
 			cpu13_config: cpu13-config {
-				temperature = <108000>;
-				hysteresis = <8000>;
+				temperature = <82000>;
+				hysteresis = <2000>;
 				type = "passive";
 			};
 
 			cpu13_config1: cpu13-config1 {
-				temperature = <110000>;
-				hysteresis = <10000>;
+				temperature = <105000>;
+				hysteresis = <5000>;
 				type = "passive";
 			};
 		};
@@ -1078,14 +1078,14 @@
 		thermal-governor = "step_wise";
 		trips {
 			cpu14_config: cpu14-config {
-				temperature = <108000>;
-				hysteresis = <8000>;
+				temperature = <82000>;
+				hysteresis = <2000>;
 				type = "passive";
 			};
 
 			cpu14_config1: cpu14-config1 {
-				temperature = <110000>;
-				hysteresis = <10000>;
+				temperature = <105000>;
+				hysteresis = <5000>;
 				type = "passive";
 			};
 		};
@@ -1116,14 +1116,14 @@
 		thermal-governor = "step_wise";
 		trips {
 			cpu15_config: cpu15-config {
-				temperature = <108000>;
-				hysteresis = <8000>;
+				temperature = <82000>;
+				hysteresis = <2000>;
 				type = "passive";
 			};
 
 			cpu15_config1: cpu15-config1 {
-				temperature = <110000>;
-				hysteresis = <10000>;
+				temperature = <105000>;
+				hysteresis = <5000>;
 				type = "passive";
 			};
 		};
@@ -1154,14 +1154,14 @@
 		thermal-governor = "step_wise";
 		trips {
 			cpu16_config: cpu16-config {
-				temperature = <108000>;
-				hysteresis = <8000>;
+				temperature = <80000>;
+				hysteresis = <2000>;
 				type = "passive";
 			};
 
 			cpu16_config1: cpu16-config1 {
-				temperature = <110000>;
-				hysteresis = <10000>;
+				temperature = <105000>;
+				hysteresis = <5000>;
 				type = "passive";
 			};
 		};
@@ -1192,14 +1192,14 @@
 		thermal-governor = "step_wise";
 		trips {
 			cpu17_config: cpu17-config {
-				temperature = <108000>;
-				hysteresis = <8000>;
+				temperature = <80000>;
+				hysteresis = <2000>;
 				type = "passive";
 			};
 
 			cpu17_config1: cpu17-config1 {
-				temperature = <110000>;
-				hysteresis = <10000>;
+				temperature = <105000>;
+				hysteresis = <5000>;
 				type = "passive";
 			};
 		};

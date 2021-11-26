@@ -407,13 +407,23 @@ static void msm_restart_prepare(const char *cmd)
 	 * Write download mode flags if restart_mode says so
 	 * Kill download mode if master-kill switch is set
 	 */
-
 	if (cmd != NULL && !strcmp(cmd, "qcom_dload"))
 		restart_mode = RESTART_DLOAD;
 
 	set_dload_mode(download_mode &&
 			(in_panic || restart_mode == RESTART_DLOAD));
 
+
+#if defined ASUS_SAKE_PROJECT || defined ASUS_VODKA_PROJECT
+	if (!in_panic) {
+		// Normal reboot. Clean the printk buffer magic
+		printk_buffer_slot2_addr = (ulong *)PRINTK_BUFFER_SLOT2;
+		*printk_buffer_slot2_addr = 0;
+		printk(KERN_CRIT "msm_restart_prepare Clean asus_global...\n");
+		flush_cache_all();
+
+	}
+#endif
 	if (qpnp_pon_check_hard_reset_stored()) {
 		/* Set warm reset as true when device is in dload mode */
 		if (get_dload_mode() ||
@@ -424,15 +434,8 @@ static void msm_restart_prepare(const char *cmd)
 		need_warm_reset = (get_dload_mode() ||
 				(cmd != NULL && cmd[0] != '\0'));
 	}
-#if defined ASUS_SAKE_PROJECT || defined ASUS_VODKA_PROJECT
-	if (!in_panic) {
-		// Normal reboot. Clean the printk buffer magic
-		printk_buffer_slot2_addr = (ulong *)PRINTK_BUFFER_SLOT2;
-		*printk_buffer_slot2_addr = 0;
-		printk(KERN_CRIT "msm_restart_prepare Clean asus_global...\n");
-		flush_cache_all();
-	}
-#endif
+
+
 	if (force_warm_reboot)
 		pr_info("Forcing a warm reset of the system\n");
 

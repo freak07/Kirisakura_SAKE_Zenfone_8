@@ -1965,8 +1965,8 @@ static int tmd2755_light_hw_get_adc(void)
 {
 	tmd2755_read_als(g_tmd2755_chip);
 	tmd2755_get_lux(g_tmd2755_chip);
-	dbg("adc: %d", g_tmd2755_chip->als_info.ch0_raw);
-	return g_tmd2755_chip->als_info.ch0_raw;
+	dbg("adc: %d, lux: %d", g_tmd2755_chip->als_info.ch0_raw, g_tmd2755_chip->als_info.lux);
+	return g_tmd2755_chip->als_info.lux;
 }
 
 static int tmd2755_light_hw_get_lux(void)
