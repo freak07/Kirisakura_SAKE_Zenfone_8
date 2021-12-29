@@ -6,11 +6,11 @@
 #define UCI_INVALID_INT -999999
 
 // user config file to read data coming from user space
-#define UCI_USER_FILE "/storage/emulated/0/uci_user.cfg"
+#define UCI_USER_FILE "/storage/emulated/0/Android/data/org.cleanslate.csconfig/cache/uci_user.cfg"
 // sys file to read from user space
-#define UCI_SYS_FILE "/storage/emulated/0/uci_sys.cfg"
+#define UCI_SYS_FILE "/storage/emulated/0/Android/data/org.cleanslate.csservice/cache/uci_sys.cfg"
 // file to write data from kernel side to unelevated access
-#define UCI_KERNEL_FILE "/storage/emulated/0/uci_kernel.out"
+#define UCI_KERNEL_FILE "/storage/emulated/0/Android/data/org.cleanslate.csservice/cache/uci_kernel.out"
 
 #define UCI_USER_FILE_END "uci_user.cfg"
 #define UCI_SYS_FILE_END "uci_sys.cfg"
@@ -64,7 +64,7 @@
 #define UCI_SDCARD_RAMOOPS_END "__console-ramoops-0.txt"
 
 // systools
-#define UCI_SDCARD_SYSTOOLS "/storage/emulated/0/__cs-systools.txt"
+#define UCI_SDCARD_SYSTOOLS "/storage/emulated/0/Android/data/org.cleanslate.csconfig/cache/__cs-systools.txt"
 #define UCI_SDCARD_SYSTOOLS_END "__cs-systools.txt"
 
 #define UCI_PSTORE_FILE_0_END "console-ramoops"
