@@ -1,7 +1,7 @@
 
 # SPDX-License-Identifier: GPL-2.0-only
 #obj-$(CONFIG_SENSORS_SSC)	+= sensors_ssc.o
-obj-m                           += icm206xx.o
+obj-y                           += icm206xx.o
 obj-y                           += ASH/
 obj-y                           += laser/
 obj-$(CONFIG_MACH_ASUS_ZS673KS)	+= snt8100fsr-linux/

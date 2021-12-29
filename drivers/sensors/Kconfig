@@ -11,7 +11,7 @@ config SENSORS_ICM206XX
 	  
 config SENSORS_ALSPS
 	tristate "ALSPS sensor for light and proximity"
-	default m
+	default y
 	help
 	  Say Y here if you want to support ALSPS
 	  connected via an I2C bus.
@@ -22,7 +22,7 @@ config SENSORS_ALSPS
 config SENSORS_SNT8155
 	tristate "SNT8155 grip sensor for game gesture"
 	depends on MACH_ASUS_ZS673KS
-	default m
+	default y
 	help
 	  Say Y here if you want to support InvenSense SNT8155
 	  connected via an I2C bus.
