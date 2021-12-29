@@ -11,7 +11,7 @@ obj-n 	+=ASH_testDriver/
 ccflags-y += -DDEFAULT_SYMBOL_NAMESPACE=ANDROID_GKI_VFS_EXPORT_ONLY
 ccflags-y += -DANDROID_GKI_VFS_EXPORT_ONLY=VFS_internal_I_am_really_a_filesystem_and_am_NOT_a_driver
 
-obj-m	:= sensors_vcnl36866.o
+obj-y	:= sensors_vcnl36866.o
 sensors_vcnl36866-y += ASH_Algo/ALSPSsensor.o
 sensors_vcnl36866-y += ASH_ATTR/lsensor_ATTR.o ASH_ATTR/psensor_ATTR.o ASH_ATTR/ASH_ATTR.o
 sensors_vcnl36866-y += ASH_Report/psensor_Report.o ASH_Report/LwithRGBsensor_Report.o
