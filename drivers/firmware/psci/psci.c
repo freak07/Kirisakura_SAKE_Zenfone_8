@@ -253,6 +253,9 @@ static int get_set_conduit_method(struct device_node *np)
 static int psci_sys_reset(struct notifier_block *nb, unsigned long action,
 			  void *data)
 {
+#if defined ASUS_SAKE_PROJECT || defined ASUS_VODKA_PROJECT
+	ulong *printk_buffer_slot2_addr;
+#endif
 	if ((reboot_mode == REBOOT_WARM || reboot_mode == REBOOT_SOFT) &&
 	    psci_system_reset2_supported) {
 		/*
@@ -262,6 +265,13 @@ static int psci_sys_reset(struct notifier_block *nb, unsigned long action,
 		 */
 		invoke_psci_fn(PSCI_FN_NATIVE(1_1, SYSTEM_RESET2), 0, 0, 0);
 	} else {
+#if defined ASUS_SAKE_PROJECT || defined ASUS_VODKA_PROJECT
+		// Normal reboot. Clean the printk buffer magic
+		printk_buffer_slot2_addr = (ulong *)PRINTK_BUFFER_SLOT2;
+		*printk_buffer_slot2_addr = 0;
+		printk(KERN_CRIT "msm_restart_prepare Clean asus_global...\n");
+		flush_cache_all();
+#endif
 		invoke_psci_fn(PSCI_0_2_FN_SYSTEM_RESET, 0, 0, 0);
 	}
 

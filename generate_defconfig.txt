@@ -1,0 +1,22 @@
+
+================ begin generate_defconfig.sh ================
+
+[generate_defconfig.sh] generate_defconfig.sh vendor/lahaina-qgki-debug_defconfig 
+[generate_defconfig.sh] QCOM_GKI_ALLYES_FRAG=/media/builder9/data/8350/ZS672KS_R_DEV/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_ALLYES_GKI.config
+[generate_defconfig.sh] REQUIRED_DEFCONFIG=lahaina-qgki-debug_defconfig
+[generate_defconfig.sh] fragment_allyesconfig.sh QCOM_GKI_FRAG:/media/builder9/data/8350/ZS672KS_R_DEV/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_GKI.config QCOM_GKI_ALLYES_FRAG:/media/builder9/data/8350/ZS672KS_R_DEV/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_ALLYES_GKI.config
+[generate_defconfig.sh] Step 1: FINAL_DEFCONFIG_BLEND:  /media/builder9/data/8350/ZS672KS_R_DEV/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_debug.config /media/builder9/data/8350/ZS672KS_R_DEV/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_consolidate.config   /media/builder9/data/8350/ZS672KS_R_DEV/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_QGKI.config /media/builder9/data/8350/ZS672KS_R_DEV/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_ALLYES_GKI.config 
+[generate_defconfig.sh] Step 2: FINAL_DEFCONFIG_BLEND:  /media/builder9/data/8350/ZS672KS_R_DEV/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_debug.config /media/builder9/data/8350/ZS672KS_R_DEV/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_consolidate.config   /media/builder9/data/8350/ZS672KS_R_DEV/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_QGKI.config /media/builder9/data/8350/ZS672KS_R_DEV/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_ALLYES_GKI.config /media/builder9/data/8350/ZS672KS_R_DEV/kernel/msm-5.4/arch/arm64/configs/gki_defconfig
+
++++[generate_defconfig.sh]+++
+[generate_defconfig.sh] after awk FINAL_DEFCONFIG_BLEND: /media/builder9/data/8350/ZS672KS_R_DEV/kernel/msm-5.4/arch/arm64/configs/gki_defconfig /media/builder9/data/8350/ZS672KS_R_DEV/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_ALLYES_GKI.config /media/builder9/data/8350/ZS672KS_R_DEV/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_QGKI.config /media/builder9/data/8350/ZS672KS_R_DEV/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_consolidate.config /media/builder9/data/8350/ZS672KS_R_DEV/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_debug.config
+[generate_defconfig.sh] ONLY_GKI=0
+[generate_defconfig.sh] ASUS_CONFIGS_DIR=/media/builder9/data/8350/ZS672KS_R_DEV/kernel/msm-5.4/arch/arm64/configs/vendor/
+[generate_defconfig.sh] ASUS_BUILD_PROJECT=VODKA
+[generate_defconfig.sh] TARGET_BUILD_VARIANT=userdebug
+[generate_defconfig.sh] REQUIRED_DEFCONFIG: lahaina-qgki-debug_defconfig
+[generate_defconfig.sh] defconfig blend for FINAL_DEFCONFIG_BLEND: /media/builder9/data/8350/ZS672KS_R_DEV/kernel/msm-5.4/arch/arm64/configs/gki_defconfig /media/builder9/data/8350/ZS672KS_R_DEV/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_ALLYES_GKI.config /media/builder9/data/8350/ZS672KS_R_DEV/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_QGKI.config /media/builder9/data/8350/ZS672KS_R_DEV/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_consolidate.config /media/builder9/data/8350/ZS672KS_R_DEV/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_debug.config /media/builder9/data/8350/ZS672KS_R_DEV/kernel/msm-5.4/arch/arm64/configs/vendor/VODKA_defconfig
+---[generate_defconfig.sh]---
+
+================ end generate_defconfig.sh ================
+

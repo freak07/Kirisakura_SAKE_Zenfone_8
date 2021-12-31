@@ -85,15 +85,18 @@
 * Global variable or extern global variabls/functions
 *****************************************************************************/
 struct fts_ts_data *fts_data;
+bool tpasus = false;
 
 #if defined(CONFIG_DRM)
 static struct drm_panel *active_panel;
 #endif
 
+#if 0
 static struct ft_chip_t ctype[] = {
 	{0x88, 0x56, 0x52, 0x00, 0x00, 0x00, 0x00, 0x56, 0xB2},
 	{0x81, 0x54, 0x52, 0x54, 0x52, 0x00, 0x00, 0x54, 0x5C},
 };
+#endif
 
 /*****************************************************************************
 * Static function prototypes
@@ -1387,6 +1390,9 @@ static int fts_get_chip_types(
 	u8 id_h, u8 id_l, bool fw_valid)
 {
 	int i = 0;
+	struct ft_chip_t ctype[] = FTS_CHIP_TYPE_MAPPING;
+	struct ft_chip_t ctype_asus[] = FTS_CHIP_TYPE_MAPPING_ASUS;
+	
 	u32 ctype_entries = sizeof(ctype) / sizeof(struct ft_chip_t);
 
 	if ((0x0 == id_h) || (0x0 == id_l)) {
@@ -1407,9 +1413,30 @@ static int fts_get_chip_types(
 		}
 	}
 
+	if (i >= ctype_entries) {
+	  FTS_DEBUG("check TP ROG");
+	  for (i = 0; i < ctype_entries; i++) {
+	      if (VALID == fw_valid) {
+		  if ((id_h == ctype_asus[i].chip_idh) && (id_l == ctype_asus[i].chip_idl)){
+		      tpasus = true;
+		      FTS_DEBUG("TP is ASUSTP");
+		      break;
+		  }
+	      } else {
+		  if (((id_h == ctype_asus[i].rom_idh) && (id_l == ctype_asus[i].rom_idl))
+		      || ((id_h == ctype_asus[i].pb_idh) && (id_l == ctype_asus[i].pb_idl))
+		      || ((id_h == ctype_asus[i].bl_idh) && (id_l == ctype_asus[i].bl_idl)))
+		      break;
+	      }
+	  }      
+	}
+	
 	if (i >= ctype_entries)
 		return -ENODATA;
-
+        if (tpasus) {
+	    ts_data->ic_info.ids = ctype_asus[i];
+	} else
+	  
 	ts_data->ic_info.ids = ctype[i];
 	return 0;
 }
@@ -2148,19 +2175,42 @@ static int fts_power_source_ctrl(struct fts_ts_data *ts_data, int enable)
 			FTS_DEBUG("regulator enable !");
 			gpio_direction_output(ts_data->pdata->reset_gpio, 0);
 			msleep(1);
-			ret = fts_ts_enable_reg(ts_data, true);
-			if (ret)
-				FTS_ERROR("Touch reg enable failed\n");
+			
+			if (!IS_ERR_OR_NULL(ts_data->vcc_i2c)) {
+				ret = regulator_enable(ts_data->vcc_i2c);
+				if (ret) {
+					FTS_ERROR("enable vcc_i2c regulator failed,ret=%d", ret);
+				}
+			}
+			gpio_direction_output(ts_data->pdata->vddio, 1);
+	    
+			msleep(1);
+			
+			ret = regulator_enable(ts_data->vdd);
+			if (ret) {
+				FTS_ERROR("enable vdd regulator failed,ret=%d", ret);
+			}
+
 			ts_data->power_disabled = false;
 		}
 	} else {
 		if (!ts_data->power_disabled) {
 			FTS_DEBUG("regulator disable !");
 			gpio_direction_output(ts_data->pdata->reset_gpio, 0);
+			msleep(10);
+			gpio_direction_output(ts_data->pdata->vddio, 0);
 			msleep(1);
-			ret = fts_ts_enable_reg(ts_data, false);
-			if (ret)
-				FTS_ERROR("Touch reg disable failed");
+			if (!IS_ERR_OR_NULL(ts_data->vcc_i2c)) {
+				ret = regulator_disable(ts_data->vcc_i2c);
+				if (ret) {
+					FTS_ERROR("disable vcc_i2c regulator failed,ret=%d", ret);
+				}
+			}
+
+			ret = regulator_disable(ts_data->vdd);
+			if (ret) {
+				FTS_ERROR("disable vdd regulator failed,ret=%d", ret);
+			}
 			ts_data->power_disabled = true;
 		}
 	}
@@ -2440,6 +2490,12 @@ static int fts_parse_dt(struct device *dev, struct fts_ts_platform_data *pdata)
 	if (pdata->irq_gpio < 0)
 		FTS_ERROR("Unable to get irq_gpio");
 
+	pdata->vddio = of_get_named_gpio_flags(np, "focaltech,vddio",
+                      0, &pdata->vddio_flags);
+	
+	if (pdata->vddio < 0)
+	    FTS_ERROR("Unable to get vddio");
+	
 	ret = of_property_read_u32(np, "focaltech,max-touch-number", &temp_val);
 	if (ret < 0) {
 		FTS_ERROR("Unable to get max-touch-number, please check dts");
@@ -2453,8 +2509,8 @@ static int fts_parse_dt(struct device *dev, struct fts_ts_platform_data *pdata)
 			pdata->max_touch_number = temp_val;
 	}
 
-	FTS_INFO("max touch number:%d, irq gpio:%d, reset gpio:%d",
-		pdata->max_touch_number, pdata->irq_gpio, pdata->reset_gpio);
+	FTS_INFO("max touch number:%d, irq gpio:%d, reset gpio:%d vddio:%d",
+		pdata->max_touch_number, pdata->irq_gpio, pdata->reset_gpio, pdata->reset_gpio,pdata->vddio);
 
 	ret = of_property_read_u32(np, "focaltech,ic-type", &temp_val);
 	if (ret < 0)
@@ -3107,8 +3163,8 @@ static const struct i2c_device_id fts_ts_i2c_id[] = {
 	{},
 };
 static const struct of_device_id fts_dt_match[] = {
-	{.compatible = "focaltech,fts_ts", },
-	{},
+    {.compatible = "focaltech,fts", },
+    {},
 };
 MODULE_DEVICE_TABLE(of, fts_dt_match);
 
@@ -3258,12 +3314,11 @@ static void __exit fts_ts_exit(void)
 	fts_ts_i2c_exit();
 	fts_ts_spi_exit();
 }
-
-#ifdef CONFIG_ARCH_QTI_VM
+//#ifdef CONFIG_ARCH_QTI_VM
 module_init(fts_ts_init);
-#else
-late_initcall(fts_ts_init);
-#endif
+//#else
+//late_initcall(fts_ts_init);
+//#endif
 module_exit(fts_ts_exit);
 
 MODULE_AUTHOR("FocalTech Driver Team");

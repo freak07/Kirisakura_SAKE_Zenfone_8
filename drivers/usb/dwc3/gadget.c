@@ -34,6 +34,21 @@ static int __dwc3_gadget_start(struct dwc3 *dwc);
 static void dwc3_gadget_disconnect_interrupt(struct dwc3 *dwc);
 static void dwc3_gadget_wakeup_interrupt(struct dwc3 *dwc, bool remote_wakeup);
 
+#ifdef CONFIG_MACH_ASUS
+#ifdef CONFIG_USB_EC_DRIVER
+extern uint8_t gDongleType;
+#else
+static uint8_t gDongleType;
+#endif
+
+enum POGO_ID {
+	NO_INSERT = 0,
+	INBOX,
+	STATION,
+	DT,
+	OTHER,
+};
+#endif
 /**
  * dwc3_gadget_set_test_mode - enables usb2 test modes
  * @dwc: pointer to our context structure
@@ -2567,6 +2582,11 @@ static int dwc3_gadget_vbus_session(struct usb_gadget *_gadget, int is_active)
 	struct dwc3 *dwc = gadget_to_dwc(_gadget);
 	unsigned long flags;
 	int ret = 0;
+#ifdef CONFIG_MACH_ASUS
+	char *udc1[2] = {"UDC_NAME=a600000.dwc3", NULL};
+	char *udc2[2] = {"UDC_NAME=a800000.dwc3", NULL};
+	char *udc_name[2];
+#endif
 
 	if (dwc->dr_mode <= USB_DR_MODE_HOST)
 		return -EPERM;
@@ -2578,6 +2598,21 @@ static int dwc3_gadget_vbus_session(struct usb_gadget *_gadget, int is_active)
 	disable_irq(dwc->irq);
 
 	flush_work(&dwc->bh_work);
+#ifdef CONFIG_MACH_ASUS
+	if (is_active) {
+
+		if (!strcmp(&udc1[0][9], kobject_name(&dwc->dev->kobj))) {
+			udc_name[0] = udc1[0];
+			udc_name[1] = udc1[1];
+		} else {
+			udc_name[0] = udc2[0];
+			udc_name[1] = udc2[1];
+		}
+
+		dev_info(dwc->dev, "udc event : %s\n", udc_name[0]);
+		kobject_uevent_env(&dwc->dev->kobj, KOBJ_CHANGE, udc_name);
+	}
+#endif
 
 	spin_lock_irqsave(&dwc->lock, flags);
 
@@ -3462,7 +3497,11 @@ static void dwc3_gadget_disconnect_interrupt(struct dwc3 *dwc)
 	int			reg;
 
 	dbg_event(0xFF, "DISCONNECT INT", 0);
+#ifdef CONFIG_MACH_ASUS
+	dev_info(dwc->dev, "Notify OTG from %s\n", __func__);
+#else
 	dev_dbg(dwc->dev, "Notify OTG from %s\n", __func__);
+#endif
 	dwc->b_suspend = false;
 	dwc3_notify_event(dwc, DWC3_CONTROLLER_NOTIFY_OTG_EVENT, 0);
 
@@ -3522,7 +3561,11 @@ static void dwc3_gadget_reset_interrupt(struct dwc3 *dwc)
 	}
 
 	dbg_event(0xFF, "BUS RESET", dwc->gadget.speed);
+#ifdef CONFIG_MACH_ASUS
+	dev_info(dwc->dev, "Notify OTG from %s\n", __func__);
+#else
 	dev_dbg(dwc->dev, "Notify OTG from %s\n", __func__);
+#endif
 	dwc->b_suspend = false;
 	dwc3_notify_event(dwc, DWC3_CONTROLLER_NOTIFY_OTG_EVENT, 0);
 
@@ -3704,6 +3747,9 @@ static void dwc3_gadget_wakeup_interrupt(struct dwc3 *dwc, bool remote_wakeup)
 {
 	enum dwc3_link_state link_state = dwc->link_state;
 
+#ifdef CONFIG_MACH_ASUS
+	dev_info(dwc->dev, "%s\n", __func__);
+#endif
 	dbg_log_string("WAKEUP: link_state:%d", link_state);
 	dwc->link_state = DWC3_LINK_STATE_U0;
 
@@ -3825,7 +3871,11 @@ static void dwc3_gadget_suspend_interrupt(struct dwc3 *dwc,
 	enum dwc3_link_state next = evtinfo & DWC3_LINK_STATE_MASK;
 
 	dbg_event(0xFF, "SUSPEND INT", next);
+#ifdef CONFIG_MACH_ASUS
+	dev_info(dwc->dev, "%s Entry to %d\n", __func__, next);
+#else
 	dev_dbg(dwc->dev, "%s Entry to %d\n", __func__, next);
+#endif
 
 	if (dwc->link_state != next && next == DWC3_LINK_STATE_U3) {
 		/*
@@ -3842,7 +3892,16 @@ static void dwc3_gadget_suspend_interrupt(struct dwc3 *dwc,
 			return;
 		}
 
+#ifdef CONFIG_MACH_ASUS
+		if (gDongleType == DT) {
+			dev_info(dwc->dev, "DT unplug usb");
+			dwc3_notify_event(dwc, DWC3_CONTROLLER_ERROR_EVENT, 0);
+			return;
+		} else
+			dwc3_suspend_gadget(dwc);
+#else
 		dwc3_suspend_gadget(dwc);
+#endif
 
 		dev_dbg(dwc->dev, "Notify OTG from %s\n", __func__);
 		dwc->b_suspend = true;

@@ -21,6 +21,9 @@
 #include <linux/timer.h>
 
 #include "rtmutex_common.h"
+#ifdef CONFIG_MACH_ASUS
+extern struct rt_mutex fake_rtmutex;
+#endif
 
 /*
  * lock->owner state tracking:
@@ -1192,8 +1195,14 @@ __rt_mutex_slowlock(struct rt_mutex *lock, int state,
 		raw_spin_unlock_irq(&lock->wait_lock);
 
 		debug_rt_mutex_print_deadlock(waiter);
+#ifdef CONFIG_MACH_ASUS
+		task_thread_info(current)->pWaitingRTMutex=lock;
+#endif
 
 		schedule();
+#ifdef CONFIG_MACH_ASUS
+		task_thread_info(current)->pWaitingRTMutex=&fake_rtmutex;
+#endif
 
 		raw_spin_lock_irq(&lock->wait_lock);
 		set_current_state(state);

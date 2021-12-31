@@ -9918,8 +9918,10 @@ struct sk_buff *__cfg80211_alloc_event_skb(struct wiphy *wiphy,
 		info = NULL;
 		break;
 	case NL80211_CMD_VENDOR:
-		if (WARN_ON(vendor_event_idx < 0 ||
-			    vendor_event_idx >= wiphy->n_vendor_events))
+//		if (WARN_ON(vendor_event_idx < 0 ||
+//			    vendor_event_idx >= wiphy->n_vendor_events))
+		if (vendor_event_idx < 0 ||
+			    vendor_event_idx >= wiphy->n_vendor_events)
 			return NULL;
 		info = &wiphy->vendor_events[vendor_event_idx];
 		break;

@@ -37,7 +37,7 @@ union i2c_smbus_data;
 struct i2c_board_info;
 enum i2c_slave_event;
 typedef int (*i2c_slave_cb_t)(struct i2c_client *client,
-			      enum i2c_slave_event event, u8 *val);
+				enum i2c_slave_event event, u8 *val);
 
 struct module;
 struct property_entry;
@@ -127,13 +127,13 @@ extern int __i2c_transfer(struct i2c_adapter *adap, struct i2c_msg *msgs,
    Note that we use i2c_adapter here, because you do not need a specific
    smbus adapter to call this function. */
 s32 i2c_smbus_xfer(struct i2c_adapter *adapter, u16 addr,
-		   unsigned short flags, char read_write, u8 command,
-		   int protocol, union i2c_smbus_data *data);
+			unsigned short flags, char read_write, u8 command,
+			int protocol, union i2c_smbus_data *data);
 
 /* Unlocked flavor */
 s32 __i2c_smbus_xfer(struct i2c_adapter *adapter, u16 addr,
-		     unsigned short flags, char read_write, u8 command,
-		     int protocol, union i2c_smbus_data *data);
+			unsigned short flags, char read_write, u8 command,
+			int protocol, union i2c_smbus_data *data);
 
 /* Now follow the 'nice' access routines. These also document the calling
    conventions of i2c_smbus_xfer. */
@@ -141,13 +141,13 @@ s32 __i2c_smbus_xfer(struct i2c_adapter *adapter, u16 addr,
 extern s32 i2c_smbus_read_byte(const struct i2c_client *client);
 extern s32 i2c_smbus_write_byte(const struct i2c_client *client, u8 value);
 extern s32 i2c_smbus_read_byte_data(const struct i2c_client *client,
-				    u8 command);
+					u8 command);
 extern s32 i2c_smbus_write_byte_data(const struct i2c_client *client,
-				     u8 command, u8 value);
+					u8 command, u8 value);
 extern s32 i2c_smbus_read_word_data(const struct i2c_client *client,
-				    u8 command);
+					u8 command);
 extern s32 i2c_smbus_write_word_data(const struct i2c_client *client,
-				     u8 command, u16 value);
+					u8 command, u16 value);
 
 static inline s32
 i2c_smbus_read_word_swapped(const struct i2c_client *client, u8 command)
@@ -166,20 +166,20 @@ i2c_smbus_write_word_swapped(const struct i2c_client *client,
 
 /* Returns the number of read bytes */
 extern s32 i2c_smbus_read_block_data(const struct i2c_client *client,
-				     u8 command, u8 *values);
+					u8 command, u8 *values);
 extern s32 i2c_smbus_write_block_data(const struct i2c_client *client,
-				      u8 command, u8 length, const u8 *values);
+					u8 command, u8 length, const u8 *values);
 /* Returns the number of read bytes */
 extern s32 i2c_smbus_read_i2c_block_data(const struct i2c_client *client,
-					 u8 command, u8 length, u8 *values);
+					u8 command, u8 length, u8 *values);
 extern s32 i2c_smbus_write_i2c_block_data(const struct i2c_client *client,
-					  u8 command, u8 length,
-					  const u8 *values);
+					u8 command, u8 length,
+					const u8 *values);
 extern s32
 i2c_smbus_read_i2c_block_data_or_emulated(const struct i2c_client *client,
-					  u8 command, u8 length, u8 *values);
+					u8 command, u8 length, u8 *values);
 int i2c_get_device_id(const struct i2c_client *client,
-		      struct i2c_device_identity *id);
+			struct i2c_device_identity *id);
 #endif /* I2C */
 
 /**
@@ -453,9 +453,9 @@ i2c_new_client_device(struct i2c_adapter *adap, struct i2c_board_info const *inf
  */
 extern struct i2c_client *
 i2c_new_probed_device(struct i2c_adapter *adap,
-		      struct i2c_board_info *info,
-		      unsigned short const *addr_list,
-		      int (*probe)(struct i2c_adapter *adap, unsigned short addr));
+			struct i2c_board_info *info,
+			unsigned short const *addr_list,
+			int (*probe)(struct i2c_adapter *adap, unsigned short addr));
 
 /* Common custom probe functions */
 extern int i2c_probe_func_quick_read(struct i2c_adapter *adap, unsigned short addr);
@@ -534,15 +534,15 @@ struct i2c_algorithm {
 	 * processed, or a negative value on error
 	 */
 	int (*master_xfer)(struct i2c_adapter *adap, struct i2c_msg *msgs,
-			   int num);
+				int num);
 	int (*master_xfer_atomic)(struct i2c_adapter *adap,
-				   struct i2c_msg *msgs, int num);
+				struct i2c_msg *msgs, int num);
 	int (*smbus_xfer)(struct i2c_adapter *adap, u16 addr,
-			  unsigned short flags, char read_write,
-			  u8 command, int size, union i2c_smbus_data *data);
+				unsigned short flags, char read_write,
+				u8 command, int size, union i2c_smbus_data *data);
 	int (*smbus_xfer_atomic)(struct i2c_adapter *adap, u16 addr,
-				 unsigned short flags, char read_write,
-				 u8 command, int size, union i2c_smbus_data *data);
+				unsigned short flags, char read_write,
+				u8 command, int size, union i2c_smbus_data *data);
 
 	/* To determine what the adapter supports */
 	u32 (*functionality)(struct i2c_adapter *adap);
@@ -670,7 +670,7 @@ struct i2c_adapter_quirks {
 #define I2C_AQ_COMB_SAME_ADDR		BIT(3)
 /* convenience macro for typical write-then read case */
 #define I2C_AQ_COMB_WRITE_THEN_READ	(I2C_AQ_COMB | I2C_AQ_COMB_WRITE_FIRST | \
-					 I2C_AQ_COMB_READ_SECOND | I2C_AQ_COMB_SAME_ADDR)
+					I2C_AQ_COMB_READ_SECOND | I2C_AQ_COMB_SAME_ADDR)
 /* clock stretching is not supported */
 #define I2C_AQ_NO_CLK_STRETCH		BIT(4)
 /* message cannot have length of 0 */
@@ -684,7 +684,7 @@ struct i2c_adapter_quirks {
  */
 struct i2c_adapter {
 	struct module *owner;
-	unsigned int class;		  /* classes to allow probing for */
+	unsigned int class;		/* classes to allow probing for */
 	const struct i2c_algorithm *algo; /* the algorithm to access the bus */
 	void *algo_data;
 
@@ -741,7 +741,7 @@ int i2c_for_each_dev(void *data, int (*fn)(struct device *dev, void *data));
 
 /* Adapter locking functions, exported for shared pin cases */
 #define I2C_LOCK_ROOT_ADAPTER BIT(0)
-#define I2C_LOCK_SEGMENT      BIT(1)
+#define I2C_LOCK_SEGMENT BIT(1)
 
 /**
  * i2c_lock_bus - Get exclusive access to an I2C bus segment
@@ -936,10 +936,10 @@ struct i2c_adapter *of_get_i2c_adapter_by_node(struct device_node *node);
 
 extern const struct of_device_id
 *i2c_of_match_device(const struct of_device_id *matches,
-		     struct i2c_client *client);
+			struct i2c_client *client);
 
 int of_i2c_get_board_info(struct device *dev, struct device_node *node,
-			  struct i2c_board_info *info);
+			struct i2c_board_info *info);
 
 #else
 
@@ -960,7 +960,7 @@ static inline struct i2c_adapter *of_get_i2c_adapter_by_node(struct device_node 
 
 static inline const struct of_device_id
 *i2c_of_match_device(const struct of_device_id *matches,
-		     struct i2c_client *client)
+			struct i2c_client *client)
 {
 	return NULL;
 }
@@ -979,14 +979,14 @@ struct acpi_resource_i2c_serialbus;
 
 #if IS_ENABLED(CONFIG_ACPI)
 bool i2c_acpi_get_i2c_resource(struct acpi_resource *ares,
-			       struct acpi_resource_i2c_serialbus **i2c);
+				struct acpi_resource_i2c_serialbus **i2c);
 u32 i2c_acpi_find_bus_speed(struct device *dev);
 struct i2c_client *i2c_acpi_new_device(struct device *dev, int index,
-				       struct i2c_board_info *info);
+				struct i2c_board_info *info);
 struct i2c_adapter *i2c_acpi_find_adapter_by_handle(acpi_handle handle);
 #else
 static inline bool i2c_acpi_get_i2c_resource(struct acpi_resource *ares,
-					     struct acpi_resource_i2c_serialbus **i2c)
+				struct acpi_resource_i2c_serialbus **i2c)
 {
 	return false;
 }

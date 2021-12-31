@@ -538,9 +538,8 @@ int drm_ioctl_permit(u32 flags, struct drm_file *file_priv)
 {
 	/* ROOT_ONLY is only for CAP_SYS_ADMIN */
 	if (unlikely((flags & DRM_ROOT_ONLY) && !capable(CAP_SYS_ADMIN)))
-		return -EACCES;
+		return -EACCES;	/* AUTH is only for authenticated or render client */
 
-	/* AUTH is only for authenticated or render client */
 	if (unlikely((flags & DRM_AUTH) && !drm_is_render_client(file_priv) &&
 		     !file_priv->authenticated))
 		return -EACCES;

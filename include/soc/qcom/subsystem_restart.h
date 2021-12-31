@@ -155,7 +155,18 @@ static inline void complete_shutdown_ack(struct subsys_desc *desc)
 	complete(&desc->shutdown_ack);
 }
 struct subsys_device *find_subsys_device(const char *str);
+#ifdef CONFIG_MACH_ASUS
+extern void subsys_save_reason(const char *name, char *reason);/*AS-K ASUS SSR and Debug+*/
+#endif
+
 #else
+
+#ifdef CONFIG_MACH_ASUS
+static inline void subsys_save_reason(const char *name, char *reason)/*AS-K ASUS SSR and Debug+*/
+{
+	return;
+}
+#endif
 
 static inline int subsystem_restart_dev(struct subsys_device *dev)
 {

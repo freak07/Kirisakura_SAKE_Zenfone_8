@@ -1938,7 +1938,7 @@ static const struct msm_pingroup lahaina_groups[] = {
 };
 
 static const int lahaina_reserved_gpios[] = {
-	52, 53, 54, 55, 56, 57, 58, 59, -1
+	52, 53, 54, 55, -1
 };
 
 static struct pinctrl_qup lahaina_qup_regs[] = {
@@ -1954,16 +1954,16 @@ static const struct msm_gpio_wakeirq_map lahaina_pdc_map[] = {
 	{ 39, 92 }, { 40, 101 }, { 43, 137 }, { 44, 102 }, { 46, 96 },
 	{ 47, 93 }, { 50, 108 }, { 51, 127 }, { 55, 128 }, { 56, 81 },
 	{ 59, 112 }, { 60, 119 }, { 63, 73 }, { 67, 74 }, { 71, 134 },
-	{ 75, 103 }, { 79, 104 }, { 80, 126 }, { 81, 139 }, { 82, 140 },
+	{ 75, 103 }, { 79, 104 }, { 80, 126 }, { 81, 139 }, /*{ 82, 140 },*/
 	{ 83, 141 }, { 84, 124 }, { 85, 109 }, { 86, 143 }, { 87, 138 },
 	{ 88, 122 }, { 89, 113 }, { 90, 114 }, { 91, 115 }, { 92, 76 },
 	{ 95, 147 }, { 96, 148 }, { 98, 149 }, { 99, 150 }, { 115, 125 },
 	{ 116, 106 }, { 117, 105 }, { 118, 116 }, { 119, 123 }, { 130, 145 },
-	{ 136, 72 }, { 140, 100 }, { 151, 110 }, { 153, 95 }, { 155, 107 },
+	{ 136, 72 }, { 140, 100 }, /*{ 151, 110 },*/ { 153, 95 }, { 155, 107 },
 	{ 156, 94 }, { 157, 111 }, { 159, 118 }, { 162, 77 }, { 165, 78 },
 	{ 169, 70 }, { 172, 132 }, { 174, 87 }, { 175, 88 }, { 177, 89 },
 	{ 179, 120 }, { 180, 129 }, { 183, 90 }, { 185, 136 }, { 187, 142 },
-	{ 190, 144 }, { 198, 91 }, { 200, 133 }, { 202, 135 },
+	{ 190, 144 }, { 198, 91 }, { 200, 133 }, /*{ 202, 135 },*/
 };
 
 static struct msm_pinctrl_soc_data lahaina_pinctrl = {
@@ -1984,7 +1984,7 @@ static struct msm_pinctrl_soc_data lahaina_pinctrl = {
 /* By default, all the gpios that are mpm wake capable are enabled.
  * The following list disables the gpios explicitly
  */
-static const unsigned int config_mpm_wake_disable_gpios[] = { 151, 202 };
+static const unsigned int config_mpm_wake_disable_gpios[] = { 151, 202, 82 };
 
 static void lahaina_pinctrl_config_mpm_wake_disable_gpios(void)
 {

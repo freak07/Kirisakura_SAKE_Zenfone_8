@@ -185,6 +185,23 @@ type_show(struct device *dev, struct device_attribute *attr, char *buf)
 	return sprintf(buf, "%s\n", tz->type);
 }
 
+#if defined ASUS_SAKE_PROJECT
+int g_camera_therma = 3000;
+#endif
+
+#if defined ASUS_VODKA_PROJECT
+int g_rear_cam_therm = 3000;
+#endif
+
+#if defined ASUS_SAKE_PROJECT || defined ASUS_VODKA_PROJECT
+static int g_virtual_therm = 30000;
+
+int get_virtual_therm(void)
+{
+	return g_virtual_therm;
+}
+#endif
+
 static ssize_t
 temp_show(struct device *dev, struct device_attribute *attr, char *buf)
 {

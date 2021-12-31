@@ -1,0 +1,31 @@
+# SPDX-License-Identifier: GPL-2.0-only
+config SENSORS_ICM206XX
+	tristate "ICM206XX 6-axis gyroscope and acceleromater combo"
+	depends on INPUT && SPI
+	help
+	  Say Y here if you want to support InvenSense ICM206XX
+	  connected via an I2C bus.
+
+	  To compile this driver as a module, choose M here: the
+	  module will be called ICM206XX.
+	  
+config SENSORS_ALSPS
+	tristate "ALSPS sensor for light and proximity"
+	default m
+	help
+	  Say Y here if you want to support ALSPS
+	  connected via an I2C bus.
+
+	  To compile this driver as a module, choose M here: the
+	  module will be called ALSPS.
+
+config SENSORS_SNT8155
+	tristate "SNT8155 grip sensor for game gesture"
+	depends on MACH_ASUS_ZS673KS
+	default m
+	help
+	  Say Y here if you want to support InvenSense SNT8155
+	  connected via an I2C bus.
+
+	  To compile this driver as a module, choose M here: the
+	  module will be called SNT8155.

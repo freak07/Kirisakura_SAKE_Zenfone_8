@@ -7366,7 +7366,6 @@ static int msm_pcie_drv_send_rpmsg(struct msm_pcie_dev_t *pcie_dev,
 
 	PCIE_DBG(pcie_dev, "PCIe: RC%d: DRV: rpmsg successfully sent\n",
 		pcie_dev->rc_idx);
-
 out:
 	mutex_unlock(&pcie_drv.rpmsg_lock);
 

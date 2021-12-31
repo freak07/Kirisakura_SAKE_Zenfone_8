@@ -78,8 +78,8 @@ static DEFINE_SPINLOCK(time_sync_lock);
 #define FORCE_WAKE_DELAY_MAX_US			6000
 #define FORCE_WAKE_DELAY_TIMEOUT_US		60000
 
-#define POWER_ON_RETRY_MAX_TIMES		3
-#define POWER_ON_RETRY_DELAY_MS			200
+#define POWER_ON_RETRY_MAX_TIMES		10
+#define POWER_ON_RETRY_DELAY_MS			600
 
 #define LINK_TRAINING_RETRY_MAX_TIMES		3
 #define LINK_TRAINING_RETRY_DELAY_MS		500
@@ -1571,12 +1571,15 @@ static void cnss_pci_set_mhi_state_bit(struct cnss_pci_data *pci_priv,
 		clear_bit(CNSS_MHI_INIT, &pci_priv->mhi_state);
 		break;
 	case CNSS_MHI_POWER_ON:
+		clear_bit(CNSS_MHI_POWER_OFF, &pci_priv->mhi_state);
 		set_bit(CNSS_MHI_POWER_ON, &pci_priv->mhi_state);
 		break;
 	case CNSS_MHI_POWERING_OFF:
 		set_bit(CNSS_MHI_POWERING_OFF, &pci_priv->mhi_state);
 		break;
 	case CNSS_MHI_POWER_OFF:
+		set_bit(CNSS_MHI_POWER_OFF, &pci_priv->mhi_state);
+		fallthrough;
 	case CNSS_MHI_FORCE_POWER_OFF:
 		clear_bit(CNSS_MHI_POWER_ON, &pci_priv->mhi_state);
 		clear_bit(CNSS_MHI_POWERING_OFF, &pci_priv->mhi_state);
@@ -2431,7 +2434,7 @@ retry:
 		if (ret == -EAGAIN && retry++ < POWER_ON_RETRY_MAX_TIMES) {
 			cnss_power_off_device(plat_priv);
 			cnss_pr_dbg("Retry to resume PCI link #%d\n", retry);
-			msleep(POWER_ON_RETRY_DELAY_MS * retry);
+			msleep(POWER_ON_RETRY_DELAY_MS);
 			goto retry;
 		}
 		/* Assert when it reaches maximum retries */
@@ -3031,7 +3034,8 @@ int cnss_pci_suspend_bus(struct cnss_pci_data *pci_priv)
 	struct pci_dev *pci_dev = pci_priv->pci_dev;
 	int ret = 0;
 
-	if (pci_priv->pci_link_state == PCI_LINK_DOWN)
+	if (pci_priv->pci_link_state == PCI_LINK_DOWN ||
+	    test_bit(CNSS_MHI_POWER_OFF, &pci_priv->mhi_state))
 		goto out;
 
 	if (cnss_pci_set_mhi_state(pci_priv, CNSS_MHI_SUSPEND)) {
@@ -5725,6 +5729,10 @@ static int cnss_pci_probe(struct pci_dev *pci_dev,
 	ret = cnss_suspend_pci_link(pci_priv);
 	if (ret)
 		cnss_pr_err("Failed to suspend PCI link, err = %d\n", ret);
+
+	if (pci_dev->device == QCA6390_DEVICE_ID)
+		cnss_disable_redundant_vreg(plat_priv);
+
 	cnss_power_off_device(plat_priv);
 
 	return 0;

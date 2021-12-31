@@ -14,6 +14,16 @@
 #if IS_ENABLED(CONFIG_QCOM_MINIDUMP)
 #include <soc/qcom/minidump.h>
 #endif
+#ifdef CONFIG_MACH_ASUS
+#include <soc/qcom/ramdump.h>
+#include <soc/qcom/subsystem_notif.h>
+#if defined ASUS_ZS673KS_PROJECT || defined ASUS_PICASSO_PROJECT
+#include <linux/gpio.h>
+#include <linux/of_gpio.h>
+#include <linux/module.h>
+#include <linux/regulator/consumer.h>
+#endif
+#endif
 
 #include "main.h"
 #include "bus.h"
@@ -59,6 +69,15 @@ static struct cnss_fw_files FW_FILES_DEFAULT = {
 	"qwlan.bin", "bdwlan.bin", "otp.bin", "utf.bin",
 	"utfbd.bin", "epping.bin", "evicted.bin"
 };
+
+#if defined ASUS_ZS673KS_PROJECT || defined ASUS_PICASSO_PROJECT
+/* ASUS_BSP+++ for wifi antenna switch */
+#define default_wifi_antenna_switch		"1"
+#define GPIO_LOOKUP_STATE		"wifi_ant_gpio"
+
+int wlan_asus_ant_gpio = 0;
+/* ASUS_BSP--- for wifi antenna switch */
+#endif
 
 struct cnss_driver_event {
 	struct list_head list;
@@ -457,6 +476,9 @@ static int cnss_fw_mem_ready_hdlr(struct cnss_plat_data *plat_priv)
 	if (ret)
 		goto out;
 
+	if (cnss_wlfw_qdss_dnld_send_sync(plat_priv))
+		cnss_pr_info("Failed to download qdss configuration file");
+
 	return 0;
 out:
 	return ret;
@@ -546,9 +568,6 @@ static int cnss_fw_ready_hdlr(struct cnss_plat_data *plat_priv)
 	clear_bit(CNSS_DEV_ERR_NOTIFY, &plat_priv->driver_state);
 
 	cnss_wlfw_send_pcie_gen_speed_sync(plat_priv);
-
-	if (cnss_wlfw_qdss_dnld_send_sync(plat_priv))
-		cnss_pr_info("Failed to download qdss configuration file");
 
 	if (test_bit(CNSS_FW_BOOT_RECOVERY, &plat_priv->driver_state)) {
 		clear_bit(CNSS_FW_BOOT_RECOVERY, &plat_priv->driver_state);
@@ -2485,6 +2504,18 @@ int cnss_minidump_remove_region(struct cnss_plat_data *plat_priv,
 }
 #endif /* CONFIG_QCOM_MINIDUMP */
 
+int cnss_request_firmware_direct(struct cnss_plat_data *plat_priv,
+				 const struct firmware **fw_entry,
+				 const char *filename)
+{
+	if (IS_ENABLED(CONFIG_CNSS_REQ_FW_DIRECT))
+		return request_firmware_direct(fw_entry, filename,
+					       &plat_priv->plat_dev->dev);
+	else
+		return request_firmware(fw_entry, filename,
+					&plat_priv->plat_dev->dev);
+}
+
 #if IS_ENABLED(CONFIG_INTERCONNECT)
 /**
  * cnss_register_bus_scale() - Setup interconnect voting data
@@ -2677,13 +2708,13 @@ static ssize_t fs_ready_store(struct device *dev,
 	cnss_pr_dbg("File system is ready, fs_ready is %d, count is %zu\n",
 		    fs_ready, count);
 
-	if (test_bit(QMI_BYPASS, &plat_priv->ctrl_params.quirks)) {
-		cnss_pr_dbg("QMI is bypassed.\n");
+	if (!plat_priv) {
+		cnss_pr_err("plat_priv is NULL\n");
 		return count;
 	}
 
-	if (!plat_priv) {
-		cnss_pr_err("plat_priv is NULL!\n");
+	if (test_bit(QMI_BYPASS, &plat_priv->ctrl_params.quirks)) {
+		cnss_pr_dbg("QMI is bypassed\n");
 		return count;
 	}
 
@@ -3017,6 +3048,35 @@ cnss_use_nv_mac(struct cnss_plat_data *plat_priv)
 				     "use-nv-mac");
 }
 
+/* ASUS_BSP--- for for wifi antenna switch*/
+#if defined ASUS_ZS673KS_PROJECT || defined ASUS_PICASSO_PROJECT
+static ssize_t do_wifi_antenna_switch_store(struct device *dev,
+		struct device_attribute *attr, const char *buf, size_t count)
+{
+	int antenna_gpio = 0;
+	struct pinctrl *key_pinctrl;
+
+	kstrtoint(buf,10,&antenna_gpio);
+
+	key_pinctrl = devm_pinctrl_get(dev);
+	if (IS_ERR_OR_NULL(key_pinctrl)) {
+	    pr_err("[cnss] get_pinctrl failed");
+	}
+
+	cnss_pr_info("[cnss]: wifi_antenna_switch_start = %d, GPIO = %d.\n", antenna_gpio, gpio_get_value(wlan_asus_ant_gpio));
+
+	gpio_set_value(wlan_asus_ant_gpio, antenna_gpio);
+
+	cnss_pr_info("[cnss]: wifi_antenna_switch_end GPIO = %d.\n", gpio_get_value(wlan_asus_ant_gpio));
+
+	return count;
+
+}
+
+static DEVICE_ATTR(do_wifi_antenna_switch, 0644, NULL, do_wifi_antenna_switch_store);
+#endif
+/* ASUS_BSP--- for for wifi antenna switch*/
+
 static inline bool
 cnss_is_converged_dt(struct cnss_plat_data *plat_priv)
 {
@@ -3029,6 +3089,16 @@ static int cnss_probe(struct platform_device *plat_dev)
 	struct cnss_plat_data *plat_priv;
 	const struct of_device_id *of_id;
 	const struct platform_device_id *device_id;
+	/* ASUS_BSP+++ "add for the antenna switch power (LDO13A)" */
+#if defined ASUS_ZS673KS_PROJECT || defined ASUS_PICASSO_PROJECT
+	struct device *dev;
+//	struct regulator *temp_reg;
+//	int rc = 0;
+
+	struct pinctrl *key_pinctrl;
+	struct pinctrl_state *set_state;
+#endif
+	/* ASUS_BSP--- "add for the antenna switch power (LDO13A)" */
 
 	if (cnss_get_plat_priv(plat_dev)) {
 		cnss_pr_err("Driver is already initialized!\n");
@@ -3123,6 +3193,56 @@ static int cnss_probe(struct platform_device *plat_dev)
 	ret = cnss_genl_init();
 	if (ret < 0)
 		cnss_pr_err("CNSS genl init failed %d\n", ret);
+
+	/* ASUS_BSP+++ "add for the antenna switch power (LDO13A)" */
+#if defined ASUS_ZS673KS_PROJECT || defined ASUS_PICASSO_PROJECT
+dev = &plat_priv->plat_dev->dev;
+	key_pinctrl = devm_pinctrl_get(dev);
+	if (IS_ERR_OR_NULL(key_pinctrl)) {
+		cnss_pr_err("[cnss] set_pinctrl failed");
+	}
+
+	set_state = pinctrl_lookup_state(key_pinctrl, GPIO_LOOKUP_STATE);
+	ret = pinctrl_select_state(key_pinctrl, set_state);
+	if(ret < 0)
+		cnss_pr_err("[cnss] pinctrl_select_state");
+
+	ret = device_create_file(&plat_dev->dev, &dev_attr_do_wifi_antenna_switch);
+	if (ret)
+		pr_err("[cnss]: sysfs node create failed error:%d\n", ret);
+
+#if defined ASUS_ZS673KS_PROJECT
+	wlan_asus_ant_gpio = of_get_named_gpio(dev->of_node,"wlan-asus_ant_141",0);
+#else
+	wlan_asus_ant_gpio = of_get_named_gpio(dev->of_node,"wlan-asus_ant_148",0);
+#endif
+	if (wlan_asus_ant_gpio < 0) {
+		pr_err("[cnss] no wlan-asus_ant_gpio \n");
+	}
+	printk("[cnss] asus_ant_gpio = %d\n", wlan_asus_ant_gpio);
+
+	if (gpio_is_valid (wlan_asus_ant_gpio)) {
+#if defined ASUS_ZS673KS_PROJECT
+		ret = gpio_request(wlan_asus_ant_gpio, "wlan-asus_ant_141");
+#else
+		ret = gpio_request(wlan_asus_ant_gpio, "wlan-asus_ant_148");
+#endif
+		if (ret){
+			printk("[cnss] gpio_request.err %d\n", ret);
+		}
+		ret = gpio_direction_output(wlan_asus_ant_gpio, 1);
+		if (ret){
+			printk("[cnss] gpio_direction_output.err %d\n", ret);
+		}
+		gpio_set_value(wlan_asus_ant_gpio, 0);
+		printk("[cnss] gpio_get_value_end %d\n", gpio_get_value(wlan_asus_ant_gpio));
+	}
+	else {
+		printk("[cnss] wlan_asus_ant_gpio is not valid");
+	}
+#endif
+	/* ASUS_BSP--- "add for the antenna switch power (LDO13A)" */
+
 
 	cnss_pr_info("Platform driver probed successfully.\n");
 

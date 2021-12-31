@@ -99,6 +99,110 @@ static void __iomem *rpmh_unit_base;
 
 static DEFINE_MUTEX(rpmh_stats_mutex);
 
+#ifdef CONFIG_MACH_ASUS
+//[PM_debug +++]
+#if defined ASUS_SAKE_PROJECT || defined ASUS_VODKA_PROJECT
+extern bool need_dump_rpmh_master_stat;
+static void asus_msm_rpmh_master_stats_print_data(struct msm_rpmh_master_stats *record,
+				const char *name)
+{
+	uint64_t accumulated_duration = record->accumulated_duration;
+	/*
+	 * If a master is in sleep when reading the sleep stats from SMEM
+	 * adjust the accumulated sleep duration to show actual sleep time.
+	 * This ensures that the displayed stats are real when used for
+	 * the purpose of computing battery utilization.
+	 */
+	if (record->last_entered > record->last_exited)
+		accumulated_duration +=
+				(__arch_counter_get_cntvct()
+				- record->last_entered);
+
+	printk("%s Version:0x%x  "
+			"Sleep Count:0x%x  "
+			"Sleep Last Entered At:0x%llx  "
+			"Sleep Last Exited At:0x%llx  "
+			"Sleep Accumulated Duration:0x%llx\n",
+			name, record->version_id, record->counts,
+			record->last_entered, record->last_exited,
+			accumulated_duration);
+}
+static void asus_msm_rpmh_master_stats_show(void)
+{
+	int i = 0;
+	size_t size = 0;
+	struct msm_rpmh_master_stats *record = NULL;
+
+	mutex_lock(&rpmh_stats_mutex);
+
+	/* First Read APSS master stats */
+
+	asus_msm_rpmh_master_stats_print_data(&apss_master_stats, "APSS");
+
+	/* Read SMEM data written by other masters */
+
+	for (i = 0; i < ARRAY_SIZE(rpmh_masters); i++) {
+		record = (struct msm_rpmh_master_stats *) qcom_smem_get(
+					rpmh_masters[i].pid,
+					rpmh_masters[i].smem_id, &size);
+		if (!IS_ERR_OR_NULL(record) )
+			asus_msm_rpmh_master_stats_print_data(record,rpmh_masters[i].master_name);
+	}
+
+	mutex_unlock(&rpmh_stats_mutex);
+}
+
+void msm_rpmh_master_stats_print(void)
+{
+	if(need_dump_rpmh_master_stat)
+	{
+		asus_msm_rpmh_master_stats_show();
+	}
+}
+#else
+void msm_rpmh_master_stats_print(void)
+{
+	bool voting_sleep = false;
+    int i = 0;
+	struct msm_rpmh_master_stats *record = NULL;
+    char buf[200];
+    ssize_t length;
+
+	mutex_lock(&rpmh_stats_mutex);
+
+	/* First Read APSS master stats */
+    record = &apss_master_stats;
+    if (record->last_entered > record->last_exited)
+        voting_sleep = true;
+    else
+        voting_sleep = false;
+    //printk("[PM]%s:%s:0x%x",
+    length = scnprintf(buf, PAGE_SIZE, "{%s:%s}",
+            "APSS", voting_sleep ? "s":"w");
+
+	/* Read SMEM data written by other masters */
+    record = NULL;
+	for (i = 0; i < ARRAY_SIZE(rpmh_masters); i++) {
+		record = (struct msm_rpmh_master_stats *) qcom_smem_get(
+					rpmh_masters[i].pid,
+					rpmh_masters[i].smem_id, NULL);
+		if (!IS_ERR_OR_NULL(record) && (PAGE_SIZE - length > 0)){
+            if (record->last_entered > record->last_exited)
+                voting_sleep = true;
+            else
+                voting_sleep = false;
+            //printk("[PM]%s:%s:0x%x",
+            length += scnprintf(buf + length, PAGE_SIZE - length, "{%s:%s:%d}",
+                    rpmh_masters[i].master_name, voting_sleep ? "s":"w", record->counts);
+        }
+	}
+    printk("[PM]%s", buf);
+	mutex_unlock(&rpmh_stats_mutex);
+}
+EXPORT_SYMBOL(msm_rpmh_master_stats_print);
+#endif
+//[PM_debug ---]
+#endif
 static ssize_t msm_rpmh_master_stats_print_data(char *prvbuf, ssize_t length,
 				struct msm_rpmh_master_stats *record,
 				const char *name)
@@ -198,6 +302,9 @@ void msm_rpmh_master_stats_update(void)
 					GET_ADDR(REG_DATA_HI, i)) << 32);
 	}
 	msm_rpmh_apss_master_stats_update(profile_unit);
+    //[PM_debug +++]
+    //msm_rpmh_master_stats_print();
+    //[PM_debug ---]
 }
 EXPORT_SYMBOL(msm_rpmh_master_stats_update);
 

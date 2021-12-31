@@ -23,7 +23,6 @@
 #define BIN_BDF_FILE_NAME_PREFIX	"bdwlan.b"
 #define BIN_BDF_FILE_NAME_GF_PREFIX	"bdwlang.b"
 #define REGDB_FILE_NAME			"regdb.bin"
-#define DUMMY_BDF_FILE_NAME		"bdwlan.dmy"
 #define CHIP_ID_GF_MASK			0x10
 
 #define QDSS_TRACE_CONFIG_FILE		"qdss_trace_config"
@@ -550,11 +549,6 @@ static int cnss_get_bdf_file_name(struct cnss_plat_data *plat_priv,
 	case CNSS_BDF_REGDB:
 		snprintf(filename_tmp, filename_len, REGDB_FILE_NAME);
 		break;
-	case CNSS_BDF_DUMMY:
-		cnss_pr_dbg("CNSS_BDF_DUMMY is set, sending dummy BDF\n");
-		snprintf(filename_tmp, filename_len, DUMMY_BDF_FILE_NAME);
-		ret = MAX_FIRMWARE_NAME_LEN;
-		break;
 	default:
 		cnss_pr_err("Invalid BDF type: %d\n",
 			    plat_priv->ctrl_params.bdf_type);
@@ -562,7 +556,7 @@ static int cnss_get_bdf_file_name(struct cnss_plat_data *plat_priv,
 		break;
 	}
 
-	if (ret >= 0)
+	if (!ret)
 		cnss_bus_add_fw_prefix_name(plat_priv, filename, filename_tmp);
 
 	return ret;
@@ -595,15 +589,16 @@ int cnss_wlfw_bdf_dnld_send_sync(struct cnss_plat_data *plat_priv,
 
 	ret = cnss_get_bdf_file_name(plat_priv, bdf_type,
 				     filename, sizeof(filename));
-	if (ret > 0) {
-		temp = DUMMY_BDF_FILE_NAME;
-		remaining = MAX_FIRMWARE_NAME_LEN;
-		goto bypass_bdf;
-	} else if (ret < 0) {
+	if (ret)
 		goto err_req_fw;
-	}
 
-	ret = request_firmware(&fw_entry, filename, &plat_priv->plat_dev->dev);
+	if (bdf_type == CNSS_BDF_REGDB)
+		ret = cnss_request_firmware_direct(plat_priv, &fw_entry,
+						   filename);
+	else
+		ret = request_firmware(&fw_entry, filename,
+				       &plat_priv->plat_dev->dev);
+
 	if (ret) {
 		cnss_pr_err("Failed to load BDF: %s\n", filename);
 		goto err_req_fw;
@@ -612,7 +607,6 @@ int cnss_wlfw_bdf_dnld_send_sync(struct cnss_plat_data *plat_priv,
 	temp = fw_entry->data;
 	remaining = fw_entry->size;
 
-bypass_bdf:
 	cnss_pr_dbg("Downloading BDF: %s, size: %u\n", filename, remaining);
 
 	while (remaining) {
@@ -675,8 +669,7 @@ bypass_bdf:
 		req->seg_id++;
 	}
 
-	if (bdf_type != CNSS_BDF_DUMMY)
-		release_firmware(fw_entry);
+	release_firmware(fw_entry);
 
 	/* QCA6490 enable S3E regulator for IPA configuration only */
 	if (resp->host_bdf_data_valid) {
@@ -689,8 +682,7 @@ bypass_bdf:
 	return 0;
 
 err_send:
-	if (bdf_type != CNSS_BDF_DUMMY)
-		release_firmware(fw_entry);
+	release_firmware(fw_entry);
 err_req_fw:
 	if (!(bdf_type == CNSS_BDF_REGDB ||
 	      test_bit(CNSS_IN_REBOOT, &plat_priv->driver_state) ||
@@ -1012,8 +1004,8 @@ int cnss_wlfw_qdss_dnld_send_sync(struct cnss_plat_data *plat_priv)
 	}
 
 	cnss_get_qdss_cfg_filename(plat_priv, qdss_cfg_filename, sizeof(qdss_cfg_filename));
-	ret = request_firmware(&fw_entry, qdss_cfg_filename,
-			       &plat_priv->plat_dev->dev);
+	ret = cnss_request_firmware_direct(plat_priv, &fw_entry,
+					   qdss_cfg_filename);
 	if (ret) {
 		cnss_pr_err("Failed to load QDSS: %s\n",
 			    qdss_cfg_filename);
@@ -2450,16 +2442,25 @@ static void cnss_wlfw_respond_get_info_ind_cb(struct qmi_handle *qmi_wlfw,
 		container_of(qmi_wlfw, struct cnss_plat_data, qmi_wlfw);
 	const struct wlfw_respond_get_info_ind_msg_v01 *ind_msg = data;
 
+#ifdef CONFIG_MACH_ASUS
+	//cnss_pr_vdbg("Received QMI WLFW respond get info indication\n");
+#else
 	cnss_pr_buf("Received QMI WLFW respond get info indication\n");
+#endif
 
 	if (!txn) {
 		cnss_pr_err("Spurious indication\n");
 		return;
 	}
-
-	cnss_pr_buf("Extract message with event length: %d, type: %d, is last: %d, seq no: %d\n",
-		    ind_msg->data_len, ind_msg->type,
-		    ind_msg->is_last, ind_msg->seq_no);
+#ifdef CONFIG_MACH_ASUS
+	//cnss_pr_buf("Extract message with event length: %d, type: %d, is last: %d, seq no: %d\n",
+	//	     ind_msg->data_len, ind_msg->type,
+	//	     ind_msg->is_last, ind_msg->seq_no);
+#else
+	cnss_pr_vdbg("Extract message with event length: %d, type: %d, is last: %d, seq no: %d\n",
+		     ind_msg->data_len, ind_msg->type,
+		     ind_msg->is_last, ind_msg->seq_no);
+#endif
 
 	if (plat_priv->get_info_cb_ctx && plat_priv->get_info_cb)
 		plat_priv->get_info_cb(plat_priv->get_info_cb_ctx,

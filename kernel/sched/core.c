@@ -4943,6 +4943,18 @@ static bool check_same_owner(struct task_struct *p)
 {
 	const struct cred *cred = current_cred(), *pcred;
 	bool match;
+#ifdef CONFIG_MACH_ASUS
+    //printk("TGPA- check_same_owner %s, %s", p->comm, current->comm);
+    // glory of king
+    if(!strcmp(p->comm, "UnityMain") && !strncmp("Thread-", current->comm, 7))
+        return true;
+    //pubg
+    if(!strncmp(p->comm, "Thread-", 7) && !strncmp("Thread-", current->comm, 7))
+        return true;
+    //peace elite
+    if(!strncmp(p->comm, "RenderThread", strlen("RenderThread")) && !strncmp("Thread-", current->comm, 7))
+        return true;
+#endif    
 
 	rcu_read_lock();
 	pcred = __task_cred(p);
