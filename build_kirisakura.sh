@@ -5,7 +5,7 @@ echo "Clean Build Directory"
 echo 
 
 #make clean && make mrproper
-#rm -rf ./out_cfi
+rm -rf ./out_cfi
 
 echo
 echo "Issue Build Commands"
@@ -48,7 +48,8 @@ export CC=$CLANG_CC
 export HOST_CC=$CLANG_CC
 export LD=$CLANG_LD
 
-export ASUS_BUILD_PROJECT=ZS673KS
+export ASUS_BUILD_PROJECT=SAKE
+export ASUS_BUILD_NUMBER_CHIPCODE=SAKE
 
 #export LLVM=1
 
