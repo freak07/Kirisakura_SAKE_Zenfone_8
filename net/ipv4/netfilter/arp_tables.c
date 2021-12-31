@@ -204,7 +204,7 @@ unsigned int arpt_do_table(struct sk_buff *skb,
 	local_bh_disable();
 	addend = xt_write_recseq_begin();
 #if defined(ASUS_ZS673KS_PROJECT) || defined(ASUS_PICASSO_PROJECT) || defined(ASUS_SAKE_PROJECT) || defined(ASUS_VODKA_PROJECT)
-	private = rcu_access_pointer(table->private);
+	private = READ_ONCE(table->private); /* Address dependency. */
 #else
 	private = READ_ONCE(table->private); /* Address dependency. */
 #endif
@@ -654,7 +654,7 @@ static struct xt_counters *alloc_counters(const struct xt_table *table)
 	unsigned int countersize;
 	struct xt_counters *counters;
 #if defined(ASUS_ZS673KS_PROJECT) || defined(ASUS_PICASSO_PROJECT) || defined(ASUS_SAKE_PROJECT) || defined(ASUS_VODKA_PROJECT)
-	const struct xt_table_info *private = xt_table_get_private_protected(table);
+	const struct xt_table_info *private = table->private;
 #else
 	const struct xt_table_info *private = table->private;
 #endif
@@ -681,7 +681,7 @@ static int copy_entries_to_user(unsigned int total_size,
 	const struct arpt_entry *e;
 	struct xt_counters *counters;
 #if defined(ASUS_ZS673KS_PROJECT) || defined(ASUS_PICASSO_PROJECT) || defined(ASUS_SAKE_PROJECT) || defined(ASUS_VODKA_PROJECT)
-	struct xt_table_info *private = xt_table_get_private_protected(table);
+	struct xt_table_info *private = table->private;
 #else
 	struct xt_table_info *private = table->private;
 #endif
@@ -820,7 +820,7 @@ static int get_info(struct net *net, void __user *user,
 	if (!IS_ERR(t)) {
 		struct arpt_getinfo info;
 #if defined(ASUS_ZS673KS_PROJECT) || defined(ASUS_PICASSO_PROJECT) || defined(ASUS_SAKE_PROJECT) || defined(ASUS_VODKA_PROJECT)
-		const struct xt_table_info *private = xt_table_get_private_protected(t);
+		const struct xt_table_info *private = t->private;
 #else
 		const struct xt_table_info *private = t->private;
 #endif
@@ -877,7 +877,7 @@ static int get_entries(struct net *net, struct arpt_get_entries __user *uptr,
 	t = xt_find_table_lock(net, NFPROTO_ARP, get.name);
 	if (!IS_ERR(t)) {
 #if defined(ASUS_ZS673KS_PROJECT) || defined(ASUS_PICASSO_PROJECT) || defined(ASUS_SAKE_PROJECT) || defined(ASUS_VODKA_PROJECT)
-		const struct xt_table_info *private = xt_table_get_private_protected(t);
+		const struct xt_table_info *private = t->private;
 #else
 		const struct xt_table_info *private = t->private;
 #endif
@@ -1045,7 +1045,7 @@ static int do_add_counters(struct net *net, const void __user *user,
 
 	local_bh_disable();
 #if defined(ASUS_ZS673KS_PROJECT) || defined(ASUS_PICASSO_PROJECT) || defined(ASUS_SAKE_PROJECT) || defined(ASUS_VODKA_PROJECT)
-	private = xt_table_get_private_protected(t);
+	private = t->private;
 #else
 	private = t->private;
 #endif
@@ -1224,6 +1224,8 @@ static int translate_compat_table(struct net *net,
 	if (!newinfo)
 		goto out_unlock;
 
+	memset(newinfo->entries, 0, size);
+
 	newinfo->number = compatr->num_entries;
 	for (i = 0; i < NF_ARP_NUMHOOKS; i++) {
 		newinfo->hook_entry[i] = compatr->hook_entry[i];
@@ -1386,7 +1388,7 @@ static int compat_copy_entries_to_user(unsigned int total_size,
 {
 	struct xt_counters *counters;
 #if defined(ASUS_ZS673KS_PROJECT) || defined(ASUS_PICASSO_PROJECT) || defined(ASUS_SAKE_PROJECT) || defined(ASUS_VODKA_PROJECT)
-	const struct xt_table_info *private = xt_table_get_private_protected(table);
+	const struct xt_table_info *private = table->private;
 #else
 	const struct xt_table_info *private = table->private;
 #endif
@@ -1610,10 +1612,15 @@ out_free:
 	return ret;
 }
 
-void arpt_unregister_table(struct net *net, struct xt_table *table,
-			   const struct nf_hook_ops *ops)
+void arpt_unregister_table_pre_exit(struct net *net, struct xt_table *table,
+				    const struct nf_hook_ops *ops)
 {
 	nf_unregister_net_hooks(net, ops, hweight32(table->valid_hooks));
+}
+EXPORT_SYMBOL(arpt_unregister_table_pre_exit);
+
+void arpt_unregister_table(struct net *net, struct xt_table *table)
+{
 	__arpt_unregister_table(net, table);
 }
 
