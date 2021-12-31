@@ -220,7 +220,6 @@ void dwmac_qcom_program_avb_algorithm(struct stmmac_priv *priv,
 
 unsigned int dwmac_qcom_get_plat_tx_coal_frames(struct sk_buff *skb)
 {
-	bool is_udp;
 	unsigned int eth_type;
 
 	eth_type = dwmac_qcom_get_eth_type(skb->data);
@@ -234,7 +233,7 @@ unsigned int dwmac_qcom_get_plat_tx_coal_frames(struct sk_buff *skb)
 		return AVB_INT_MOD;
 	if (eth_type == ETH_P_IP || eth_type == ETH_P_IPV6) {
 #ifdef CONFIG_PTPSUPPORT_OBJ
-		is_udp = (((eth_type == ETH_P_IP) &&
+		bool is_udp = (((eth_type == ETH_P_IP) &&
 				   (ip_hdr(skb)->protocol ==
 					IPPROTO_UDP)) ||
 				  ((eth_type == ETH_P_IPV6) &&
@@ -288,6 +287,7 @@ int ethqos_handle_prv_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 	return ret;
 }
 
+#ifndef MODULE
 static int __init set_early_ethernet_ipv4(char *ipv4_addr_in)
 {
 	int ret = 1;
@@ -367,6 +367,7 @@ fail:
 }
 
 __setup("ermac=", set_early_ethernet_mac);
+#endif
 
 static int qcom_ethqos_add_ipaddr(struct ip_params *ip_info,
 				  struct net_device *dev)
@@ -411,6 +412,7 @@ place_marker("M - Etherent Assigned IPv4 address");
 	return res;
 }
 
+#ifdef CONFIG_IPV6
 static int qcom_ethqos_add_ipv6addr(struct ip_params *ip_info,
 				    struct net_device *dev)
 {
@@ -458,6 +460,7 @@ static int qcom_ethqos_add_ipv6addr(struct ip_params *ip_info,
 		}
 	return ret;
 }
+#endif
 
 static int rgmii_readl(struct qcom_ethqos *ethqos, unsigned int offset)
 {
@@ -762,7 +765,8 @@ static int ethqos_rgmii_macro_init(struct qcom_ethqos *ethqos)
 				      0, RGMII_IO_MACRO_CONFIG2);
 		if (ethqos->emac_ver == EMAC_HW_v2_3_2_RG ||
 		    ethqos->emac_ver == EMAC_HW_v2_1_2 ||
-			ethqos->emac_ver == EMAC_HW_v2_1_1)
+			ethqos->emac_ver == EMAC_HW_v2_1_1 ||
+			ethqos->emac_ver == EMAC_HW_v2_3_1)
 			rgmii_updatel(ethqos,
 				      RGMII_CONFIG2_TX_CLK_PHASE_SHIFT_EN,
 				      RGMII_CONFIG2_TX_CLK_PHASE_SHIFT_EN,
@@ -778,7 +782,8 @@ static int ethqos_rgmii_macro_init(struct qcom_ethqos *ethqos)
 			      0, RGMII_IO_MACRO_CONFIG2);
 		if (ethqos->emac_ver == EMAC_HW_v2_3_2_RG ||
 		    ethqos->emac_ver == EMAC_HW_v2_1_2 ||
-			ethqos->emac_ver == EMAC_HW_v2_1_1)
+			ethqos->emac_ver == EMAC_HW_v2_1_1 ||
+			ethqos->emac_ver == EMAC_HW_v2_3_1)
 			rgmii_updatel(ethqos, RGMII_CONFIG2_RX_PROG_SWAP,
 				      RGMII_CONFIG2_RX_PROG_SWAP,
 				      RGMII_IO_MACRO_CONFIG2);
@@ -1287,6 +1292,7 @@ static void ethqos_is_ipv4_NW_stack_ready(struct work_struct *work)
 	flush_delayed_work(&ethqos->ipv4_addr_assign_wq);
 }
 
+#ifdef CONFIG_IPV6
 static void ethqos_is_ipv6_NW_stack_ready(struct work_struct *work)
 {
 	struct delayed_work *dwork;
@@ -1316,6 +1322,7 @@ static void ethqos_is_ipv6_NW_stack_ready(struct work_struct *work)
 	cancel_delayed_work_sync(&ethqos->ipv6_addr_assign_wq);
 	flush_delayed_work(&ethqos->ipv6_addr_assign_wq);
 }
+#endif
 
 static int ethqos_set_early_eth_param(struct stmmac_priv *priv,
 				      struct qcom_ethqos *ethqos)
@@ -1333,6 +1340,7 @@ static int ethqos_set_early_eth_param(struct stmmac_priv *priv,
 		schedule_delayed_work(&ethqos->ipv4_addr_assign_wq, 0);
 	}
 
+#ifdef CONFIG_IPV6
 	if (pparams.is_valid_ipv6_addr) {
 		INIT_DELAYED_WORK(&ethqos->ipv6_addr_assign_wq,
 				  ethqos_is_ipv6_NW_stack_ready);
@@ -1341,6 +1349,7 @@ static int ethqos_set_early_eth_param(struct stmmac_priv *priv,
 			schedule_delayed_work(&ethqos->ipv6_addr_assign_wq,
 					      msecs_to_jiffies(1000));
 	}
+#endif
 
 	if (pparams.is_valid_mac_addr) {
 		ether_addr_copy(dev_addr, pparams.mac_addr);
