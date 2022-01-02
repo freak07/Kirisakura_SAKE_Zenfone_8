@@ -2017,6 +2017,10 @@ static const struct of_device_id match_table[] = {
 		.compatible = "qcom,qpnp-smblite",
 		.data = (void *)PM2250,
 	},
+	{
+		.compatible = "qcom,qpnp-pm5100-smblite",
+		.data = (void *)PM5100,
+	},
 	{ },
 };
 

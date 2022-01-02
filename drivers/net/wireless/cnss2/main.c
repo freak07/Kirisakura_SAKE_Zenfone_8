@@ -3184,6 +3184,7 @@ static int cnss_probe(struct platform_device *plat_dev)
 	struct cnss_plat_data *plat_priv;
 	const struct of_device_id *of_id;
 	const struct platform_device_id *device_id;
+	int retry = 0;
 	/* ASUS_BSP+++ "add for the antenna switch power (LDO13A)" */
 #if defined ASUS_ZS673KS_PROJECT || defined ASUS_PICASSO_PROJECT
 	struct device *dev;
@@ -3276,13 +3277,22 @@ static int cnss_probe(struct platform_device *plat_dev)
 	 * device power on and bus init.
 	 */
 	if (!test_bit(SKIP_DEVICE_BOOT, &plat_priv->ctrl_params.quirks)) {
-		ret = cnss_power_on_device(plat_priv);
+retry:
+		ret = cnss_power_on_device(plat_priv, true);
 		if (ret)
 			goto deinit_misc;
 
 		ret = cnss_bus_init(plat_priv);
-		if (ret)
+		if (ret) {
+			if ((ret != -EPROBE_DEFER) &&
+			    retry++ < POWER_ON_RETRY_MAX_TIMES) {
+				cnss_power_off_device(plat_priv);
+				cnss_pr_dbg("Retry cnss_bus_init #%d\n", retry);
+				msleep(POWER_ON_RETRY_DELAY_MS * retry);
+				goto retry;
+			}
 			goto power_off;
+		}
 	}
 
 	cnss_register_coex_service(plat_priv);
