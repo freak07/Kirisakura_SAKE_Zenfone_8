@@ -1254,7 +1254,7 @@ static void hub_activate(struct usb_hub *hub, enum hub_activation_type type)
 			 */
 			if (portchange || (hub_is_superspeed(hub->hdev) &&
 						port_resumed))
-				set_bit(port1, hub->change_bits);
+				set_bit(port1, hub->event_bits);
 #ifdef CONFIG_MACH_ASUS
 			else if (ProDock_state != 0 ){
 				need_debounce_delay = true;
