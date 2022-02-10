@@ -849,6 +849,8 @@ int dsi_panel_set_fod_hbm(struct dsi_panel *panel, bool status)
 		panel->fod_hbm_enabled = false;
 	}
 
+	sysfs_notify(&panel->parent->kobj, NULL, "fod_ui");
+
 	return 0;
 }
 
@@ -3806,7 +3808,24 @@ static void dsi_panel_setup_vm_ops(struct dsi_panel *panel, bool trusted_vm_env)
 	}
 }
 
+static ssize_t sysfs_fod_ui_read(struct device *dev,
+	struct device_attribute *attr, char *buf)
+{
+	struct dsi_display *display = dev_get_drvdata(dev);
+	struct dsi_panel *panel = display->panel;
+	bool status;
+
+	mutex_lock(&panel->panel_lock);
+	status = panel->fod_hbm_enabled;
+	mutex_unlock(&panel->panel_lock);
+
+	return snprintf(buf, PAGE_SIZE, "%d\n", status);
+}
+
+static DEVICE_ATTR(fod_ui, 0444, sysfs_fod_ui_read, NULL);
+
 static struct attribute *panel_attrs[] = {
+	&dev_attr_fod_ui.attr,
 	NULL,
 };
 
