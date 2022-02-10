@@ -279,6 +279,9 @@ struct dsi_panel {
 	struct brightness_alpha_pair *fod_dim_lut;
 	unsigned int fod_dim_lut_len;
 
+	u8 fod_dim_alpha;
+	bool fod_hbm_enabled;
+
 	/* ASUS Anakin BSP Display +++ */
 	const char *panel_vendor_id;
 	int panel_hbm_mode;
@@ -434,4 +437,7 @@ int dsi_panel_create_cmd_packets(const char *data, u32 length, u32 count,
 void dsi_panel_destroy_cmd_packets(struct dsi_panel_cmd_set *set);
 
 void dsi_panel_dealloc_cmd_packets(struct dsi_panel_cmd_set *set);
+
+int dsi_panel_set_fod_hbm(struct dsi_panel *panel, bool status);
+
 #endif /* _DSI_PANEL_H_ */

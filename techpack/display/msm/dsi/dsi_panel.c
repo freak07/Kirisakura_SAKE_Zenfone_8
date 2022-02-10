@@ -790,6 +790,68 @@ error:
 	return rc;
 }
 
+static u32 dsi_panel_get_backlight(struct dsi_panel *panel)
+{
+	return panel->bl_config.real_bl_level;
+}
+
+static u32 interpolate(uint32_t x, uint32_t xa, uint32_t xb,
+		       uint32_t ya, uint32_t yb)
+{
+	return ya - (ya - yb) * (x - xa) / (xb - xa);
+}
+
+static u32 dsi_panel_get_fod_dim_alpha(struct dsi_panel *panel)
+{
+	u32 brightness = dsi_panel_get_backlight(panel);
+	int i;
+
+	if (!panel->fod_dim_lut)
+		return 0;
+
+	for (i = 0; i < panel->fod_dim_lut_len; i++)
+		if (panel->fod_dim_lut[i].brightness >= brightness)
+			break;
+
+	if (i == 0)
+		return panel->fod_dim_lut[i].alpha;
+
+	if (i == panel->fod_dim_lut_len)
+		return panel->fod_dim_lut[i - 1].alpha;
+
+	return interpolate(brightness,
+			   panel->fod_dim_lut[i - 1].brightness,
+			   panel->fod_dim_lut[i].brightness,
+			   panel->fod_dim_lut[i - 1].alpha,
+			   panel->fod_dim_lut[i].alpha);
+}
+
+int dsi_panel_set_fod_hbm(struct dsi_panel *panel, bool status)
+{
+	int rc;
+
+	if (status) {
+		rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_FOD_HBM_ON);
+		if (rc)
+			return rc;
+
+		panel->fod_hbm_enabled = true;
+	} else {
+		rc = dsi_panel_set_backlight(panel,
+					     panel->bl_config.real_bl_level);
+		if (rc)
+			return rc;
+
+		rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_FOD_HBM_OFF);
+		if (rc)
+			return rc;
+
+		panel->fod_hbm_enabled = false;
+	}
+
+	return 0;
+}
+
 int dsi_panel_set_backlight(struct dsi_panel *panel, u32 bl_lvl)
 {
 	int rc = 0;
@@ -817,6 +879,8 @@ int dsi_panel_set_backlight(struct dsi_panel *panel, u32 bl_lvl)
 	}
 
 	bl->real_bl_level = bl_lvl;
+
+	panel->fod_dim_alpha = dsi_panel_get_fod_dim_alpha(panel);
 
 	return rc;
 }
