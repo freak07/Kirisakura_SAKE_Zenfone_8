@@ -237,7 +237,11 @@
  * enable it when customer need control TP power
  * default: disable
  */
+#if defined ASUS_SAKE_PROJECT
+#define FTS_POWER_SOURCE_CUST_EN 1
+#else
 #define FTS_POWER_SOURCE_CUST_EN 0
+#endif
 
 /****************************************************/
 
