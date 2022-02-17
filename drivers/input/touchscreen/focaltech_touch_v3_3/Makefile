@@ -1,0 +1,9 @@
+obj-$(CONFIG_TOUCHSCREEN_FTS_V3_3) += focaltech_fts_v3_3.o
+focaltech_fts_v3_3-y += focaltech_core.o
+focaltech_fts_v3_3-y += focaltech_ex_fun.o
+focaltech_fts_v3_3-y += focaltech_ex_mode.o
+focaltech_fts_v3_3-y += focaltech_gesture.o
+focaltech_fts_v3_3-y += focaltech_esdcheck.o
+focaltech_fts_v3_3-y += focaltech_point_report_check.o
+focaltech_fts_v3_3-y += focaltech_i2c.o
+focaltech_fts_v3_3-y += focaltech_flash.o
