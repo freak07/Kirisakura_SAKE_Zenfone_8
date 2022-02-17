@@ -364,6 +364,48 @@ static int fts_get_ic_information(struct fts_ts_data *ts_data)
 	ts_data->ic_info.is_incell = FTS_CHIP_IDC;
 	ts_data->ic_info.hid_supported = FTS_HID_SUPPORTTED;
 
+#if defined ASUS_SAKE_PROJECT
+	FTS_FUNC_ENTER();
+	do {
+		ret = fts_read_reg(FTS_REG_CHIP_ID, &chip_id[0]);
+		ret = fts_read_reg(FTS_REG_CHIP_ID2, &chip_id[1]);
+		if ((ret < 0) || (0x0 == chip_id[0]) || (0x0 == chip_id[1])) {
+			FTS_DEBUG("chip id read invalid, read:0x%02x%02x",
+				  chip_id[0], chip_id[1]);
+		} else {
+			ret = fts_get_chip_types(ts_data, chip_id[0],
+						 chip_id[1], VALID);
+			if (!ret)
+				break;
+			else
+				FTS_DEBUG("TP not ready, read:0x%02x%02x",
+					  chip_id[0], chip_id[1]);
+		}
+
+		cnt++;
+		msleep(INTERVAL_READ_REG);
+	} while ((cnt * INTERVAL_READ_REG) < TIMEOUT_READ_REG);
+
+	if ((cnt * INTERVAL_READ_REG) >= TIMEOUT_READ_REG) {
+		FTS_INFO("fw is invalid, need read boot id");
+		if (ts_data->ic_info.hid_supported) {
+			fts_hid2std();
+		}
+
+		ret = fts_read_bootid(ts_data, &chip_id[0]);
+		if (ret < 0) {
+			FTS_ERROR("read boot id fail");
+			return ret;
+		}
+
+		ret = fts_get_chip_types(ts_data, chip_id[0], chip_id[1],
+					 INVALID);
+		if (ret < 0) {
+			FTS_ERROR("can't get ic informaton");
+			return ret;
+		}
+	}
+#else
 	for (cnt = 0; cnt < 3; cnt++) {
 		fts_reset_proc(0);
 		mdelay(FTS_CMD_START_DELAY);
@@ -388,6 +430,7 @@ static int fts_get_ic_information(struct fts_ts_data *ts_data)
 		FTS_ERROR("get ic informaton fail");
 		return -EIO;
 	}
+#endif
 
 	FTS_INFO("get ic information, chip id = 0x%02x%02x(cid type=0x%x)",
 		 ts_data->ic_info.ids.chip_idh, ts_data->ic_info.ids.chip_idl,
