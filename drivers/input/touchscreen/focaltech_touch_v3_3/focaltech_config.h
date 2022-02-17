@@ -289,7 +289,12 @@
  * define your own fw_file, the sample one to be replaced is invalid
  * NOTE: if FTS_GET_MODULE_NUM > 1, it's the fw corresponding with FTS_VENDOR_ID
  */
+#if defined ASUS_SAKE_PROJECT
+#define FTS_UPGRADE_FW_FILE                                                    \
+	"include/firmware/FT3658G_SAKE_V85_D01_20211221_app.i"
+#else
 #define FTS_UPGRADE_FW_FILE "include/firmware/fw_sample.i"
+#endif
 
 /*
  * if FTS_GET_MODULE_NUM >= 2, fw corrsponding with FTS_VENDOR_ID2
