@@ -58,6 +58,14 @@
 
 #define FTS_MAX_CHIP_IDS 8
 
+#if defined ASUS_SAKE_PROJECT
+#define FTS_CHIP_TYPE_MAPPING                                                  \
+	{                                                                      \
+		{                                                              \
+			0x88, 0x56, 0x52, 0x00, 0x00, 0x00, 0x00, 0x56, 0xB2   \
+		}                                                              \
+	}
+#else
 #define FTS_CHIP_TYPE_MAPPING                                                  \
 	{                                                                      \
 		{                                                              \
@@ -65,7 +73,6 @@
 		}                                                              \
 	}
 
-#if !defined ASUS_SAKE_PROJECT
 #define FTS_CHIP_ID_MAPPING                                                    \
 	{                                                                      \
 		{                                                              \
