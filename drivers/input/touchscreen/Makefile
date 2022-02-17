@@ -123,3 +123,4 @@ obj-$(CONFIG_TOUCHSCREEN2_ROG)    	+= ROG5_TP2/
 endif
 obj-$(CONFIG_TOUCHSCREEN_SYNAPTICS_DSX) += synaptics_dsx/
 obj-$(CONFIG_TOUCHSCREEN_NT36XXX)	+= nt36xxx/
+obj-$(CONFIG_TOUCHSCREEN_FTS_V3_3)	+= focaltech_touch_v3_3/

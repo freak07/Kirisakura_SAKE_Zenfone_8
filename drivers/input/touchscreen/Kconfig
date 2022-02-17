@@ -1347,4 +1347,6 @@ source "drivers/input/touchscreen/synaptics_dsx/Kconfig"
 
 source "drivers/input/touchscreen/nt36xxx/Kconfig"
 
+source "drivers/input/touchscreen/focaltech_touch_v3_3/Kconfig"
+
 endif
