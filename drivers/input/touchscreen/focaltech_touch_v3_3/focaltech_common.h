@@ -65,6 +65,7 @@
 		}                                                              \
 	}
 
+#if !defined ASUS_SAKE_PROJECT
 #define FTS_CHIP_ID_MAPPING                                                    \
 	{                                                                      \
 		{                                                              \
@@ -74,6 +75,7 @@
 			}                                                      \
 		}                                                              \
 	}
+#endif
 
 #define FILE_NAME_LENGTH 128
 #define ENABLE 1
