@@ -775,6 +775,7 @@ static int fts_read_touchdata(struct fts_ts_data *data)
 
 	ret = fts_read(buf, 1, buf + 1, data->pnt_buf_size - 1);
 
+#if !defined ASUS_SAKE_PROJECT
 	if (((0xEF == buf[2]) && (0xEF == buf[3]) && (0xEF == buf[4])) ||
 	    ((ret < 0) && (0xEF == buf[1]))) {
 		fts_release_all_finger();
@@ -786,6 +787,7 @@ static int fts_read_touchdata(struct fts_ts_data *data)
 		FTS_ERROR("touch data(%x) abnormal,ret:%d", buf[1], ret);
 		return -EIO;
 	}
+#endif
 
 	if (data->gesture_mode) {
 		ret = fts_gesture_readdata(data, buf + FTS_TOUCH_DATA_LEN);
