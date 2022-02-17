@@ -150,7 +150,11 @@ int fts_reset_proc(int hdelayms)
 {
 	FTS_DEBUG("tp reset");
 	gpio_direction_output(fts_data->pdata->reset_gpio, 0);
+#if defined ASUS_SAKE_PROJECT
+	msleep(5);
+#else
 	msleep(1);
+#endif
 	gpio_direction_output(fts_data->pdata->reset_gpio, 1);
 	if (hdelayms) {
 		msleep(hdelayms);
@@ -1158,7 +1162,11 @@ static int fts_power_source_ctrl(struct fts_ts_data *ts_data, int enable)
 		if (!ts_data->power_disabled) {
 			FTS_DEBUG("regulator disable !");
 			gpio_direction_output(ts_data->pdata->reset_gpio, 0);
+#if defined ASUS_SAKE_PROJECT
+			msleep(10);
+#else
 			msleep(1);
+#endif
 			ret = regulator_disable(ts_data->vdd);
 			if (ret) {
 				FTS_ERROR("disable vdd regulator failed,ret=%d",
