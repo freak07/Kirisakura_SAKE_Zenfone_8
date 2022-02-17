@@ -790,7 +790,11 @@ static int fts_read_touchdata(struct fts_ts_data *data)
 #endif
 
 	if (data->gesture_mode) {
+#if defined ASUS_SAKE_PROJECT
+		ret = fts_gesture_readdata(data, NULL);
+#else
 		ret = fts_gesture_readdata(data, buf + FTS_TOUCH_DATA_LEN);
+#endif
 		if (0 == ret) {
 			FTS_DEBUG("succuss to get gesture data in irq handler");
 			return 1;
@@ -1055,8 +1059,13 @@ static int fts_report_buffer_init(struct fts_ts_data *ts_data)
 	int point_num = 0;
 	int events_num = 0;
 
+#if defined ASUS_SAKE_PROJECT
+	point_num = ts_data->pdata->max_touch_number;
+	ts_data->pnt_buf_size = point_num * FTS_ONE_TCH_LEN + 3;
+#else
 	point_num = FTS_MAX_POINTS_SUPPORT;
 	ts_data->pnt_buf_size = FTS_TOUCH_DATA_LEN + FTS_GESTURE_DATA_LEN;
+#endif
 
 	ts_data->point_buf =
 		(u8 *)kzalloc(ts_data->pnt_buf_size + 1, GFP_KERNEL);

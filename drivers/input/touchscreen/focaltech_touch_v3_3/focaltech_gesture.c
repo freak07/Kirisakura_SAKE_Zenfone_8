@@ -296,6 +296,21 @@ int fts_gesture_readdata(struct fts_ts_data *ts_data, u8 *data)
 		return 1;
 	}
 
+#if defined ASUS_SAKE_PROJECT
+	ret = fts_read_reg(FTS_REG_GESTURE_EN, &buf[0]);
+	if ((ret < 0) || (buf[0] != ENABLE)) {
+		FTS_DEBUG("gesture not enable in fw, don't process gesture %d",
+			  buf[0]);
+		return 1;
+	}
+
+	buf[2] = FTS_REG_GESTURE_OUTPUT_ADDRESS;
+	ret = fts_read(&buf[2], 1, &buf[2], FTS_GESTURE_DATA_LEN - 2);
+	if (ret < 0) {
+		FTS_ERROR("read gesture header data fail");
+		return ret;
+	}
+#else
 	if (!data) {
 		FTS_ERROR("gesture data buffer is null");
 		ret = -EINVAL;
@@ -307,6 +322,7 @@ int fts_gesture_readdata(struct fts_ts_data *ts_data, u8 *data)
 		FTS_DEBUG("gesture not enable in fw, don't process gesture");
 		return 1;
 	}
+#endif
 
 	/* init variable before read gesture point */
 	memset(gesture->coordinate_x, 0, FTS_GESTURE_POINTS_MAX * sizeof(u16));
