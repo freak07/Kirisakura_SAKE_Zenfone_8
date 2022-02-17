@@ -220,7 +220,11 @@
  * ESD check & protection
  * default: disable
  */
+#if defined ASUS_SAKE_PROJECT
+#define FTS_ESDCHECK_EN 0
+#else
 #define FTS_ESDCHECK_EN 1
+#endif
 
 /*
  * Pinctrl enable
