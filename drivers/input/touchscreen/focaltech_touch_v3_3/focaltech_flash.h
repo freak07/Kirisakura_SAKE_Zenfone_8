@@ -1,5 +1,5 @@
 /************************************************************************
-* Copyright (c) 2012-2020, Focaltech Systems (R)£¬All Rights Reserved.
+* Copyright (C) 2012-2019, Focaltech Systems (R)£¬All Rights Reserved.
 *
 * File Name: focaltech_flash.h
 *
@@ -58,12 +58,12 @@
 #define FTS_RETRIES_ECC_CAL 10
 #define FTS_RETRIES_DELAY_ECC_CAL 50
 #define FTS_CMD_ECC_READ 0x66
-#define FTS_CMD_DATA_LEN 0xB0
-#define FTS_CMD_APP_DATA_LEN_INCELL 0x7A
-#define FTS_CMD_DATA_LEN_LEN 4
 #define FTS_CMD_SET_WFLASH_ADDR 0xAB
 #define FTS_CMD_SET_RFLASH_ADDR 0xAC
 #define FTS_LEN_SET_ADDR 4
+#define FTS_CMD_DATA_LEN 0xB0
+#define FTS_CMD_APP_DATA_LEN_INCELL 0x7A
+#define FTS_CMD_DATA_LEN_LEN 4
 #define FTS_CMD_WRITE 0xBF
 #define FTS_RETRIES_WRITE 100
 #define FTS_RETRIES_DELAY_WRITE 1
@@ -75,7 +75,7 @@
 #define FTS_FLASH_PACKET_LENGTH 32 /* max=128 */
 #define FTS_MAX_LEN_ECC_CALC 0xFFFE /* must be even */
 #define FTS_MIN_LEN 0x120
-#define FTS_MAX_LEN_FILE (256 * 1024)
+#define FTS_MAX_LEN_FILE (128 * 1024)
 #define FTS_MAX_LEN_APP (64 * 1024)
 #define FTS_MAX_LEN_SECTOR (4 * 1024)
 #define FTS_CONIFG_VENDORID_OFF 0x04
@@ -135,7 +135,7 @@ enum UPGRADE_SPEC {
 *****************************************************************************/
 /* IC info */
 struct upgrade_func {
-	u16 ctype[FTS_MAX_COMPATIBLE_TYPE];
+	u64 ctype[FTS_MAX_COMPATIBLE_TYPE];
 	u32 fwveroff;
 	u32 fwcfgoff;
 	u32 appoff;
@@ -201,8 +201,16 @@ struct fts_upgrade {
 /*****************************************************************************
 * Global variable or extern global variabls/functions
 *****************************************************************************/
+extern struct upgrade_func upgrade_func_ft5452;
+extern struct upgrade_func upgrade_func_ft5652;
 
 /*****************************************************************************
 * Static function prototypes
 *****************************************************************************/
+int fts_fwupg_reset_in_boot(void);
+int fts_fwupg_enter_into_boot(void);
+int fts_fwupg_erase(u32 delay);
+int fts_fwupg_ecc_cal(u32 saddr, u32 len);
+int fts_flash_write_buf(u32 saddr, u8 *buf, u32 len, u32 delay);
+int fts_fwupg_upgrade(struct fts_upgrade *upg);
 #endif

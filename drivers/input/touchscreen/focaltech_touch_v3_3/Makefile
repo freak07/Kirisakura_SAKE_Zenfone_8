@@ -7,3 +7,4 @@ focaltech_fts_v3_3-y += focaltech_esdcheck.o
 focaltech_fts_v3_3-y += focaltech_point_report_check.o
 focaltech_fts_v3_3-y += focaltech_i2c.o
 focaltech_fts_v3_3-y += focaltech_flash.o
+focaltech_fts_v3_3-y += focaltech_flash/focaltech_upgrade_ft3518.o
