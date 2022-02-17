@@ -1984,8 +1984,12 @@ static int fts_fwupg_get_fw_file(struct fts_upgrade *upg)
 	upg->lic_length = upg->fw_length;
 
 	FTS_INFO("upgrade fw file len:%d", upg->fw_length);
+#if defined ASUS_SAKE_PROJECT
+	if ((upg->fw_length < FTS_MIN_LEN)) {
+#else
 	if ((upg->fw_length < FTS_MIN_LEN) ||
 	    (upg->fw_length > FTS_MAX_LEN_FILE)) {
+#endif
 		FTS_ERROR("fw file len(%d) fail", upg->fw_length);
 		return -ENODATA;
 	}
