@@ -173,7 +173,11 @@
 /*
  * choose your ic chip type of focaltech
  */
+#if defined ASUS_SAKE_PROJECT
+#define FTS_CHIP_TYPE _FT3658U
+#else
 #define FTS_CHIP_TYPE _FT8720
+#endif
 
 /******************* Enables *********************/
 /*********** 1 to enable, 0 to disable ***********/
