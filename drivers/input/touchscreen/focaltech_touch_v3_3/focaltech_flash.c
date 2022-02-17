@@ -68,6 +68,7 @@ struct upgrade_module module_list[] = {
 };
 
 struct upgrade_func *upgrade_func_list[] = {
+	&upgrade_func_ft3658u,
 	&upgrade_func_ft5452,
 	&upgrade_func_ft5652,
 };
