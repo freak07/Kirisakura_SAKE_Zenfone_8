@@ -53,7 +53,11 @@
 *****************************************************************************/
 #define FTS_DRIVER_NAME "fts_ts"
 #define FTS_DRIVER_PEN_NAME "fts_ts,pen"
+#if defined ASUS_SAKE_PROJECT
+#define INTERVAL_READ_REG 50 /* unit:ms */
+#else
 #define INTERVAL_READ_REG 200 /* unit:ms */
+#endif
 #define TIMEOUT_READ_REG 1000 /* unit:ms */
 #if FTS_POWER_SOURCE_CUST_EN
 #define FTS_VTG_MIN_UV 2800000
