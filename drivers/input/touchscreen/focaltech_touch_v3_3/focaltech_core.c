@@ -144,6 +144,12 @@ void fts_tp_state_recovery(struct fts_ts_data *ts_data)
 
 	/* recover TP gesture state 0xD0 */
 	fts_gesture_recovery(ts_data);
+
+#if defined ASUS_SAKE_PROJECT
+	if (ts_data->high_report_rate)
+		fts_write_reg(FTS_REG_REPORT_RATE, FTS_REPORT_RATE_240);
+#endif
+
 	FTS_FUNC_EXIT();
 }
 
@@ -2004,6 +2010,11 @@ int fts_ts_resume(struct device *dev)
 	} else {
 		fts_irq_enable();
 	}
+
+#if defined ASUS_SAKE_PROJECT
+	if (ts_data->high_report_rate)
+		fts_write_reg(FTS_REG_REPORT_RATE, FTS_REPORT_RATE_240);
+#endif
 
 	ts_data->suspended = false;
 	FTS_FUNC_EXIT();

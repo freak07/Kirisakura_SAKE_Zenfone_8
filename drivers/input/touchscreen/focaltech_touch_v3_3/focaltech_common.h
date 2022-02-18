@@ -124,6 +124,12 @@
 #define FTS_REG_LIC_VER 0xE4
 #define FTS_REG_ESD_SATURATE 0xED
 
+#if defined ASUS_SAKE_PROJECT
+#define FTS_REG_REPORT_RATE 0xC3
+#define FTS_REPORT_RATE_240 0
+#define FTS_REPORT_RATE_120 1
+#endif
+
 #define FTS_SYSFS_ECHO_ON(buf) (buf[0] == '1')
 #define FTS_SYSFS_ECHO_OFF(buf) (buf[0] == '0')
 

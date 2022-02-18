@@ -1186,6 +1186,26 @@ static ssize_t asus_ex_proc_fpxy_read(struct file *file, char __user *buf,
 
 	return simple_read_from_buffer(buf, count, ppos, str, len);
 }
+
+static ssize_t fts_high_report_rate_show(struct device *dev,
+					 struct device_attribute *attr,
+					 char *buf)
+{
+	return snprintf(buf, PAGE_SIZE, "%u\n", fts_data->high_report_rate);
+}
+
+static ssize_t fts_high_report_rate_store(struct device *dev,
+					  struct device_attribute *attr,
+					  const char *buf, size_t count)
+{
+	bool enabled = buf[0] != '0';
+
+	fts_write_reg(FTS_REG_REPORT_RATE,
+		      enabled ? FTS_REPORT_RATE_240 : FTS_REPORT_RATE_120);
+	fts_data->high_report_rate = enabled;
+
+	return count;
+}
 #endif
 
 /* get the fw version  example:cat fw_version */
@@ -1226,6 +1246,11 @@ static DEVICE_ATTR(fts_touch_point, S_IRUGO | S_IWUSR, fts_tpbuf_show,
 static DEVICE_ATTR(fts_log_level, S_IRUGO | S_IWUSR, fts_log_level_show,
 		   fts_log_level_store);
 
+#if defined ASUS_SAKE_PROJECT
+static DEVICE_ATTR(fts_high_report_rate, S_IRUGO | S_IWUSR,
+		   fts_high_report_rate_show, fts_high_report_rate_store);
+#endif
+
 /* add your attr in here*/
 static struct attribute *fts_attributes[] = {
 	&dev_attr_fts_fw_version.attr,	  &dev_attr_fts_rw_reg.attr,
@@ -1233,7 +1258,11 @@ static struct attribute *fts_attributes[] = {
 	&dev_attr_fts_force_upgrade.attr, &dev_attr_fts_driver_info.attr,
 	&dev_attr_fts_hw_reset.attr,	  &dev_attr_fts_irq.attr,
 	&dev_attr_fts_boot_mode.attr,	  &dev_attr_fts_touch_point.attr,
-	&dev_attr_fts_log_level.attr,	  NULL
+	&dev_attr_fts_log_level.attr,
+#if defined ASUS_SAKE_PROJECT
+	&dev_attr_fts_high_report_rate.attr,
+#endif
+	NULL,
 };
 
 static struct attribute_group fts_attribute_group = { .attrs = fts_attributes };
