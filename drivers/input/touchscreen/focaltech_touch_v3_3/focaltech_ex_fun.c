@@ -1174,6 +1174,20 @@ static ssize_t fts_log_level_store(struct device *dev,
 	return count;
 }
 
+#if defined ASUS_SAKE_PROJECT
+static ssize_t asus_ex_proc_fpxy_read(struct file *file, char __user *buf,
+				      size_t count, loff_t *ppos)
+{
+	char str[32] = {};
+	int len;
+
+	len = snprintf(str, sizeof(str), "%u,%u\n", fts_data->fp_x,
+		       fts_data->fp_y);
+
+	return simple_read_from_buffer(buf, count, ppos, str, len);
+}
+#endif
+
 /* get the fw version  example:cat fw_version */
 static DEVICE_ATTR(fts_fw_version, S_IRUGO | S_IWUSR, fts_tpfwver_show,
 		   fts_tpfwver_store);
@@ -1224,6 +1238,12 @@ static struct attribute *fts_attributes[] = {
 
 static struct attribute_group fts_attribute_group = { .attrs = fts_attributes };
 
+#if defined ASUS_SAKE_PROJECT
+static struct file_operations asus_ex_proc_fpxy_ops = {
+	.read = asus_ex_proc_fpxy_read,
+};
+#endif
+
 int fts_create_sysfs(struct fts_ts_data *ts_data)
 {
 	int ret = 0;
@@ -1237,11 +1257,20 @@ int fts_create_sysfs(struct fts_ts_data *ts_data)
 		FTS_INFO("[EX]: sysfs_create_group() succeeded!!");
 	}
 
+#if defined ASUS_SAKE_PROJECT
+	proc_create("driver/fp_xy", 0777, NULL, &asus_ex_proc_fpxy_ops);
+#endif
+
 	return ret;
 }
 
 int fts_remove_sysfs(struct fts_ts_data *ts_data)
 {
 	sysfs_remove_group(&ts_data->dev->kobj, &fts_attribute_group);
+
+#if defined ASUS_SAKE_PROJECT
+	remove_proc_entry("driver/fp_xy", NULL);
+#endif
+
 	return 0;
 }

@@ -227,6 +227,10 @@ struct fts_ts_data {
 #elif defined(CONFIG_HAS_EARLYSUSPEND)
 	struct early_suspend early_suspend;
 #endif
+#if defined ASUS_SAKE_PROJECT
+	unsigned int fp_x;
+	unsigned int fp_y;
+#endif
 };
 
 enum _FTS_BUS_TYPE {
