@@ -74,9 +74,6 @@ struct fts_ts_data *fts_data;
 /*****************************************************************************
 * Static function prototypes
 *****************************************************************************/
-static int fts_ts_suspend(struct device *dev);
-static int fts_ts_resume(struct device *dev);
-
 int fts_check_cid(struct fts_ts_data *ts_data, u8 id_h)
 {
 	int i = 0;
@@ -1888,7 +1885,7 @@ static int fts_ts_remove_entry(struct fts_ts_data *ts_data)
 	return 0;
 }
 
-static int fts_ts_suspend(struct device *dev)
+int fts_ts_suspend(struct device *dev)
 {
 	int ret = 0;
 	struct fts_ts_data *ts_data = fts_data;
@@ -1935,7 +1932,7 @@ static int fts_ts_suspend(struct device *dev)
 	return 0;
 }
 
-static int fts_ts_resume(struct device *dev)
+int fts_ts_resume(struct device *dev)
 {
 	struct fts_ts_data *ts_data = fts_data;
 
