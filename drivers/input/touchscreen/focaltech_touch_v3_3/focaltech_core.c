@@ -1540,6 +1540,9 @@ static int fb_notifier_callback(struct notifier_block *self,
 		}
 		break;
 
+	case DRM_PANEL_BLANK_LP:
+		queue_work(fts_data->ts_workqueue, &fts_data->suspend_work);
+		break;
 	default:
 		FTS_DEBUG("FB BLANK(%d) do not need process\n", *blank);
 		break;
