@@ -1523,9 +1523,9 @@ static int fb_notifier_callback(struct notifier_block *self,
 	FTS_DEBUG("FB event:%lu,blank:%d", event, *blank);
 	switch (*blank) {
 	case DRM_PANEL_BLANK_UNBLANK:
-		if (event == DRM_PANEL_EARLY_EVENT_BLANK) {
+		if (event == DRM_PANEL_EVENT_BLANK) {
 			FTS_DEBUG("resume: event = %lu, not care\n", event);
-		} else if (event == DRM_PANEL_EVENT_BLANK) {
+		} else if (event == DRM_PANEL_EARLY_EVENT_BLANK) {
 			queue_work(fts_data->ts_workqueue,
 				   &fts_data->resume_work);
 		}
