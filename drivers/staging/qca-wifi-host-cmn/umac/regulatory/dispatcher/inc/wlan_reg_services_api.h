@@ -1747,7 +1747,7 @@ static inline QDF_STATUS
 wlan_reg_get_cur_6g_ap_pwr_type(struct wlan_objmgr_pdev *pdev,
 				enum reg_6g_ap_type *reg_cur_6g_ap_pwr_type)
 {
-	*reg_cur_6g_ap_pwr_type = REG_VERY_LOW_POWER_AP;
+	*reg_cur_6g_ap_pwr_type = REG_CURRENT_MAX_AP_TYPE;
 	return QDF_STATUS_E_NOSUPPORT;
 }
 
