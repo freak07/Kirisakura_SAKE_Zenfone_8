@@ -108,8 +108,10 @@
 struct fts_gesture_st {
 	u8 gesture_id;
 	u8 point_num;
+#if !defined ASUS_SAKE_PROJECT
 	u16 coordinate_x[FTS_GESTURE_POINTS_MAX];
 	u16 coordinate_y[FTS_GESTURE_POINTS_MAX];
+#endif
 };
 
 /*****************************************************************************
@@ -492,8 +494,10 @@ static void fts_gesture_report(struct input_dev *input_dev, int gesture_id)
 int fts_gesture_readdata(struct fts_ts_data *ts_data, u8 *data)
 {
 	int ret = 0;
+#if !defined ASUS_SAKE_PROJECT
 	int i = 0;
 	int index = 0;
+#endif
 	u8 buf[FTS_GESTURE_DATA_LEN] = { 0 };
 	struct input_dev *input_dev = ts_data->input_dev;
 	struct fts_gesture_st *gesture = &fts_gesture_data;
@@ -530,14 +534,17 @@ int fts_gesture_readdata(struct fts_ts_data *ts_data, u8 *data)
 	}
 #endif
 
+#if !defined ASUS_SAKE_PROJECT
 	/* init variable before read gesture point */
 	memset(gesture->coordinate_x, 0, FTS_GESTURE_POINTS_MAX * sizeof(u16));
 	memset(gesture->coordinate_y, 0, FTS_GESTURE_POINTS_MAX * sizeof(u16));
+#endif
 	gesture->gesture_id = buf[2];
 	gesture->point_num = buf[3];
 	FTS_DEBUG("gesture_id=%d, point_num=%d", gesture->gesture_id,
 		  gesture->point_num);
 
+#if !defined ASUS_SAKE_PROJECT
 	/* save point data,max:6 */
 	for (i = 0; i < FTS_GESTURE_POINTS_MAX; i++) {
 		index = 4 * i + 4;
@@ -546,6 +553,7 @@ int fts_gesture_readdata(struct fts_ts_data *ts_data, u8 *data)
 		gesture->coordinate_y[i] =
 			(u16)(((buf[2 + index] & 0x0F) << 8) + buf[3 + index]);
 	}
+#endif
 
 	/* report gesture to OS */
 	fts_gesture_report(input_dev, gesture->gesture_id);
