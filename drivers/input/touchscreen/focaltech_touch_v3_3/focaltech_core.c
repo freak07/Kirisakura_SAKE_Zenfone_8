@@ -767,6 +767,11 @@ static int fts_read_touchdata(struct fts_ts_data *data)
 	int ret = 0;
 	u8 *buf = data->point_buf;
 
+#if defined ASUS_SAKE_PROJECT
+	if (data->suspended)
+		goto skip_touch_data_read;
+#endif
+
 	memset(buf, 0xFF, data->pnt_buf_size);
 	buf[0] = 0x01;
 
@@ -784,6 +789,10 @@ static int fts_read_touchdata(struct fts_ts_data *data)
 		FTS_ERROR("touch data(%x) abnormal,ret:%d", buf[1], ret);
 		return -EIO;
 	}
+#endif
+
+#if defined ASUS_SAKE_PROJECT
+skip_touch_data_read:
 #endif
 
 	if (data->gesture_mode) {
