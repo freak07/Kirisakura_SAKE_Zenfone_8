@@ -499,7 +499,6 @@ static int fts_input_report_key(struct fts_ts_data *data, int index)
 static int fts_input_report_b(struct fts_ts_data *data)
 {
 	int i = 0;
-	int uppoint = 0;
 	int touchs = 0;
 	bool va_reported = false;
 	u32 max_touch_num = data->pdata->max_touch_number;
@@ -546,7 +545,6 @@ static int fts_input_report_b(struct fts_ts_data *data)
 					  events[i].area);
 			}
 		} else {
-			uppoint++;
 			input_mt_report_slot_state(data->input_dev,
 						   MT_TOOL_FINGER, false);
 			data->touchs &= ~BIT(events[i].id);
