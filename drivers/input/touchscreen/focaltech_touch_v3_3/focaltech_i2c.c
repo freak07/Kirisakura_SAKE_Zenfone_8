@@ -63,16 +63,28 @@
 *****************************************************************************/
 int fts_read(u8 *cmd, u32 cmdlen, u8 *data, u32 datalen)
 {
-	int ret = 0;
-	int i = 0;
 	struct fts_ts_data *ts_data = fts_data;
-	struct i2c_msg msg_list[2];
+	struct i2c_msg msg_list[2] = {
+		{
+			.addr = ts_data->client->addr,
+			.len = cmdlen,
+			.buf = ts_data->bus_tx_buf,
+		},
+		{
+			.addr = ts_data->client->addr,
+			.flags = I2C_M_RD,
+			.len = datalen,
+			.buf = ts_data->bus_rx_buf,
+		},
+	};
 	struct i2c_msg *msg = NULL;
 	int msg_num = 0;
+	int ret = 0;
+	int i = 0;
 
 	/* must have data when read */
-	if (!ts_data || !ts_data->client || !data || !datalen ||
-	    (datalen > I2C_BUF_LENGTH) || (cmdlen > I2C_BUF_LENGTH)) {
+	if (!data || !datalen || datalen > I2C_BUF_LENGTH ||
+	    cmdlen > I2C_BUF_LENGTH) {
 		FTS_ERROR(
 			"fts_data/client/cmdlen(%d)/data/datalen(%d) is invalid",
 			cmdlen, datalen);
@@ -80,18 +92,8 @@ int fts_read(u8 *cmd, u32 cmdlen, u8 *data, u32 datalen)
 	}
 
 	mutex_lock(&ts_data->bus_lock);
-	memset(&msg_list[0], 0, sizeof(struct i2c_msg));
-	memset(&msg_list[1], 0, sizeof(struct i2c_msg));
-	memcpy(ts_data->bus_tx_buf, cmd, cmdlen);
-	msg_list[0].addr = ts_data->client->addr;
-	msg_list[0].flags = 0;
-	msg_list[0].len = cmdlen;
-	msg_list[0].buf = ts_data->bus_tx_buf;
-	msg_list[1].addr = ts_data->client->addr;
-	msg_list[1].flags = I2C_M_RD;
-	msg_list[1].len = datalen;
-	msg_list[1].buf = ts_data->bus_rx_buf;
 	if (cmd && cmdlen) {
+		memcpy(ts_data->bus_tx_buf, cmd, cmdlen);
 		msg = &msg_list[0];
 		msg_num = 2;
 	} else {
@@ -108,32 +110,30 @@ int fts_read(u8 *cmd, u32 cmdlen, u8 *data, u32 datalen)
 			break;
 		}
 	}
-
 	mutex_unlock(&ts_data->bus_lock);
+
 	return ret;
 }
 
 int fts_write(u8 *writebuf, u32 writelen)
 {
+	struct fts_ts_data *ts_data = fts_data;
+	struct i2c_msg msgs = {
+		.addr = ts_data->client->addr,
+		.len = writelen,
+		.buf = ts_data->bus_tx_buf,
+	};
 	int ret = 0;
 	int i = 0;
-	struct fts_ts_data *ts_data = fts_data;
-	struct i2c_msg msgs;
 
-	if (!ts_data || !ts_data->client || !writebuf || !writelen ||
-	    (writelen > I2C_BUF_LENGTH)) {
+	if (!writebuf || !writelen || writelen > I2C_BUF_LENGTH) {
 		FTS_ERROR("fts_data/client/data/datalen(%d) is invalid",
 			  writelen);
 		return -EINVAL;
 	}
 
 	mutex_lock(&ts_data->bus_lock);
-	memset(&msgs, 0, sizeof(struct i2c_msg));
 	memcpy(ts_data->bus_tx_buf, writebuf, writelen);
-	msgs.addr = ts_data->client->addr;
-	msgs.flags = 0;
-	msgs.len = writelen;
-	msgs.buf = ts_data->bus_tx_buf;
 	for (i = 0; i < I2C_RETRY_NUMBER; i++) {
 		ret = i2c_transfer(ts_data->client->adapter, &msgs, 1);
 		if (ret < 0) {
@@ -143,6 +143,7 @@ int fts_write(u8 *writebuf, u32 writelen)
 		}
 	}
 	mutex_unlock(&ts_data->bus_lock);
+
 	return ret;
 }
 
@@ -153,10 +154,8 @@ int fts_read_reg(u8 addr, u8 *value)
 
 int fts_write_reg(u8 addr, u8 value)
 {
-	u8 buf[2] = { 0 };
+	u8 buf[2] = { addr, value };
 
-	buf[0] = addr;
-	buf[1] = value;
 	return fts_write(buf, sizeof(buf));
 }
 
