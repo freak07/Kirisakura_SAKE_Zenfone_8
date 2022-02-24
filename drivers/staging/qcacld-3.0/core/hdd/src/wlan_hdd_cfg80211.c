@@ -18190,6 +18190,13 @@ wlan_hdd_inform_bss_frame(struct hdd_adapter *adapter,
 		  HIGH_SEQ_NUM_OFFSET) | bss_desc->seq_ctrl.seqNumLo),
 		  bss_desc->fProbeRsp);
 
+	//ASUS_BSP+++ "add for the RSSI (value = 0) issue"
+	if( bss_data.rssi == 0 ) {
+	       hdd_info("[wlan]: wlan_hdd_cfg80211_inform_bss_frame, rssi (0 -> -9900).\n");
+	       bss_data.rssi = (-9900);
+	}
+	//ASUS_BSP--- "add for the RSSI (value = 0) issue"
+
 	bss_status = wlan_cfg80211_inform_bss_frame_data(wiphy, &bss_data);
 	hdd_ctx->beacon_probe_rsp_cnt_per_scan++;
 	qdf_mem_free(bss_data.mgmt);
