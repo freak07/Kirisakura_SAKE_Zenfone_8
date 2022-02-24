@@ -415,6 +415,12 @@ lim_process_mlm_post_join_suspend_link(struct mac_context *mac_ctx,
 	mac_ctx->lim.lim_timers.gLimJoinFailureTimer.sessionId =
 		session->peSessionId;
 
+	//ASUS_BSP+++
+	pe_info("[wlan]: gLimJoinFailureTimer (%d --> 2000).\n", 
+		(int)(mac_ctx->lim.lim_timers.gLimJoinFailureTimer.initScheduleTimeInMsecs));
+	mac_ctx->lim.lim_timers.gLimJoinFailureTimer.initScheduleTimeInMsecs = 2000;
+	//ASUS_BSP---
+
 	wma_add_bss_peer_sta(session->vdev_id, session->bssId);
 }
 
