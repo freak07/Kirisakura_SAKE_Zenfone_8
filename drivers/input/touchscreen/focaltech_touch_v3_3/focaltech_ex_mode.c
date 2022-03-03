@@ -99,16 +99,12 @@ static int fts_ex_mode_switch(enum _ex_mode mode, u8 value)
 static ssize_t fts_glove_mode_show(struct device *dev,
 				   struct device_attribute *attr, char *buf)
 {
-	int count = 0;
-	u8 val = 0;
 	struct fts_ts_data *ts_data = fts_data;
 	struct input_dev *input_dev = ts_data->input_dev;
+	int count;
 
 	mutex_lock(&input_dev->mutex);
-	fts_read_reg(FTS_REG_GLOVE_MODE_EN, &val);
-	count = snprintf(buf + count, PAGE_SIZE, "Glove Mode:%s\n",
-			 ts_data->glove_mode ? "On" : "Off");
-	count += snprintf(buf + count, PAGE_SIZE, "Glove Reg(0xC0):%d\n", val);
+	count = snprintf(buf, PAGE_SIZE, "%u\n", ts_data->glove_mode);
 	mutex_unlock(&input_dev->mutex);
 
 	return count;
