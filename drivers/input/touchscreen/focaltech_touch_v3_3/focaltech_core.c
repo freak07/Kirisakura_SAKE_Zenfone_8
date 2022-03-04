@@ -574,6 +574,26 @@ static int fts_input_report_b(struct fts_ts_data *data)
 			if (events[i].area <= 0) {
 				events[i].area = 0x09;
 			}
+
+#if defined ASUS_SAKE_PROJECT
+			if (data->fod_pressed &&
+			    data->events[i].area >= data->fod_last_press_area)
+				data->fod_pressed = false;
+
+			if (data->enabled_gestures[GESTURE_TYPE_FOD] &&
+			    !data->fod_pressed &&
+			    events[i].x >= data->fod_position[0] &&
+			    events[i].x <= data->fod_position[1] &&
+			    events[i].y >= data->fod_position[2] &&
+			    events[i].y <= data->fod_position[3]) {
+				data->fod_last_press_area = events[i].area;
+				data->fod_last_press_id = events[i].id;
+				data->fod_pressed = true;
+				data->fp_x = events[i].x;
+				data->fp_y = events[i].y;
+			}
+#endif
+
 			input_report_abs(data->input_dev, ABS_MT_TOUCH_MAJOR,
 					 events[i].area);
 			input_report_abs(data->input_dev, ABS_MT_POSITION_X,
@@ -593,6 +613,11 @@ static int fts_input_report_b(struct fts_ts_data *data)
 					  events[i].area);
 			}
 		} else {
+#if defined ASUS_SAKE_PROJECT
+			if (data->fod_pressed &&
+			    data->fod_last_press_id == events[i].id)
+				data->fod_pressed = false;
+#endif
 			input_mt_report_slot_state(data->input_dev,
 						   MT_TOOL_FINGER, false);
 			data->touchs &= ~BIT(events[i].id);
@@ -1693,6 +1718,13 @@ static int fts_ts_probe_entry(struct fts_ts_data *ts_data)
 	spin_lock_init(&ts_data->irq_lock);
 	mutex_init(&ts_data->report_mutex);
 	mutex_init(&ts_data->bus_lock);
+
+#if defined ASUS_SAKE_PROJECT
+	ts_data->fod_position[0] = 6560;
+	ts_data->fod_position[1] = 10720;
+	ts_data->fod_position[2] = 26096;
+	ts_data->fod_position[3] = 30256;
+#endif
 
 	/* Init communication interface */
 	ret = fts_bus_init(ts_data);

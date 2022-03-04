@@ -277,8 +277,15 @@ static ssize_t fts_gestures_store(struct device *dev,
 	return count;
 }
 
+static ssize_t fts_fod_pressed_show(struct device *dev,
+				    struct device_attribute *attr, char *buf)
+{
+	return snprintf(buf, PAGE_SIZE, "%u\n", fts_data->fod_pressed);
+}
+
 static DEVICE_ATTR(fts_gestures, S_IRUGO | S_IWUSR, fts_gestures_show,
 		   fts_gestures_store);
+static DEVICE_ATTR(fts_fod_pressed, S_IRUGO, fts_fod_pressed_show, NULL);
 #else
 static ssize_t fts_gesture_show(struct device *dev,
 				struct device_attribute *attr, char *buf)
@@ -369,6 +376,7 @@ static DEVICE_ATTR(fts_gesture_buf, S_IRUGO | S_IWUSR, fts_gesture_buf_show,
 static struct attribute *fts_gesture_mode_attrs[] = {
 #if defined ASUS_SAKE_PROJECT
 	&dev_attr_fts_gestures.attr,
+	&dev_attr_fts_fod_pressed.attr,
 #else
 	&dev_attr_fts_gesture_mode.attr,
 	&dev_attr_fts_gesture_buf.attr,
@@ -552,6 +560,25 @@ int fts_gesture_readdata(struct fts_ts_data *ts_data, u8 *data)
 			(u16)(((buf[0 + index] & 0x0F) << 8) + buf[1 + index]);
 		gesture->coordinate_y[i] =
 			(u16)(((buf[2 + index] & 0x0F) << 8) + buf[3 + index]);
+	}
+#endif
+
+#if defined ASUS_SAKE_PROJECT
+	switch (gesture->gesture_id) {
+	case GESTURE_FOD_PRESS:
+	case GESTURE_FOD_PARTIAL_PRESS:
+		if (gesture->point_num >= 1) {
+			ts_data->fp_x = ((buf[4] & 0x0F) << 8) + buf[5];
+			ts_data->fp_y = ((buf[6] & 0x0F) << 8) + buf[7];
+		}
+
+		ts_data->fod_pressed = true;
+
+		sysfs_notify(&ts_data->dev->kobj, NULL, "fts_fod_pressed");
+		return 0;
+	case GESTURE_FOD_UNPRESS:
+		ts_data->fod_pressed = false;
+		return 0;
 	}
 #endif
 
