@@ -1612,8 +1612,9 @@ static void fts_resume_work(struct work_struct *work)
 
 static void fts_suspend_work(struct work_struct *work)
 {
+	struct delayed_work *dwork = to_delayed_work(work);
 	struct fts_ts_data *ts_data =
-		container_of(work, struct fts_ts_data, suspend_work);
+		container_of(dwork, struct fts_ts_data, suspend_work);
 
 	fts_ts_suspend(ts_data->dev);
 }
@@ -1640,6 +1641,7 @@ static int fb_notifier_callback(struct notifier_block *self,
 		if (event == DRM_PANEL_EVENT_BLANK) {
 			FTS_DEBUG("resume: event = %lu, not care\n", event);
 		} else if (event == DRM_PANEL_EARLY_EVENT_BLANK) {
+			cancel_delayed_work(&fts_data->suspend_work);
 			queue_work(fts_data->ts_workqueue,
 				   &fts_data->resume_work);
 		}
@@ -1647,15 +1649,18 @@ static int fb_notifier_callback(struct notifier_block *self,
 
 	case DRM_PANEL_BLANK_POWERDOWN:
 		if (event == DRM_PANEL_EARLY_EVENT_BLANK) {
-			queue_work(fts_data->ts_workqueue,
-				   &fts_data->suspend_work);
+			mod_delayed_work(fts_data->ts_workqueue,
+					 &fts_data->suspend_work,
+					 msecs_to_jiffies(1000));
 		} else if (event == DRM_PANEL_EVENT_BLANK) {
 			FTS_DEBUG("suspend: event = %lu, not care\n", event);
 		}
 		break;
 
 	case DRM_PANEL_BLANK_LP:
-		queue_work(fts_data->ts_workqueue, &fts_data->suspend_work);
+		mod_delayed_work(fts_data->ts_workqueue,
+				 &fts_data->suspend_work,
+				 msecs_to_jiffies(1000));
 		break;
 	default:
 		FTS_DEBUG("FB BLANK(%d) do not need process\n", *blank);
@@ -1823,7 +1828,7 @@ static int fts_ts_probe_entry(struct fts_ts_data *ts_data)
 #if defined(CONFIG_DRM) && defined(CONFIG_DRM_PANEL)
 	if (ts_data->ts_workqueue) {
 		INIT_WORK(&ts_data->resume_work, fts_resume_work);
-		INIT_WORK(&ts_data->suspend_work, fts_suspend_work);
+		INIT_DELAYED_WORK(&ts_data->suspend_work, fts_suspend_work);
 	}
 
 	ts_data->fb_notif.notifier_call = fb_notifier_callback;
