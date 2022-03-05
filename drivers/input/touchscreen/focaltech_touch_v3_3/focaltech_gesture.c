@@ -178,8 +178,9 @@ static void fts_gesture_apply(struct fts_ts_data *ts_data)
 
 static void fts_gesture_work(struct work_struct *work)
 {
+	struct delayed_work *dwork = to_delayed_work(work);
 	struct fts_ts_data *ts_data =
-		container_of(work, struct fts_ts_data, gesture_work);
+		container_of(dwork, struct fts_ts_data, gesture_work);
 	bool suspended = ts_data->suspended;
 	bool gesture_mode = false;
 	unsigned int i;
@@ -214,7 +215,8 @@ void fts_gesture_set(struct fts_ts_data *ts_data, enum gesture_type type,
 	if (!enabled && type == GESTURE_TYPE_DOUBLECLICK)
 		ts_data->double_click_pressed = false;
 
-	queue_work(ts_data->ts_workqueue, &ts_data->gesture_work);
+	mod_delayed_work(ts_data->ts_workqueue, &ts_data->gesture_work,
+			 msecs_to_jiffies(100));
 }
 
 static ssize_t fts_gestures_show(struct device *dev,
@@ -720,7 +722,7 @@ int fts_gesture_init(struct fts_ts_data *ts_data)
 	input_set_capability(input_dev, EV_KEY, KEY_GESTURE_FORWARD);
 
 #if defined ASUS_SAKE_PROJECT
-	INIT_WORK(&ts_data->gesture_work, fts_gesture_work);
+	INIT_DELAYED_WORK(&ts_data->gesture_work, fts_gesture_work);
 #endif
 
 	fts_create_gesture_sysfs(ts_data->dev);

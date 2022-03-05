@@ -248,7 +248,7 @@ struct fts_ts_data {
 #if defined ASUS_SAKE_PROJECT
 	unsigned int fp_x;
 	unsigned int fp_y;
-	struct work_struct gesture_work;
+	struct delayed_work gesture_work;
 	bool enabled_gestures[GESTURE_TYPE_MAX];
 	u8 gesture_data[5];
 	bool fod_pressed;
