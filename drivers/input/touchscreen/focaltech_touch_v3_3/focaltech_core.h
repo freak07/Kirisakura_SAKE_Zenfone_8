@@ -252,6 +252,7 @@ struct fts_ts_data {
 	bool enabled_gestures[GESTURE_TYPE_MAX];
 	u8 gesture_data[5];
 	bool fod_pressed;
+	bool double_click_pressed;
 	unsigned int fod_last_press_area;
 	unsigned int fod_last_press_id;
 	unsigned int fod_position[4];

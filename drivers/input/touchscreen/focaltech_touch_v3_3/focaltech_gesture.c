@@ -211,6 +211,9 @@ void fts_gesture_set(struct fts_ts_data *ts_data, enum gesture_type type,
 
 	ts_data->enabled_gestures[type] = enabled;
 
+	if (!enabled && type == GESTURE_TYPE_DOUBLECLICK)
+		ts_data->double_click_pressed = false;
+
 	queue_work(ts_data->ts_workqueue, &ts_data->gesture_work);
 }
 
@@ -283,9 +286,18 @@ static ssize_t fts_fod_pressed_show(struct device *dev,
 	return snprintf(buf, PAGE_SIZE, "%u\n", fts_data->fod_pressed);
 }
 
+static ssize_t fts_double_click_pressed_show(struct device *dev,
+					     struct device_attribute *attr,
+					     char *buf)
+{
+	return snprintf(buf, PAGE_SIZE, "%u\n", fts_data->double_click_pressed);
+}
+
 static DEVICE_ATTR(fts_gestures, S_IRUGO | S_IWUSR, fts_gestures_show,
 		   fts_gestures_store);
 static DEVICE_ATTR(fts_fod_pressed, S_IRUGO, fts_fod_pressed_show, NULL);
+static DEVICE_ATTR(fts_double_click_pressed, S_IRUGO,
+		   fts_double_click_pressed_show, NULL);
 #else
 static ssize_t fts_gesture_show(struct device *dev,
 				struct device_attribute *attr, char *buf)
@@ -377,6 +389,7 @@ static struct attribute *fts_gesture_mode_attrs[] = {
 #if defined ASUS_SAKE_PROJECT
 	&dev_attr_fts_gestures.attr,
 	&dev_attr_fts_fod_pressed.attr,
+	&dev_attr_fts_double_click_pressed.attr,
 #else
 	&dev_attr_fts_gesture_mode.attr,
 	&dev_attr_fts_gesture_buf.attr,
@@ -578,6 +591,11 @@ int fts_gesture_readdata(struct fts_ts_data *ts_data, u8 *data)
 		return 0;
 	case GESTURE_FOD_UNPRESS:
 		ts_data->fod_pressed = false;
+		return 0;
+	case GESTURE_DOUBLECLICK:
+		ts_data->double_click_pressed = true;
+		sysfs_notify(&ts_data->dev->kobj, NULL,
+			     "fts_double_click_pressed");
 		return 0;
 	}
 #endif
