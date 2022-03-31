@@ -19,6 +19,7 @@
 
 #ifdef CONFIG_UCI
 #include <linux/uci/uci.h>
+#include <linux/notification/notification.h>
 #endif
 
 //Bottom USB RT1715 +++
@@ -399,6 +400,7 @@ static int dsi_panel_set_pinctrl_state(struct dsi_panel *panel, bool enable)
 static bool screen_is_on = true; // start with true, on/off is set at power off/on only!
 static bool listener_added = false;
 static void uci_user_listener(void);
+static void ntf_listener(char* event, int num_param, char* str_param);
 #endif
 
 static int dsi_panel_power_on(struct dsi_panel *panel)
@@ -674,6 +676,7 @@ static int dsi_panel_update_backlight(struct dsi_panel *panel,
 #ifdef CONFIG_UCI
 	if (!listener_added) {
 		uci_add_user_listener(uci_user_listener);
+		ntf_add_listener(ntf_listener);
 		listener_added = true;
 	}
 #endif
@@ -698,7 +701,9 @@ static int dsi_panel_update_backlight(struct dsi_panel *panel,
 	first_brightness_set = true;
 	if (g_panel == NULL) g_panel = panel;
 	if ((backlight_dimmer) && (bl_lvl == bl_min_stock)) {
-		bl_lvl = backlight_min;
+		if (ntf_is_screen_on()) { // only change when screen is not on AOD/off
+			bl_lvl = backlight_min;
+		}
 	}
 #endif
 	dsi_anakin_record_backlight(bl_lvl);
@@ -4932,7 +4937,8 @@ static void uci_user_listener(void) {
 			if (g_panel != NULL && screen_is_on) {
 				if (g_panel->power_mode == SDE_MODE_DPMS_ON) {
 					if (mutex_trylock(&g_panel->panel_lock)) {
-						dsi_panel_update_backlight(g_panel, last_brightness);
+						dsi_panel_update_backlight(g_panel, last_brightness<4?4:last_brightness); 
+							// must check last_brightness < 4, otherwise lowered bl lvl can stuck on new firmware
 						mutex_unlock(&g_panel->panel_lock);
 					}
 				}
@@ -4940,6 +4946,17 @@ static void uci_user_listener(void) {
                 }
         }
 }
+void ntf_listener(char* event, int num_param, char* str_param) {
+        if (strcmp(event,NTF_EVENT_CHARGE_LEVEL) && strcmp(event, NTF_EVENT_INPUT)) {
+                pr_info("%s ifilter ntf listener event %s %d %s\n",__func__,event,num_param,str_param);
+        }
+	if (!strcmp(event,NTF_EVENT_WAKE_BY_USER) || !strcmp(event,NTF_EVENT_WAKE_BY_FRAMEWORK)) {
+    		backlight_min = 5; // force change upon screen on
+    		uci_user_listener();
+        }
+}
+
+
 #endif
 
 int dsi_panel_switch(struct dsi_panel *panel)
