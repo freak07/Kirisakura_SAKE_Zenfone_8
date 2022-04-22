@@ -87,4 +87,13 @@ obj-$(CONFIG_INPUT_WM831X_ON)		+= wm831x-on.o
 obj-$(CONFIG_INPUT_XEN_KBDDEV_FRONTEND)	+= xen-kbdfront.o
 obj-$(CONFIG_INPUT_YEALINK)		+= yealink.o
 obj-$(CONFIG_INPUT_IDEAPAD_SLIDEBAR)	+= ideapad_slidebar.o
+obj-$(CONFIG_INPUT_SX932X)	+= sx932x.o
+obj-$(CONFIG_INPUT_SX932X_2ND)	+= sx932x_2nd.o
+obj-$(CONFIG_INPUT_SX932X_SAKE)	+= sx932x_sake.o
+obj-$(CONFIG_INPUT_SX932X_VODKA) += sx932x_sake.o
+
+
+
+
+
 

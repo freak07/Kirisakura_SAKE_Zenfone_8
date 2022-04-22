@@ -921,7 +921,9 @@ static int __do_replace(struct net *net, const char *name,
 	    (newinfo->number <= oldinfo->initial_entries))
 		module_put(t->me);
 
+#if defined(ASUS_ZS673KS_PROJECT) || defined(ASUS_PICASSO_PROJECT) || defined(ASUS_SAKE_PROJECT) || defined(ASUS_VODKA_PROJECT)
 	xt_table_unlock(t);
+#endif
 
 	get_old_counters(oldinfo, counters);
 
@@ -937,6 +939,10 @@ static int __do_replace(struct net *net, const char *name,
 		net_warn_ratelimited("arptables: counters copy to user failed while replacing table\n");
 	}
 	vfree(counters);
+#if defined(ASUS_ZS673KS_PROJECT) || defined(ASUS_PICASSO_PROJECT) || defined(ASUS_SAKE_PROJECT) || defined(ASUS_VODKA_PROJECT)
+#else
+	xt_table_unlock(t);
+#endif
 	return ret;
 
  put_module:
@@ -1021,6 +1027,7 @@ static int do_add_counters(struct net *net, const void __user *user,
 
 	local_bh_disable();
 	private = t->private;
+
 	if (private->number != tmp.num_counters) {
 		ret = -EINVAL;
 		goto unlock_up_free;
@@ -1360,6 +1367,7 @@ static int compat_copy_entries_to_user(unsigned int total_size,
 {
 	struct xt_counters *counters;
 	const struct xt_table_info *private = table->private;
+
 	void __user *pos;
 	unsigned int size;
 	int ret = 0;

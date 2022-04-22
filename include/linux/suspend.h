@@ -39,7 +39,6 @@ typedef int __bitwise suspend_state_t;
 #define PM_SUSPEND_MEM		((__force suspend_state_t) 3)
 #define PM_SUSPEND_MIN		PM_SUSPEND_TO_IDLE
 #define PM_SUSPEND_MAX		((__force suspend_state_t) 4)
-
 enum suspend_stat_step {
 	SUSPEND_FREEZE = 1,
 	SUSPEND_PREPARE,
@@ -72,6 +71,7 @@ struct suspend_stats {
 };
 
 extern struct suspend_stats suspend_stats;
+extern bool suspend_happened;
 
 static inline void dpm_save_failed_dev(const char *name)
 {

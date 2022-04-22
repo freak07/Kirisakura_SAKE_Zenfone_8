@@ -495,7 +495,7 @@ extern void wq_worker_comm(char *buf, size_t size, struct task_struct *task);
  * it can be processed by another CPU.
  */
 static inline bool queue_work(struct workqueue_struct *wq,
-			      struct work_struct *work)
+				struct work_struct *work)
 {
 	return queue_work_on(WORK_CPU_UNBOUND, wq, work);
 }
@@ -509,8 +509,8 @@ static inline bool queue_work(struct workqueue_struct *wq,
  * Equivalent to queue_delayed_work_on() but tries to use the local CPU.
  */
 static inline bool queue_delayed_work(struct workqueue_struct *wq,
-				      struct delayed_work *dwork,
-				      unsigned long delay)
+					struct delayed_work *dwork,
+					unsigned long delay)
 {
 	return queue_delayed_work_on(WORK_CPU_UNBOUND, wq, dwork, delay);
 }
@@ -524,8 +524,8 @@ static inline bool queue_delayed_work(struct workqueue_struct *wq,
  * mod_delayed_work_on() on local CPU.
  */
 static inline bool mod_delayed_work(struct workqueue_struct *wq,
-				    struct delayed_work *dwork,
-				    unsigned long delay)
+					struct delayed_work *dwork,
+					unsigned long delay)
 {
 	return mod_delayed_work_on(WORK_CPU_UNBOUND, wq, dwork, delay);
 }
@@ -597,7 +597,7 @@ static inline void flush_scheduled_work(void)
  * workqueue on the specified CPU.
  */
 static inline bool schedule_delayed_work_on(int cpu, struct delayed_work *dwork,
-					    unsigned long delay)
+						unsigned long delay)
 {
 	return queue_delayed_work_on(cpu, system_wq, dwork, delay);
 }
@@ -611,7 +611,7 @@ static inline bool schedule_delayed_work_on(int cpu, struct delayed_work *dwork,
  * workqueue.
  */
 static inline bool schedule_delayed_work(struct delayed_work *dwork,
-					 unsigned long delay)
+					unsigned long delay)
 {
 	return queue_delayed_work(system_wq, dwork, delay);
 }

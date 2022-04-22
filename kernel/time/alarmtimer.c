@@ -62,6 +62,10 @@ static struct rtc_timer		rtctimer;
 static struct rtc_device	*rtcdev;
 static DEFINE_SPINLOCK(rtcdev_lock);
 
+#if defined ASUS_SAKE_PROJECT || defined ASUS_VODKA_PROJECT
+static int alarm_debug = 0;
+#endif
+
 /**
  * alarmtimer_get_rtcdev - Return selected rtcdevice
  *
@@ -171,6 +175,10 @@ static void alarmtimer_enqueue(struct alarm_base *base, struct alarm *alarm)
 	if (alarm->state & ALARMTIMER_STATE_ENQUEUED)
 		timerqueue_del(&base->timerqueue, &alarm->node);
 
+#if defined ASUS_SAKE_PROJECT || defined ASUS_VODKA_PROJECT
+    pr_info("[oem][alarm]%s: comm:%s pid:%d exp:%llu func:%pf\n", __func__,current->comm, current->pid,ktime_to_ms(alarm->node.expires), alarm->function);//This print code could be removed for release build.
+#endif
+
 	timerqueue_add(&base->timerqueue, &alarm->node);
 	alarm->state |= ALARMTIMER_STATE_ENQUEUED;
 }
@@ -215,6 +223,13 @@ static enum hrtimer_restart alarmtimer_fired(struct hrtimer *timer)
 	alarmtimer_dequeue(base, alarm);
 	spin_unlock_irqrestore(&base->lock, flags);
 
+#if defined ASUS_SAKE_PROJECT || defined ASUS_VODKA_PROJECT
+	if(alarm_debug & 0x1){
+		pr_info("[oem][alarm]%s: type=%d, func=%pf, exp:%llu\n", __func__,alarm->type, alarm->function, ktime_to_ms(alarm->node.expires));
+		alarm_debug &= 0xFE;
+	}
+#endif
+
 	if (alarm->function)
 		restart = alarm->function(alarm, base->gettime());
 
@@ -256,6 +271,10 @@ static int alarmtimer_suspend(struct device *dev)
 	unsigned long flags;
 	struct rtc_time tm;
 
+#if defined ASUS_SAKE_PROJECT || defined ASUS_VODKA_PROJECT
+	struct alarm* min_timer = NULL;
+#endif
+
 	spin_lock_irqsave(&freezer_delta_lock, flags);
 	min = freezer_delta;
 	expires = freezer_expires;
@@ -281,6 +300,9 @@ static int alarmtimer_suspend(struct device *dev)
 			continue;
 		delta = ktime_sub(next->expires, base->gettime());
 		if (!min || (delta < min)) {
+#if defined ASUS_SAKE_PROJECT || defined ASUS_VODKA_PROJECT	
+			min_timer = container_of(next, struct alarm, node);
+#endif
 			expires = next->expires;
 			min = delta;
 			type = i;
@@ -288,6 +310,16 @@ static int alarmtimer_suspend(struct device *dev)
 	}
 	if (min == 0)
 		return 0;
+
+#if defined ASUS_SAKE_PROJECT || defined ASUS_VODKA_PROJECT	
+	if (min_timer){
+		pr_info("[oem][alarm]%s: [%p]type=%d, func=%pf, exp:%llu\n", __func__,
+		min_timer, min_timer->type, min_timer->function,
+		ktime_to_ms(min_timer->node.expires));
+		min_timer = NULL;
+	}
+	alarm_debug = 0x1;
+#endif
 
 	if (ktime_to_ns(min) < 2 * NSEC_PER_SEC) {
 		__pm_wakeup_event(ws, 2 * MSEC_PER_SEC);

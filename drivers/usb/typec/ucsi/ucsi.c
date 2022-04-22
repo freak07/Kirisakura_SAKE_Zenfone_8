@@ -508,10 +508,6 @@ static void ucsi_partner_change(struct ucsi_connector *con)
 	if (!completion_done(&con->complete))
 		complete(&con->complete);
 
-	/* Only notify USB controller if partner supports USB data */
-	if (!(UCSI_CONSTAT_PARTNER_FLAGS(con->status.flags) & UCSI_CONSTAT_PARTNER_FLAG_USB))
-		u_role = USB_ROLE_NONE;
-
 	ret = usb_role_switch_set_role(ucsi->usb_role_sw, u_role);
 	if (ret)
 		dev_err(ucsi->dev, "%s(): failed to set role(%d):%d\n",
@@ -581,13 +577,10 @@ static void ucsi_handle_connector_change(struct work_struct *work)
 
 		if (con->status.flags & UCSI_CONSTAT_CONNECTED)
 			ucsi_register_partner(con);
-		else
+		else {
 			ucsi_unregister_partner(con);
-
-		/* Only notify USB controller if partner supports USB data */
-		if (!(UCSI_CONSTAT_PARTNER_FLAGS(con->status.flags) &
-				UCSI_CONSTAT_PARTNER_FLAG_USB))
-			u_role = USB_ROLE_NONE;
+			typec_set_data_role(con->port, TYPEC_DEVICE);
+		}
 
 		ret = usb_role_switch_set_role(ucsi->usb_role_sw, u_role);
 		if (ret)
@@ -717,7 +710,11 @@ static int ucsi_dr_swap(struct typec_port *port, enum typec_data_role role)
 	u64 command;
 	int ret = 0;
 
+#ifdef CONFIG_MACH_ASUS
+	mutex_lock(&con->swap_lock);
+#else
 	mutex_lock(&con->lock);
+#endif
 
 	if (!con->partner) {
 		ret = -ENOTCONN;
@@ -743,7 +740,11 @@ static int ucsi_dr_swap(struct typec_port *port, enum typec_data_role role)
 		ret = -ETIMEDOUT;
 
 out_unlock:
+#ifdef CONFIG_MACH_ASUS
+	mutex_unlock(&con->swap_lock);
+#else
 	mutex_unlock(&con->lock);
+#endif
 
 	return ret < 0 ? ret : 0;
 }
@@ -754,8 +755,11 @@ static int ucsi_pr_swap(struct typec_port *port, enum typec_role role)
 	enum typec_role cur_role;
 	u64 command;
 	int ret = 0;
-
+#ifdef CONFIG_MACH_ASUS
+	mutex_lock(&con->swap_lock);
+#else
 	mutex_lock(&con->lock);
+#endif
 
 	if (!con->partner) {
 		ret = -ENOTCONN;
@@ -788,7 +792,11 @@ static int ucsi_pr_swap(struct typec_port *port, enum typec_role role)
 	}
 
 out_unlock:
+#ifdef CONFIG_MACH_ASUS
+	mutex_unlock(&con->swap_lock);
+#else
 	mutex_unlock(&con->lock);
+#endif
 
 	return ret;
 }
@@ -821,6 +829,9 @@ static int ucsi_register_port(struct ucsi *ucsi, int index)
 	INIT_WORK(&con->work, ucsi_handle_connector_change);
 	init_completion(&con->complete);
 	mutex_init(&con->lock);
+#ifdef CONFIG_MACH_ASUS
+	mutex_init(&con->swap_lock);
+#endif
 	con->num = index + 1;
 	con->ucsi = ucsi;
 
@@ -901,10 +912,6 @@ static int ucsi_register_port(struct ucsi *ucsi, int index)
 		ucsi_pwr_opmode_change(con);
 		ucsi_register_partner(con);
 	}
-
-	/* Only notify USB controller if partner supports USB data */
-	if (!(UCSI_CONSTAT_PARTNER_FLAGS(con->status.flags) & UCSI_CONSTAT_PARTNER_FLAG_USB))
-		role = USB_ROLE_NONE;
 
 	ret = usb_role_switch_set_role(ucsi->usb_role_sw, role);
 	if (ret)

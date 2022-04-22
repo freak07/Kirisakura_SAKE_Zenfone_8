@@ -430,9 +430,55 @@ static const struct dev_pm_ops qcom_ipcc_dev_pm_ops = {
 	SET_NOIRQ_SYSTEM_SLEEP_PM_OPS(qcom_ipcc_pm_suspend, qcom_ipcc_pm_resume)
 };
 
+	
+#if defined ASUS_SAKE_PROJECT || defined ASUS_VODKA_PROJECT
+//[PM_debug +++]
+static int qcom_ipcc_suspend(struct platform_device *pdev, pm_message_t state);
+static int qcom_ipcc_resume(struct platform_device *pdev);
+
+static int qcom_ipcc_suspend(struct platform_device *pdev, pm_message_t state)
+{
+	return 0;	
+}
+
+static int qcom_ipcc_resume(struct platform_device *pdev)	
+{
+	int virq;
+	struct irq_desc *desc;
+	const char *name = "null";
+	u32 packed_id;
+    struct device *dev = &(pdev->dev);
+	struct ipcc_protocol_data *proto_data = dev_get_drvdata(dev);
+	
+	packed_id = readl_no_log(proto_data->base + IPCC_REG_RECV_ID);
+
+	if (packed_id == IPCC_NO_PENDING_IRQ)
+		return 0;
+	
+	virq = irq_find_mapping(proto_data->irq_domain, packed_id);	
+	desc = irq_to_desc(virq);
+
+	if (desc == NULL)
+		name = "stray irq";
+	else if (desc->action && desc->action->name)	
+		name = desc->action->name;
+
+	pr_warn("%s: %d triggered %s (client-id: %u; signal-id: %u\n",
+		__func__, virq, name, qcom_ipcc_get_client_id(packed_id),
+		qcom_ipcc_get_signal_id(packed_id));
+	return 0;	
+}
+//[PM_debug ---]	
+#endif
+
 static struct platform_driver qcom_ipcc_driver = {
 	.probe = qcom_ipcc_probe,
 	.remove = qcom_ipcc_remove,
+#if defined ASUS_SAKE_PROJECT || defined ASUS_VODKA_PROJECT
+//[PM_debug +++]
+    .suspend =  qcom_ipcc_suspend,
+    .resume =   qcom_ipcc_resume,	
+#endif
 	.driver = {
 		.name = "qcom_ipcc",
 		.of_match_table = qcom_ipcc_of_match,

@@ -703,6 +703,10 @@ int snd_usb_enable_audio_stream(struct snd_usb_substream *subs,
 		"cannot set format: format = %#x, rate = %d, channels = %d\n",
 			   subs->pcm_format, subs->cur_rate, subs->channels);
 		return -EINVAL;
+	}else{
+		dev_err(&subs->dev->dev,
+		"current format: format = %#x, rate = %d, channels = %d\n",
+			   subs->pcm_format, subs->cur_rate, subs->channels);
 	}
 
 	subs->altset_idx = 0;

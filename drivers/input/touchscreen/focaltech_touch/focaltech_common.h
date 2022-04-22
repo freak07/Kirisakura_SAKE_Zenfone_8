@@ -54,6 +54,10 @@
 #define FTS_CHIP_IDC(type)            (((type) & FLAGBIT(FLAG_IDC_BIT)) == FLAGBIT(FLAG_IDC_BIT))
 #define FTS_HID_SUPPORTTED(type)      (((type) & FLAGBIT(FLAG_HID_BIT)) == FLAGBIT(FLAG_HID_BIT))
 
+
+#define FTS_CHIP_TYPE_MAPPING {{0x81, 0x54, 0x52, 0x54, 0x52, 0x00, 0x00, 0x54, 0x5C}}
+#define FTS_CHIP_TYPE_MAPPING_ASUS {{0x88, 0x56, 0x52, 0x00, 0x00, 0x00, 0x00, 0x56, 0xB2}}
+
 #define FILE_NAME_LENGTH                    128
 #define ENABLE                              1
 #define DISABLE                             0

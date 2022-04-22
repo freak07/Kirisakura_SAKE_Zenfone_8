@@ -246,6 +246,23 @@ static void thermal_zone_trip_update(struct thermal_zone_device *tz, int trip)
 		dev_dbg(&instance->cdev->device, "old_target=%d, target=%d\n",
 					old_target, (int)instance->target);
 
+                #if defined ASUS_SAKE_PROJECT || defined ASUS_VODKA_PROJECT
+                /**
+                *Add thermel cooling mechanism monitor log for only cpu-1-[0~7]-srep
+                *
+                *1.cooling trigger ==> state change form -1 to positive & throttle=1
+                *    eg(logs):throttle=1 state(-1->18) or throttle=1 state(-1->1)
+                *
+                *2.cooling clean ==> state change form positive to -1 & throttle=0
+                *    eg(logs):throttle=0 state(18->-1) or throttle=0 state(1->-1)
+                */
+                if (!strncmp(tz->type, "cpu-1-", sizeof("cpu-1-") - 1) && (trip == 0)){//only need print trip 0 now
+                    if(printk_ratelimit()){//Limit print freq
+                        printk(KERN_ERR "[ABSP][tz_update] id=%d, type=%s, temp=%d throttle=%d state(%d->%d)\n", tz->id, tz->type, tz->temperature,throttle,old_target,(int)instance->target);
+                    }
+                }
+                #endif
+
 		if (instance->initialized && old_target == instance->target)
 			continue;
 

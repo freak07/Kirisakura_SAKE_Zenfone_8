@@ -959,6 +959,9 @@ struct file {
 		struct rcu_head 	fu_rcuhead;
 	} f_u;
 	struct path		f_path;
+#ifdef CONFIG_MACH_ASUS
+#define f_dentry	f_path.dentry
+#endif
 	struct inode		*f_inode;	/* cached value */
 	const struct file_operations	*f_op;
 

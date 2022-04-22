@@ -245,8 +245,16 @@ static int qcom_dload_panic(struct notifier_block *this, unsigned long event,
 	struct qcom_dload *poweroff = container_of(this, struct qcom_dload,
 						     panic_nb);
 	poweroff->in_panic = true;
-	if (enable_dump)
+#ifdef CONFIG_MACH_ASUS
+	if (enable_dump){
 		msm_enable_dump_mode(true);
+		reboot_mode = REBOOT_WARM;
+	}
+#else
+	if (enable_dump){
+		msm_enable_dump_mode(true);
+	}	
+#endif
 	return NOTIFY_OK;
 }
 

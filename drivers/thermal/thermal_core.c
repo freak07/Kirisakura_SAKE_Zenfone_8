@@ -327,12 +327,30 @@ static void monitor_thermal_zone(struct thermal_zone_device *tz)
 
 	mutex_unlock(&tz->lock);
 }
+#if defined ASUS_SAKE_PROJECT
+extern int g_camera_therma;
+#endif
+
+#if defined ASUS_VODKA_PROJECT
+extern int g_rear_cam_therm;
+#endif
+
 static void store_temperature(struct thermal_zone_device *tz, int temp)
 {
 	mutex_lock(&tz->lock);
 	tz->last_temperature = tz->temperature;
 	tz->temperature = temp;
 	mutex_unlock(&tz->lock);
+
+#if defined ASUS_SAKE_PROJECT
+	if(strcmp( tz->type, "camera-therm-usr") == 0)
+		g_camera_therma = temp;
+#endif
+
+#if defined ASUS_VODKA_PROJECT
+	if(strcmp( tz->type, "rear-cam-therm-usr") == 0)
+		g_rear_cam_therm = temp;
+#endif
 
 	trace_thermal_temperature(tz);
 	if (tz->last_temperature == THERMAL_TEMP_INVALID)

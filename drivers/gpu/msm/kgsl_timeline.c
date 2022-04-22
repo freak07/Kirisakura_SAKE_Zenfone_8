@@ -556,6 +556,7 @@ long kgsl_ioctl_timeline_destroy(struct kgsl_device_private *dev_priv,
 	list_for_each_entry_safe(fence, tmp, &temp, node) {
 		dma_fence_set_error(&fence->base, -ENOENT);
 		dma_fence_signal_locked(&fence->base);
+
 		dma_fence_put(&fence->base);
 	}
 	spin_unlock_irq(&timeline->lock);
