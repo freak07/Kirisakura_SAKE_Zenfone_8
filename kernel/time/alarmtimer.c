@@ -62,7 +62,7 @@ static struct rtc_timer		rtctimer;
 static struct rtc_device	*rtcdev;
 static DEFINE_SPINLOCK(rtcdev_lock);
 
-#if defined ASUS_SAKE_PROJECT || defined ASUS_VODKA_PROJECT
+#ifdef CONFIG_ASUS_POWER_DEBUG
 static int alarm_debug = 0;
 #endif
 
@@ -175,7 +175,7 @@ static void alarmtimer_enqueue(struct alarm_base *base, struct alarm *alarm)
 	if (alarm->state & ALARMTIMER_STATE_ENQUEUED)
 		timerqueue_del(&base->timerqueue, &alarm->node);
 
-#if defined ASUS_SAKE_PROJECT || defined ASUS_VODKA_PROJECT
+#ifdef CONFIG_ASUS_POWER_DEBUG
     pr_info("[oem][alarm]%s: comm:%s pid:%d exp:%llu func:%pf\n", __func__,current->comm, current->pid,ktime_to_ms(alarm->node.expires), alarm->function);//This print code could be removed for release build.
 #endif
 
@@ -223,7 +223,7 @@ static enum hrtimer_restart alarmtimer_fired(struct hrtimer *timer)
 	alarmtimer_dequeue(base, alarm);
 	spin_unlock_irqrestore(&base->lock, flags);
 
-#if defined ASUS_SAKE_PROJECT || defined ASUS_VODKA_PROJECT
+#ifdef CONFIG_ASUS_POWER_DEBUG
 	if(alarm_debug & 0x1){
 		pr_info("[oem][alarm]%s: type=%d, func=%pf, exp:%llu\n", __func__,alarm->type, alarm->function, ktime_to_ms(alarm->node.expires));
 		alarm_debug &= 0xFE;
@@ -271,7 +271,7 @@ static int alarmtimer_suspend(struct device *dev)
 	unsigned long flags;
 	struct rtc_time tm;
 
-#if defined ASUS_SAKE_PROJECT || defined ASUS_VODKA_PROJECT
+#ifdef CONFIG_ASUS_POWER_DEBUG
 	struct alarm* min_timer = NULL;
 #endif
 
@@ -300,7 +300,7 @@ static int alarmtimer_suspend(struct device *dev)
 			continue;
 		delta = ktime_sub(next->expires, base->gettime());
 		if (!min || (delta < min)) {
-#if defined ASUS_SAKE_PROJECT || defined ASUS_VODKA_PROJECT	
+#ifdef CONFIG_ASUS_POWER_DEBUG
 			min_timer = container_of(next, struct alarm, node);
 #endif
 			expires = next->expires;
@@ -311,7 +311,7 @@ static int alarmtimer_suspend(struct device *dev)
 	if (min == 0)
 		return 0;
 
-#if defined ASUS_SAKE_PROJECT || defined ASUS_VODKA_PROJECT	
+#ifdef CONFIG_ASUS_POWER_DEBUG
 	if (min_timer){
 		pr_info("[oem][alarm]%s: [%p]type=%d, func=%pf, exp:%llu\n", __func__,
 		min_timer, min_timer->type, min_timer->function,
