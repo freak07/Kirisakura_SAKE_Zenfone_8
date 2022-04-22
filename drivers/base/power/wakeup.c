@@ -1108,7 +1108,7 @@ void pm_system_irq_wakeup(unsigned int irq_number)
 			pr_warn("%s: %d triggered %s\n", __func__,
 					irq_number, name);
 	#endif
-
+		}
 		}
 		pm_system_wakeup();
 }
