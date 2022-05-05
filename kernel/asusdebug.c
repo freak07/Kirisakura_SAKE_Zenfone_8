@@ -823,7 +823,7 @@ void save_last_shutdown_log(char *filename)
 	
 
 	
-	file_handle = ksys_open(messages, O_CREAT | O_RDWR | O_SYNC, 0);
+	file_handle = ksys_open(messages, O_CREAT | O_RDWR | O_SYNC, S_IRUGO);
 	if (!IS_ERR((const void *)(ulong)file_handle)) {
 		ksys_write(file_handle, (unsigned char *)last_shutdown_log, PRINTK_BUFFER_SLOT_SIZE);
 		ksys_close(file_handle);
@@ -1505,19 +1505,19 @@ static ssize_t asusdebug_write(struct file *file, const char __user *buf, size_t
 		if (!asus_asdf_set) {
 			asus_asdf_set = 1;
 			save_phone_hang_log(1);
-			get_last_shutdown_log();
+			printk_buffer_rebase();
 			printk("[ASDF] get_last_shutdown_log: printk_buffer_slot2_addr=%p, value=0x%lx\n", printk_buffer_slot2_addr, *printk_buffer_slot2_addr);
 #if 0
 			if ((*printk_buffer_slot2_addr) == (ulong)PRINTK_BUFFER_MAGIC)
 				save_rtb_log();
-#endif
+
 			if ((*printk_buffer_slot2_addr) == (ulong)PRINTK_BUFFER_MAGIC) {
 				printk("[ASDF] after saving asdf log, then reboot\n");
 				ksys_sync();
 				ASUSEvtlog("[ASDF] after saving asdf log, then reboot\n");
 				//kernel_restart(NULL);
 			}
-
+#endif
 			(*printk_buffer_slot2_addr) = (ulong)PRINTK_BUFFER_MAGIC;
 		}
 #if 0 

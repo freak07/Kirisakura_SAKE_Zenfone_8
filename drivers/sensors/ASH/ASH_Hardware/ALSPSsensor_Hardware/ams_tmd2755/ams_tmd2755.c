@@ -294,7 +294,7 @@ static int tmd2755_ALSPS_hw_get_interrupt()
 		chip->in_asat = 0;
 	}
 
-	if ((status & TMD2755_INT_ST_ALS_IRQ) || chip->in_asat) {
+	if (status & TMD2755_INT_ST_ALS_IRQ) {
 		if (status & TMD2755_INT_ST_ALS_IRQ)
 			dev_dbg(dev, "%*.*s():%*d --> ALS Threshold Interrupt occurred\n",
 				MIN_KERNEL_LOG_LEN, MAX_KERNEL_LOG_LEN, __func__, LINE_NUM_KERNEL_LOG_LEN, __LINE__);
