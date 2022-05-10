@@ -248,11 +248,6 @@ QDF_STATUS hdd_update_mac_config(struct hdd_context *hdd_ctx)
 
 	memset(mac_table, 0, sizeof(mac_table));
 	status = request_firmware(&fw, WLAN_MAC_FILE, hdd_ctx->parent_dev);
-	if (!status)
-		goto mac_done;
-	
-	status = request_firmware(&fw, WLAN_MAC_FILE_CUST, hdd_ctx->parent_dev);
-
 	if (status) {
 		/*
 		 * request_firmware "fails" if the file is not found, which is a
@@ -262,7 +257,6 @@ QDF_STATUS hdd_update_mac_config(struct hdd_context *hdd_ctx)
 		return QDF_STATUS_E_FAILURE;
 	}
 
-mac_done:
 	if (!fw || !fw->data || !fw->size) {
 		hdd_alert("invalid firmware");
 		qdf_status = QDF_STATUS_E_INVAL;
