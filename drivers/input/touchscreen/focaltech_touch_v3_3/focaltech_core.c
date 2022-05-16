@@ -2114,7 +2114,7 @@ static void __exit fts_ts_exit(void)
 	i2c_del_driver(&fts_ts_driver);
 }
 
-module_init(fts_ts_init);
+late_initcall(fts_ts_init);
 module_exit(fts_ts_exit);
 
 MODULE_IMPORT_NS(VFS_internal_I_am_really_a_filesystem_and_am_NOT_a_driver);
