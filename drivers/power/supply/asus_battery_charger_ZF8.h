@@ -73,6 +73,7 @@ struct ADSP_ChargerPD_Info {
     int     thermel_threshold;
     int     boot_completed;
     bool    in_call;
+    u32     launchedtime;
 };
 
 struct battman_oem_read_buffer_req_msg { 
