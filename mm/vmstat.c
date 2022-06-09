@@ -1148,12 +1148,9 @@ const char * const vmstat_text[] = {
 	"nr_isolated_anon",
 	"nr_isolated_file",
 	"workingset_nodes",
-	"workingset_refault_anon",
-	"workingset_refault_file",
-	"workingset_activate_anon",
-	"workingset_activate_file",
-	"workingset_restore_anon",
-	"workingset_restore_file",
+	"workingset_refault",
+	"workingset_activate",
+	"workingset_restore",
 	"workingset_nodereclaim",
 	"nr_anon_pages",
 	"nr_mapped",
@@ -1210,10 +1207,6 @@ const char * const vmstat_text[] = {
 	"pgscan_kswapd",
 	"pgscan_direct",
 	"pgscan_direct_throttle",
-	"pgscan_anon",
-	"pgscan_file",
-	"pgsteal_anon",
-	"pgsteal_file",
 
 #ifdef CONFIG_NUMA
 	"zone_reclaim_failed",
@@ -1462,10 +1455,6 @@ static void pagetypeinfo_showblockcount_print(struct seq_file *m,
 
 		page = pfn_to_online_page(pfn);
 		if (!page)
-			continue;
-
-		/* Watch for unexpected holes punched in the memmap */
-		if (!memmap_valid_within(pfn, page, zone))
 			continue;
 
 		if (page_zone(page) != zone)

@@ -214,9 +214,9 @@ static void unaccount_page_cache_page(struct address_space *mapping,
 
 	nr = hpage_nr_pages(page);
 
-	__mod_lruvec_page_state(page, NR_FILE_PAGES, -nr);
+	__mod_node_page_state(page_pgdat(page), NR_FILE_PAGES, -nr);
 	if (PageSwapBacked(page)) {
-		__mod_lruvec_page_state(page, NR_SHMEM, -nr);
+		__mod_node_page_state(page_pgdat(page), NR_SHMEM, -nr);
 		if (PageTransHuge(page))
 			__dec_node_page_state(page, NR_SHMEM_THPS);
 	} else if (PageTransHuge(page)) {
@@ -839,22 +839,21 @@ int replace_page_cache_page(struct page *old, struct page *new, gfp_t gfp_mask)
 	new->mapping = mapping;
 	new->index = offset;
 
-	mem_cgroup_migrate(old, new);
-
 	xas_lock_irqsave(&xas, flags);
 	xas_store(&xas, new);
 
 	old->mapping = NULL;
 	/* hugetlb pages do not participate in page cache accounting. */
 	if (!PageHuge(old))
-		__dec_lruvec_page_state(old, NR_FILE_PAGES);
+		__dec_node_page_state(new, NR_FILE_PAGES);
 	if (!PageHuge(new))
-		__inc_lruvec_page_state(new, NR_FILE_PAGES);
+		__inc_node_page_state(new, NR_FILE_PAGES);
 	if (PageSwapBacked(old))
-		__dec_lruvec_page_state(old, NR_SHMEM);
+		__dec_node_page_state(new, NR_SHMEM);
 	if (PageSwapBacked(new))
-		__inc_lruvec_page_state(new, NR_SHMEM);
+		__inc_node_page_state(new, NR_SHMEM);
 	xas_unlock_irqrestore(&xas, flags);
+	mem_cgroup_migrate(old, new);
 	if (freepage)
 		freepage(old);
 	put_page(old);
@@ -870,24 +869,24 @@ noinline int __add_to_page_cache_locked(struct page *page,
 {
 	XA_STATE(xas, &mapping->i_pages, offset);
 	int huge = PageHuge(page);
+	struct mem_cgroup *memcg;
 	int error;
-	bool charged = false;
 
 	VM_BUG_ON_PAGE(!PageLocked(page), page);
 	VM_BUG_ON_PAGE(PageSwapBacked(page), page);
 	mapping_set_update(&xas, mapping);
 
+	if (!huge) {
+		error = mem_cgroup_try_charge(page, current->mm,
+					      gfp_mask, &memcg, false);
+		if (error)
+			return error;
+	}
+
 	get_page(page);
 	page->mapping = mapping;
 	page->index = offset;
 	gfp_mask &= GFP_RECLAIM_MASK;
-
-	if (!huge) {
-		error = mem_cgroup_charge(page, current->mm, gfp_mask);
-		if (error)
-			goto error;
-		charged = true;
-	}
 
 	do {
 		unsigned int order = xa_get_order(xas.xa, xas.xa_index);
@@ -926,25 +925,25 @@ noinline int __add_to_page_cache_locked(struct page *page,
 
 		/* hugetlb pages do not participate in page cache accounting */
 		if (!huge)
-			__inc_lruvec_page_state(page, NR_FILE_PAGES);
+			__inc_node_page_state(page, NR_FILE_PAGES);
 unlock:
 		xas_unlock_irq(&xas);
 	} while (xas_nomem(&xas, gfp_mask));
 
-	if (xas_error(&xas)) {
-		error = xas_error(&xas);
-		if (charged)
-			mem_cgroup_uncharge(page);
+	if (xas_error(&xas))
 		goto error;
-	}
 
+	if (!huge)
+		mem_cgroup_commit_charge(page, memcg, false, false);
 	trace_mm_filemap_add_to_page_cache(page);
 	return 0;
 error:
 	page->mapping = NULL;
 	/* Leave page->index set: truncation relies upon it */
+	if (!huge)
+		mem_cgroup_cancel_charge(page, memcg, false);
 	put_page(page);
-	return error;
+	return xas_error(&xas);
 }
 ALLOW_ERROR_INJECTION(__add_to_page_cache_locked, ERRNO);
 
@@ -2694,7 +2693,7 @@ void filemap_map_pages(struct vm_fault *vmf,
 				vmf->flags |= FAULT_FLAG_PREFAULT_OLD;
 		}
 
-		if (alloc_set_pte(vmf, page))
+		if (alloc_set_pte(vmf, NULL, page))
 			goto unlock;
 		unlock_page(page);
 		goto next;

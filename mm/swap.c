@@ -66,8 +66,9 @@ static void __page_cache_release(struct page *page)
 
 		spin_lock_irqsave(&pgdat->lru_lock, flags);
 		lruvec = mem_cgroup_page_lruvec(page, pgdat);
-		del_page_from_lru_list(page, lruvec);
-		__clear_page_lru_flags(page);
+		VM_BUG_ON_PAGE(!PageLRU(page), page);
+		__ClearPageLRU(page);
+		del_page_from_lru_list(page, lruvec, page_off_lru(page));
 		spin_unlock_irqrestore(&pgdat->lru_lock, flags);
 	}
 	__ClearPageWaiters(page);
@@ -221,9 +222,9 @@ static void pagevec_move_tail_fn(struct page *page, struct lruvec *lruvec,
 	int *pgmoved = arg;
 
 	if (PageLRU(page) && !PageUnevictable(page)) {
-		del_page_from_lru_list(page, lruvec);
+		del_page_from_lru_list(page, lruvec, page_lru(page));
 		ClearPageActive(page);
-		add_page_to_lru_list_tail(page, lruvec);
+		add_page_to_lru_list_tail(page, lruvec, page_lru(page));
 		(*pgmoved)++;
 	}
 }
@@ -261,53 +262,31 @@ void rotate_reclaimable_page(struct page *page)
 	}
 }
 
-void lru_note_cost(struct lruvec *lruvec, bool file, unsigned int nr_pages)
+static void update_page_reclaim_stat(struct lruvec *lruvec,
+				     int file, int rotated)
 {
-	do {
-		unsigned long lrusize;
+	struct zone_reclaim_stat *reclaim_stat = &lruvec->reclaim_stat;
 
-		/* Record cost event */
-		if (file)
-			lruvec->file_cost += nr_pages;
-		else
-			lruvec->anon_cost += nr_pages;
-
-		/*
-		 * Decay previous events
-		 *
-		 * Because workloads change over time (and to avoid
-		 * overflow) we keep these statistics as a floating
-		 * average, which ends up weighing recent refaults
-		 * more than old ones.
-		 */
-		lrusize = lruvec_page_state(lruvec, NR_INACTIVE_ANON) +
-			  lruvec_page_state(lruvec, NR_ACTIVE_ANON) +
-			  lruvec_page_state(lruvec, NR_INACTIVE_FILE) +
-			  lruvec_page_state(lruvec, NR_ACTIVE_FILE);
-
-		if (lruvec->file_cost + lruvec->anon_cost > lrusize / 4) {
-			lruvec->file_cost /= 2;
-			lruvec->anon_cost /= 2;
-		}
-	} while ((lruvec = parent_lruvec(lruvec)));
-}
-
-void lru_note_cost_page(struct page *page)
-{
-	lru_note_cost(mem_cgroup_page_lruvec(page, page_pgdat(page)),
-		      page_is_file_lru(page), hpage_nr_pages(page));
+	reclaim_stat->recent_scanned[file]++;
+	if (rotated)
+		reclaim_stat->recent_rotated[file]++;
 }
 
 static void __activate_page(struct page *page, struct lruvec *lruvec,
 			    void *arg)
 {
 	if (PageLRU(page) && !PageActive(page) && !PageUnevictable(page)) {
-		del_page_from_lru_list(page, lruvec);
+		int file = page_is_file_cache(page);
+		int lru = page_lru_base_type(page);
+
+		del_page_from_lru_list(page, lruvec, lru);
 		SetPageActive(page);
-		add_page_to_lru_list(page, lruvec);
+		lru += LRU_ACTIVE;
+		add_page_to_lru_list(page, lruvec, lru);
 		trace_mm_lru_activate(page);
 
 		__count_vm_event(PGACTIVATE);
+		update_page_reclaim_stat(lruvec, file, 1);
 	}
 }
 
@@ -381,43 +360,6 @@ static void __lru_cache_activate_page(struct page *page)
 	put_cpu_var(lru_add_pvec);
 }
 
-#ifdef CONFIG_LRU_GEN
-static void page_inc_refs(struct page *page)
-{
-	unsigned long refs;
-	unsigned long old_flags, new_flags;
-
-	if (PageUnevictable(page))
-		return;
-
-	/* see the comment on MAX_NR_TIERS */
-	do {
-		new_flags = old_flags = READ_ONCE(page->flags);
-
-		if (!(new_flags & BIT(PG_referenced))) {
-			new_flags |= BIT(PG_referenced);
-			continue;
-		}
-
-		if (!(new_flags & BIT(PG_workingset))) {
-			new_flags |= BIT(PG_workingset);
-			continue;
-		}
-
-		refs = new_flags & LRU_REFS_MASK;
-		refs = min(refs + BIT(LRU_REFS_PGOFF), LRU_REFS_MASK);
-
-		new_flags &= ~LRU_REFS_MASK;
-		new_flags |= refs;
-	} while (new_flags != old_flags &&
-		 cmpxchg(&page->flags, old_flags, new_flags) != old_flags);
-}
-#else
-static void page_inc_refs(struct page *page)
-{
-}
-#endif /* CONFIG_LRU_GEN */
-
 /*
  * Mark a page as having seen activity.
  *
@@ -431,12 +373,6 @@ static void page_inc_refs(struct page *page)
 void mark_page_accessed(struct page *page)
 {
 	page = compound_head(page);
-
-	if (lru_gen_enabled()) {
-		page_inc_refs(page);
-		return;
-	}
-
 	if (!PageActive(page) && !PageUnevictable(page) &&
 			PageReferenced(page)) {
 
@@ -451,7 +387,8 @@ void mark_page_accessed(struct page *page)
 		else
 			__lru_cache_activate_page(page);
 		ClearPageReferenced(page);
-		workingset_activation(page);
+		if (page_is_file_cache(page))
+			workingset_activation(page);
 	} else if (!PageReferenced(page)) {
 		SetPageReferenced(page);
 	}
@@ -459,6 +396,35 @@ void mark_page_accessed(struct page *page)
 		clear_page_idle(page);
 }
 EXPORT_SYMBOL(mark_page_accessed);
+
+static void __lru_cache_add(struct page *page)
+{
+	struct pagevec *pvec = &get_cpu_var(lru_add_pvec);
+
+	get_page(page);
+	if (!pagevec_add(pvec, page) || PageCompound(page))
+		__pagevec_lru_add(pvec);
+	put_cpu_var(lru_add_pvec);
+}
+
+/**
+ * lru_cache_add_anon - add a page to the page lists
+ * @page: the page to add
+ */
+void lru_cache_add_anon(struct page *page)
+{
+	if (PageActive(page))
+		ClearPageActive(page);
+	__lru_cache_add(page);
+}
+
+void lru_cache_add_file(struct page *page)
+{
+	if (PageActive(page))
+		ClearPageActive(page);
+	__lru_cache_add(page);
+}
+EXPORT_SYMBOL(lru_cache_add_file);
 
 /**
  * lru_cache_add - add a page to a page list
@@ -471,42 +437,29 @@ EXPORT_SYMBOL(mark_page_accessed);
  */
 void lru_cache_add(struct page *page)
 {
-	struct pagevec *pvec;
 	VM_BUG_ON_PAGE(PageActive(page) && PageUnevictable(page), page);
 	VM_BUG_ON_PAGE(PageLRU(page), page);
-
-	/* see the comment in lru_gen_add_page() */
-	if (lru_gen_enabled() && !PageUnevictable(page) &&
-	    lru_gen_in_fault() && !(current->flags & PF_MEMALLOC))
-		SetPageActive(page);
-
-	get_page(page);
-	pvec = &get_cpu_var(lru_add_pvec);
-	if (!pagevec_add(pvec, page) || PageCompound(page))
-		__pagevec_lru_add(pvec);
-	put_cpu_var(lru_add_pvec);
+	__lru_cache_add(page);
 }
-EXPORT_SYMBOL(lru_cache_add);
 
 /**
- * lru_cache_add_inactive_or_unevictable
+ * lru_cache_add_active_or_unevictable
  * @page:  the page to be added to LRU
  * @vma:   vma in which page is mapped for determining reclaimability
  *
- * Place @page on the inactive or unevictable LRU list, depending on its
+ * Place @page on the active or unevictable LRU list, depending on its
  * evictability.  Note that if the page is not evictable, it goes
  * directly back onto it's zone's unevictable list, it does NOT use a
  * per cpu pagevec.
  */
-void __lru_cache_add_inactive_or_unevictable(struct page *page,
+void __lru_cache_add_active_or_unevictable(struct page *page,
 					   unsigned long vma_flags)
 {
-	bool unevictable;
-
 	VM_BUG_ON_PAGE(PageLRU(page), page);
 
-	unevictable = (vma_flags & (VM_LOCKED | VM_SPECIAL)) == VM_LOCKED;
-	if (unlikely(unevictable) && !TestSetPageMlocked(page)) {
+	if (likely((vma_flags & (VM_LOCKED | VM_SPECIAL)) != VM_LOCKED))
+		SetPageActive(page);
+	else if (!TestSetPageMlocked(page)) {
 		/*
 		 * We use the irq-unsafe __mod_zone_page_stat because this
 		 * counter is not modified from interrupt context, and the pte
@@ -543,7 +496,8 @@ void __lru_cache_add_inactive_or_unevictable(struct page *page,
 static void lru_deactivate_file_fn(struct page *page, struct lruvec *lruvec,
 			      void *arg)
 {
-	bool active = PageActive(page);
+	int lru, file;
+	bool active;
 
 	if (!PageLRU(page))
 		return;
@@ -555,7 +509,11 @@ static void lru_deactivate_file_fn(struct page *page, struct lruvec *lruvec,
 	if (page_mapped(page))
 		return;
 
-	del_page_from_lru_list(page, lruvec);
+	active = PageActive(page);
+	file = page_is_file_cache(page);
+	lru = page_lru_base_type(page);
+
+	del_page_from_lru_list(page, lruvec, lru + active);
 	ClearPageActive(page);
 	ClearPageReferenced(page);
 
@@ -565,31 +523,36 @@ static void lru_deactivate_file_fn(struct page *page, struct lruvec *lruvec,
 		 * It can make readahead confusing.  But race window
 		 * is _really_ small and  it's non-critical problem.
 		 */
-		add_page_to_lru_list(page, lruvec);
+		add_page_to_lru_list(page, lruvec, lru);
 		SetPageReclaim(page);
 	} else {
 		/*
 		 * The page's writeback ends up during pagevec
 		 * We moves tha page into tail of inactive.
 		 */
-		add_page_to_lru_list_tail(page, lruvec);
+		add_page_to_lru_list_tail(page, lruvec, lru);
 		__count_vm_event(PGROTATED);
 	}
 
 	if (active)
 		__count_vm_event(PGDEACTIVATE);
+	update_page_reclaim_stat(lruvec, file, 0);
 }
 
 static void lru_deactivate_fn(struct page *page, struct lruvec *lruvec,
 			    void *arg)
 {
-	if (PageLRU(page) && !PageUnevictable(page) && (PageActive(page) || lru_gen_enabled())) {
-		del_page_from_lru_list(page, lruvec);
+	if (PageLRU(page) && PageActive(page) && !PageUnevictable(page)) {
+		int file = page_is_file_cache(page);
+		int lru = page_lru_base_type(page);
+
+		del_page_from_lru_list(page, lruvec, lru + LRU_ACTIVE);
 		ClearPageActive(page);
 		ClearPageReferenced(page);
-		add_page_to_lru_list(page, lruvec);
+		add_page_to_lru_list(page, lruvec, lru);
 
 		__count_vm_events(PGDEACTIVATE, hpage_nr_pages(page));
+		update_page_reclaim_stat(lruvec, file, 0);
 	}
 }
 
@@ -598,19 +561,23 @@ static void lru_lazyfree_fn(struct page *page, struct lruvec *lruvec,
 {
 	if (PageLRU(page) && PageAnon(page) && PageSwapBacked(page) &&
 	    !PageSwapCache(page) && !PageUnevictable(page)) {
-		del_page_from_lru_list(page, lruvec);
+		bool active = PageActive(page);
+
+		del_page_from_lru_list(page, lruvec,
+				       LRU_INACTIVE_ANON + active);
 		ClearPageActive(page);
 		ClearPageReferenced(page);
 		/*
-		 * Lazyfree pages are clean anonymous pages.  They have
-		 * PG_swapbacked flag cleared, to distinguish them from normal
-		 * anonymous pages
+		 * lazyfree pages are clean anonymous pages. They have
+		 * SwapBacked flag cleared to distinguish normal anonymous
+		 * pages
 		 */
 		ClearPageSwapBacked(page);
-		add_page_to_lru_list(page, lruvec);
+		add_page_to_lru_list(page, lruvec, LRU_INACTIVE_FILE);
 
 		__count_vm_events(PGLAZYFREE, hpage_nr_pages(page));
 		count_memcg_page_event(page, PGLAZYFREE);
+		update_page_reclaim_stat(lruvec, 1, 0);
 	}
 }
 
@@ -687,7 +654,7 @@ void deactivate_file_page(struct page *page)
  */
 void deactivate_page(struct page *page)
 {
-	if (PageLRU(page) && !PageUnevictable(page) && (PageActive(page) || lru_gen_enabled())) {
+	if (PageLRU(page) && PageActive(page) && !PageUnevictable(page)) {
 		struct pagevec *pvec = &get_cpu_var(lru_deactivate_pvecs);
 
 		get_page(page);
@@ -857,10 +824,13 @@ void release_pages(struct page **pages, int nr)
 			}
 
 			lruvec = mem_cgroup_page_lruvec(page, locked_pgdat);
-			del_page_from_lru_list(page, lruvec);
-			__clear_page_lru_flags(page);
+			VM_BUG_ON_PAGE(!PageLRU(page), page);
+			__ClearPageLRU(page);
+			del_page_from_lru_list(page, lruvec, page_off_lru(page));
 		}
 
+		/* Clear Active bit in case of parallel mark_page_accessed */
+		__ClearPageActive(page);
 		__ClearPageWaiters(page);
 
 		list_add(&page->lru, &pages_to_free);
@@ -899,6 +869,8 @@ EXPORT_SYMBOL(__pagevec_release);
 void lru_add_page_tail(struct page *page, struct page *page_tail,
 		       struct lruvec *lruvec, struct list_head *list)
 {
+	const int file = 0;
+
 	VM_BUG_ON_PAGE(!PageHead(page), page);
 	VM_BUG_ON_PAGE(PageCompound(page_tail), page);
 	VM_BUG_ON_PAGE(PageLRU(page_tail), page);
@@ -921,14 +893,19 @@ void lru_add_page_tail(struct page *page, struct page *page_tail,
 		 * Put page_tail on the list at the correct position
 		 * so they all end up in order.
 		 */
-		add_page_to_lru_list_tail(page_tail, lruvec);
+		add_page_to_lru_list_tail(page_tail, lruvec,
+					  page_lru(page_tail));
 	}
+
+	if (!PageUnevictable(page))
+		update_page_reclaim_stat(lruvec, file, PageActive(page_tail));
 }
 #endif /* CONFIG_TRANSPARENT_HUGEPAGE */
 
 static void __pagevec_lru_add_fn(struct page *page, struct lruvec *lruvec,
 				 void *arg)
 {
+	enum lru_list lru;
 	int was_unevictable = TestClearPageUnevictable(page);
 
 	VM_BUG_ON_PAGE(PageLRU(page), page);
@@ -963,17 +940,21 @@ static void __pagevec_lru_add_fn(struct page *page, struct lruvec *lruvec,
 	smp_mb();
 
 	if (page_evictable(page)) {
+		lru = page_lru(page);
+		update_page_reclaim_stat(lruvec, page_is_file_cache(page),
+					 PageActive(page));
 		if (was_unevictable)
 			count_vm_event(UNEVICTABLE_PGRESCUED);
 	} else {
+		lru = LRU_UNEVICTABLE;
 		ClearPageActive(page);
 		SetPageUnevictable(page);
 		if (!was_unevictable)
 			count_vm_event(UNEVICTABLE_PGCULLED);
 	}
 
-	add_page_to_lru_list(page, lruvec);
-	trace_mm_lru_insertion(page);
+	add_page_to_lru_list(page, lruvec, lru);
+	trace_mm_lru_insertion(page, lru);
 }
 
 /*

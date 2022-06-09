@@ -683,7 +683,7 @@ static void smaps_account(struct mem_size_stats *mss, struct page *page,
 
 #ifdef CONFIG_SHMEM
 static int smaps_pte_hole(unsigned long addr, unsigned long end,
-			  __always_unused int depth, struct mm_walk *walk)
+		struct mm_walk *walk)
 {
 	struct mem_size_stats *mss = walk->private;
 
@@ -1466,7 +1466,7 @@ static int add_to_pagemap(unsigned long addr, pagemap_entry_t *pme,
 }
 
 static int pagemap_pte_hole(unsigned long start, unsigned long end,
-			    __always_unused int depth, struct mm_walk *walk)
+				struct mm_walk *walk)
 {
 	struct pagemapread *pm = walk->private;
 	unsigned long addr = start;
@@ -1877,7 +1877,7 @@ cont:
 
 		list_add(&page->lru, &page_list);
 		inc_node_page_state(page, NR_ISOLATED_ANON +
-				page_is_file_lru(page));
+				page_is_file_cache(page));
 		isolated++;
 		if (isolated >= SWAP_CLUSTER_MAX)
 			break;
