@@ -1226,7 +1226,7 @@ static ssize_t launchedtime_store(struct class *c,
 {
     u32 tmp;
     tmp = simple_strtol(buf, NULL, 10);
-    ChgPD_Info.launchedtime = tmp/1000;
+    ChgPD_Info.launchedtime = tmp * 3600;
     fix_time = true;
 
     CHG_DBG_E("%s. set active time : %d", __func__, tmp);
@@ -1850,8 +1850,6 @@ void set_qc_stat(int status)
         }
         break;
     default:
-        cancel_delayed_work_sync(&asus_set_qc_state_work);
-        asus_extcon_set_state_sync(quickchg_extcon, SWITCH_LEVEL0_DEFAULT);
         break;
     }
 }
