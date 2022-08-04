@@ -226,7 +226,7 @@ int xhci_reset(struct xhci_hcd *xhci, u64 timeout_us)
 		udelay(1000);
 
 	ret = xhci_handshake_check_state(xhci, &xhci->op_regs->command,
-			CMD_RESET, 0, 1000 * 1000);
+			CMD_RESET, 0, timeout_us);
 	if (ret)
 		return ret;
 
@@ -239,8 +239,7 @@ int xhci_reset(struct xhci_hcd *xhci, u64 timeout_us)
 	 * xHCI cannot write to any doorbells or operational registers other
 	 * than status until the "Controller Not Ready" flag is cleared.
 	 */
-	ret = xhci_handshake(&xhci->op_regs->status,
-			STS_CNR, 0, 1000 * 1000);
+	ret = xhci_handshake(&xhci->op_regs->status, STS_CNR, 0, timeout_us);
 
 	xhci->usb2_rhub.bus_state.port_c_suspend = 0;
 	xhci->usb2_rhub.bus_state.suspended_ports = 0;

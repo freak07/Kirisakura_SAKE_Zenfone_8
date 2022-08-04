@@ -1182,8 +1182,8 @@ void pm_system_irq_wakeup(unsigned int irq_number)
 					irq_number, name);
 	#endif
 		}
-		}
 		pm_system_wakeup();
+	}
 }
 
 unsigned int pm_wakeup_irq(void)
