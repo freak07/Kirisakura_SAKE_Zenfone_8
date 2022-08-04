@@ -86,6 +86,10 @@ static irqreturn_t nfc_dev_irq_handler(int irq, void *dev_id)
 {
     struct nfc_dev *nfc_dev = dev_id;
     unsigned long flags;
+
+    if (device_may_wakeup(&nfc_dev->client->dev))
+        pm_wakeup_event(&nfc_dev->client->dev, WAKEUP_SRC_TIMEOUT);
+
     nfc_disable_irq(nfc_dev);
     spin_lock_irqsave(&nfc_dev->irq_enabled_lock, flags);
     nfc_dev->count_irq++;
@@ -469,6 +473,36 @@ err:
     return ret;
 }
 
+int nfc_i2c_dev_suspend(struct device *device)
+{
+    struct i2c_client *client = to_i2c_client(device);
+    struct nfc_dev *nfc_dev = i2c_get_clientdata(client);
+
+    pr_info("%s: irq_enabled = %d", __func__,
+                            nfc_dev->irq_enabled);
+
+    if (device_may_wakeup(&client->dev) && nfc_dev->irq_enabled) {
+        if (!enable_irq_wake(client->irq))
+            nfc_dev->irq_wake_up = true;
+    }
+    return 0;
+}
+
+int nfc_i2c_dev_resume(struct device *device)
+{
+    struct i2c_client *client = to_i2c_client(device);
+    struct nfc_dev *nfc_dev = i2c_get_clientdata(client);
+
+    pr_info("%s: irq_wake_up = %d", __func__,
+                            nfc_dev->irq_wake_up);
+
+    if (device_may_wakeup(&client->dev) && nfc_dev->irq_wake_up) {
+        if (!disable_irq_wake(client->irq))
+            nfc_dev->irq_wake_up = false;
+    }
+    return 0;
+}
+
 static const struct i2c_device_id nfc_id[] = {
         { "pn544", 0 },
         { }
@@ -480,6 +514,10 @@ static struct of_device_id nfc_match_table[] = {
 };
 MODULE_DEVICE_TABLE(of, nfc_match_table);
 
+static const struct dev_pm_ops nfc_i2c_dev_pm_ops = {
+    SET_SYSTEM_SLEEP_PM_OPS(nfc_i2c_dev_suspend, nfc_i2c_dev_resume)
+};
+
 static struct i2c_driver nfc_driver = {
         .id_table   = nfc_id,
         .probe      = nfc_probe,
@@ -487,6 +525,7 @@ static struct i2c_driver nfc_driver = {
         .driver     = {
                 .owner = THIS_MODULE,
                 .name  = "pn544",
+                .pm = &nfc_i2c_dev_pm_ops,
                 .of_match_table = nfc_match_table,
         },
 };

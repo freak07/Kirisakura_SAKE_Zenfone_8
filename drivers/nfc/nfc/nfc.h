@@ -52,6 +52,8 @@ struct nfc_dev    {
     unsigned int        count_irq;
     /* NFC additional parameters for old platforms */
     void *pdata_op;
+    // NFC_IRQ wake-up state
+    bool irq_wake_up;
 };
 
 void nfc_disable_irq(struct nfc_dev *nfc_dev);

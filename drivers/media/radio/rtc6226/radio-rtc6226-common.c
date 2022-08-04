@@ -1474,8 +1474,8 @@ int rtc6226_power_up(struct rtc6226_device *radio)
 	FMDBG("%s : after initialization\n", __func__);
 
 	/* mpxconfig */
-	/* Disable Mute / De-emphasis / Volume 12 */
-	radio->registers[MPXCFG] = 0x000c |
+	/* Disable Mute / De-emphasis / Volume 16 */
+	radio->registers[MPXCFG] = MPXCFG_CSR0_VOLUME |
 		MPXCFG_CSR0_DIS_MUTE |
 		((de << 12) & MPXCFG_CSR0_DEEM);
 	retval = rtc6226_set_register(radio, MPXCFG);
