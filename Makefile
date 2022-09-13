@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0
 VERSION = 5
 PATCHLEVEL = 4
-SUBLEVEL = 209
+SUBLEVEL = 212
 EXTRAVERSION =
 NAME = Kleptomaniac Octopus
 
@@ -1024,6 +1024,9 @@ endif
 
 KBUILD_LDFLAGS_MODULE += --build-id
 LDFLAGS_vmlinux += --build-id
+
+KBUILD_LDFLAGS	+= -z noexecstack
+KBUILD_LDFLAGS	+= $(call ld-option,--no-warn-rwx-segments)
 
 # +++ ASUS_BSP : Add ASUS build option to KBUILD_CPPFLAGS
 
