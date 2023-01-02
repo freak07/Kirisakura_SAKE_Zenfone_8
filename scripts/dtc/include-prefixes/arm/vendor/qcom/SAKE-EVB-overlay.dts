@@ -739,14 +739,6 @@
     };
 };
 
-&rx_swr_gpios {
-	qcom,tlmm-pins = <171>;
-};
-
-&tx_swr_gpios {
-	qcom,tlmm-pins = <168>;
-};
-
 &dai_mi2s0_rx {
     qcom,msm-mi2s-lines = <2>;
 };

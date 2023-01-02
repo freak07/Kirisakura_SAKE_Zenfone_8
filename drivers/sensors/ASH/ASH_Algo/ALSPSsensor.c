@@ -570,8 +570,9 @@ static int proximity_turn_onoff(bool bOn)
 static int proximity_set_threshold(void)
 {
 	int ret = 0;
+#ifndef CONFIG_TMD2755_FLAG
 	int temp = 0;
-
+#endif
 	/* Check Hardware Support First */
 	if(g_ALSPS_hw_client->mpsensor_hw->proximity_hw_set_hi_threshold == NULL) {
 		err("proximity_hw_set_hi_threshold NOT SUPPORT. \n");
@@ -627,6 +628,7 @@ static int proximity_set_threshold(void)
 		err("Proximity read DEFAULT Low Calibration : %d\n", g_ps_data->g_ps_calvalue_lo);
 	}
 	*/
+#ifndef CONFIG_TMD2755_FLAG
 	if(anti_oil_enable == 1){
 		temp = (g_ps_data->g_ps_calvalue_hi - g_ps_data->g_ps_calvalue_lo) / 3;
 		g_ps_data->g_ps_calvalue_lo = temp + g_ps_data->g_ps_calvalue_lo;
@@ -637,6 +639,7 @@ static int proximity_set_threshold(void)
 			log("Proximity final low threshold:%d (offset:%d)\n", g_ps_data->g_ps_calvalue_lo, temp);
 		}
 	}
+#endif
 
 	ret = g_ALSPS_hw_client->mpsensor_hw->proximity_hw_set_hi_threshold(g_ps_data->g_ps_calvalue_hi);
 	if(ret < 0){
