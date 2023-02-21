@@ -261,6 +261,7 @@ static struct {
 	{"XYRATEX", "RS", "*", BLIST_SPARSELUN | BLIST_LARGELUN},
 	{"Zzyzx", "RocketStor 500S", NULL, BLIST_SPARSELUN},
 	{"Zzyzx", "RocketStor 2000", NULL, BLIST_SPARSELUN},
+	{"SAMSUNG", "KLUCG2K1EA-B0C1", NULL, BLIST_SKIP_VPD_PAGES},
 	{ NULL, NULL, NULL, 0 },
 };
 

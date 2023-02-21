@@ -1,0 +1,5 @@
+config HALL_SENSOR
+    tristate "Hall sensor driver"
+	---help---
+	 Say y here if you want to use this hall sensor driver, it
+	 can get magnetic data form xyz-axis.

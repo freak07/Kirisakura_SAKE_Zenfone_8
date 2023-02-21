@@ -63,6 +63,11 @@ obj-y				+= gpu/
 
 obj-$(CONFIG_CONNECTOR)		+= connector/
 
+#VODKA camera moto driver.
+ifeq ($(ASUS_BUILD_PROJECT),VODKA)
+obj-y				+= msp/
+endif
+
 # i810fb and intelfb depend on char/agp/
 obj-$(CONFIG_FB_I810)           += video/fbdev/i810/
 obj-$(CONFIG_FB_INTEL)          += video/fbdev/intelfb/
@@ -186,3 +191,42 @@ obj-$(CONFIG_SIOX)		+= siox/
 obj-$(CONFIG_GNSS)		+= gnss/
 obj-$(CONFIG_INTERCONNECT)	+= interconnect/
 obj-$(CONFIG_COUNTER)		+= counter/
+
+#ASUS_BSP Vibrator +++
+obj-$(CONFIG_TSPDRV) += motor/tspdrv/
+#ASUS_BSP Vibrator ---
+
+# ASUS_BSP Deeo : AURA SYNC driver
+obj-y				+= aura_sync/
+
+# ASUS_BSP Clay : ALSPSsensor and Airtrigger driver
+obj-$(CONFIG_SENSORS_SSC)       += sensors/
+
+#ASUS_BSP ec hid driver
+obj-y				+= ec_hid_driver/
+
+#ASUS_BSP gamepad hid driver
+obj-y				+= gamepad_hid_driver/
+
+#Tuxera
+ifeq ($(ASUS_BUILD_PROJECT),ZS673KS)
+	ifdef CONFIG_TUXERA_USERDEBUG
+		obj-y				+= tuxera/zs673ks/exfat/userdebug/
+		obj-y				+= tuxera/zs673ks/ntfs/userdebug/
+	else
+		obj-y				+= tuxera/zs673ks/exfat/user/
+		obj-y				+= tuxera/zs673ks/ntfs/user/
+	endif
+endif
+
+#Tuxera
+ifeq ($(ASUS_BUILD_PROJECT),PICASSO)
+	ifdef CONFIG_TUXERA_USERDEBUG
+		obj-y				+= tuxera/zs675kw/exfat/userdebug/
+		obj-y				+= tuxera/zs675kw/ntfs/userdebug/
+	else
+		obj-y				+= tuxera/zs675kw/exfat/user/
+		obj-y				+= tuxera/zs675kw/ntfs/user/
+	endif
+endif
+

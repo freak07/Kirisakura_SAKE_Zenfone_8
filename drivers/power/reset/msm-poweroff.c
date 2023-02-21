@@ -398,19 +398,32 @@ EXPORT_SYMBOL(msm_set_restart_mode);
 
 static void msm_restart_prepare(const char *cmd)
 {
+#if defined ASUS_SAKE_PROJECT || defined ASUS_VODKA_PROJECT
+	ulong *printk_buffer_slot2_addr;
+#endif
 	bool need_warm_reset = false;
 	u8 reason = PON_RESTART_REASON_UNKNOWN;
 	/* Write download mode flags if we're panic'ing
 	 * Write download mode flags if restart_mode says so
 	 * Kill download mode if master-kill switch is set
 	 */
-
 	if (cmd != NULL && !strcmp(cmd, "qcom_dload"))
 		restart_mode = RESTART_DLOAD;
 
 	set_dload_mode(download_mode &&
 			(in_panic || restart_mode == RESTART_DLOAD));
 
+
+#if defined ASUS_SAKE_PROJECT || defined ASUS_VODKA_PROJECT
+	if (!in_panic) {
+		// Normal reboot. Clean the printk buffer magic
+		printk_buffer_slot2_addr = (ulong *)PRINTK_BUFFER_SLOT2;
+		*printk_buffer_slot2_addr = 0;
+		printk(KERN_CRIT "msm_restart_prepare Clean asus_global...\n");
+		flush_cache_all();
+
+	}
+#endif
 	if (qpnp_pon_check_hard_reset_stored()) {
 		/* Set warm reset as true when device is in dload mode */
 		if (get_dload_mode() ||
@@ -421,6 +434,7 @@ static void msm_restart_prepare(const char *cmd)
 		need_warm_reset = (get_dload_mode() ||
 				(cmd != NULL && cmd[0] != '\0'));
 	}
+
 
 	if (force_warm_reboot)
 		pr_info("Forcing a warm reset of the system\n");
@@ -509,10 +523,37 @@ static int do_msm_restart(struct notifier_block *unused, unsigned long action,
 	return NOTIFY_DONE;
 }
 
+int do_msm_restart2(void *arg)
+{
+	const char *cmd = arg;
+
+	pr_notice("Going down for restart now\n");
+
+	msm_restart_prepare(cmd);
+
+	deassert_ps_hold();
+
+	msleep(10000);
+
+	return NOTIFY_DONE;
+}
+
 static void do_msm_poweroff(void)
 {
+
+#if defined ASUS_SAKE_PROJECT || defined ASUS_VODKA_PROJECT
+	ulong *printk_buffer_slot2_addr;
+#endif
 	pr_notice("Powering off the SoC\n");
 
+#if defined ASUS_SAKE_PROJECT || defined ASUS_VODKA_PROJECT
+	// Normal power off. Clean the printk buffer magic
+	printk_buffer_slot2_addr = (ulong *)PRINTK_BUFFER_SLOT2;
+	*printk_buffer_slot2_addr = 0;
+
+	printk(KERN_CRIT "Clean asus_global...\n");
+	flush_cache_all();
+#endif
 	set_dload_mode(0);
 	qpnp_pon_system_pwr_off(PON_POWER_OFF_SHUTDOWN);
 

@@ -1,0 +1,6 @@
+config LATCH_AK09973
+    tristate "Latch ak09973 driver"
+    depends on I2C
+	---help---
+	 Say y here if you want to use this hall sensor driver, it
+	 can get magnetic data form xyz-axis.

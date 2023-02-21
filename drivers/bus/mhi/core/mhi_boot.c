@@ -16,6 +16,9 @@
 #include <linux/wait.h>
 #include <linux/mhi.h>
 #include "mhi_internal.h"
+#ifdef CONFIG_MACH_ASUS
+#include <soc/qcom/subsystem_restart.h>
+#endif
 
 static void mhi_process_sfr(struct mhi_controller *mhi_cntrl,
 	struct file_info *info)
@@ -59,6 +62,9 @@ static void mhi_process_sfr(struct mhi_controller *mhi_cntrl,
 
 	/* force sfr string to log in kernel msg */
 	MHI_ERR("%s\n", sfr_buf);
+#ifdef CONFIG_MACH_ASUS
+	subsys_save_reason("wlan", sfr_buf );
+#endif
 err:
 	kfree(sfr_buf);
 }

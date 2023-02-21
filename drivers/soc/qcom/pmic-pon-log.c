@@ -252,6 +252,10 @@ static int pmic_pon_log_print_reason(char *buf, int buf_size, u8 data,
 	return pos;
 }
 
+#ifdef CONFIG_MACH_ASUS
+extern void asus_boot_reason_dump( char * buf );
+#endif
+
 #define BUF_SIZE 128
 
 static int pmic_pon_log_parse_entry(const struct pmic_pon_log_entry *entry,
@@ -435,7 +439,10 @@ static int pmic_pon_log_parse_entry(const struct pmic_pon_log_entry *entry,
 		pr_info("PMIC PON log: %s\n", buf);
 	else
 		pr_debug("PMIC PON log: %s\n", buf);
-
+	
+#ifdef CONFIG_MACH_ASUS
+	asus_boot_reason_dump(buf);
+#endif
 	if (entry->state < ARRAY_SIZE(pmic_pon_state_label))
 		ipc_log_string(ipc_log, "State=%s; %s\n",
 				pmic_pon_state_label[entry->state], buf);

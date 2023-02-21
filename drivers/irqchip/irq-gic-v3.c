@@ -41,6 +41,10 @@
 
 #define FLAGS_WORKAROUND_GICR_WAKER_MSM8996	(1ULL << 0)
 
+//[PM_debug +++]
+//irq debug
+int gic_irq_cnt,gic_resume_irq;//Add these values to save IRQ's counts and number
+//[PM_debug ---]
 struct redist_region {
 	void __iomem		*redist_base;
 	phys_addr_t		phys_base;
@@ -588,7 +592,12 @@ static void gic_show_resume_irq(struct gic_chip_data *gic)
 	u32 enabled;
 	u32 pending[32];
 	void __iomem *base = gic_data.dist_base;
-
+//[PM_debug +++]
+//irg debug
+//reset IRQ count and IRQ number every time.
+	gic_resume_irq=0;
+	gic_irq_cnt=0;
+//[PM_debug ---]
 	if (!msm_show_resume_irq_mask)
 		return;
 
@@ -614,10 +623,16 @@ static void gic_show_resume_irq(struct gic_chip_data *gic)
 			name = desc->action->name;
 		else if (desc->irq_data.chip && desc->irq_data.chip->name)
 			name = desc->irq_data.chip->name;
-
 		pr_warn("%s: irq:%d hwirq:%u triggered %s\n",
 			 __func__, irq, i, name);
+    //[PM_debug +++]
+        //irq debug
+        //save IRQ's counts and number
+		gic_resume_irq = irq;
+		gic_irq_cnt++;
 	}
+	printk("irq count: %d\n", gic_irq_cnt);        
+    //[PM_debug ---]
 }
 
 static void gic_resume_one(struct gic_chip_data *gic)

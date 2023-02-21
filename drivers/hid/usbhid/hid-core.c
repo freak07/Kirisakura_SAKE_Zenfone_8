@@ -268,11 +268,17 @@ static int usbhid_restart_ctrl_queue(struct usbhid_device *usbhid)
  * Input interrupt completion handler.
  */
 
+#if defined CONFIG_MACH_ASUS_ZS673KS
+extern u8 key_state;
+#endif
 static void hid_irq_in(struct urb *urb)
 {
 	struct hid_device	*hid = urb->context;
 	struct usbhid_device	*usbhid = hid->driver_data;
 	int			status;
+#if defined CONFIG_MACH_ASUS_ZS673KS
+	u8	buffer_ret[2];
+#endif
 
 	switch (urb->status) {
 	case 0:			/* success */
@@ -294,6 +300,13 @@ static void hid_irq_in(struct urb *urb)
 			else
 				clear_bit(HID_KEYS_PRESSED, &usbhid->iofl);
 		}
+#if defined CONFIG_MACH_ASUS_ZS673KS
+		if ( (hid->vendor == 0x0BDA) && (hid->product == 0x4BF0) ){
+			memcpy(buffer_ret, urb->transfer_buffer, sizeof(buffer_ret));
+			pr_info("%s(%d)buf0:%x,buf1:%x\n",__func__, __LINE__, buffer_ret[0], buffer_ret[1]);
+			key_state = buffer_ret[1];
+		}
+#endif
 		break;
 	case -EPIPE:		/* stall */
 		usbhid_mark_busy(usbhid);
@@ -867,10 +880,15 @@ static int hid_alloc_buffers(struct usb_device *dev, struct hid_device *hid)
 
 	return 0;
 }
-
+#if defined CONFIG_MACH_ASUS_ZS673KS
+int usbhid_get_raw_report(struct hid_device *hid,
+		unsigned char report_number, __u8 *buf, size_t count,
+		unsigned char report_type)
+#else
 static int usbhid_get_raw_report(struct hid_device *hid,
 		unsigned char report_number, __u8 *buf, size_t count,
 		unsigned char report_type)
+#endif
 {
 	struct usbhid_device *usbhid = hid->driver_data;
 	struct usb_device *dev = hid_to_usb_dev(hid);
@@ -901,9 +919,56 @@ static int usbhid_get_raw_report(struct hid_device *hid,
 
 	return ret;
 }
+#if defined CONFIG_MACH_ASUS_ZS673KS
+EXPORT_SYMBOL(usbhid_get_raw_report);
 
+//ASUS_BSP : Add for gamepad vendor protocol ++
+int asus_usbhid_set_raw_report(struct hid_device *hid, unsigned int reportnum,
+				 __u8 *buf, size_t count, unsigned char rtype)
+{
+	struct usbhid_device *usbhid = hid->driver_data;
+	struct usb_device *dev = hid_to_usb_dev(hid);
+	struct usb_interface *intf = usbhid->intf;
+	struct usb_host_interface *interface = intf->cur_altsetting;
+	int ret, skipped_report_id = 0;
+
+	/* Byte 0 is the report number. Report data starts at byte 1.*/
+	if ((rtype == HID_OUTPUT_REPORT) &&
+	    (hid->quirks & HID_QUIRK_SKIP_OUTPUT_REPORT_ID))
+		buf[0] = 0;
+	else
+		buf[0] = reportnum;
+
+	if (buf[0] == 0x0) {
+		/* Don't send the Report ID */
+		buf++;
+		count--;
+		skipped_report_id = 1;
+	}
+
+	ret = usb_control_msg(dev, usb_sndctrlpipe(dev, 0),
+			HID_REQ_SET_REPORT,
+			USB_DIR_OUT | USB_TYPE_CLASS | USB_RECIP_INTERFACE,
+			((rtype - 1) << 8) | reportnum,
+			interface->desc.bInterfaceNumber, buf, count,
+			USB_CTRL_SET_TIMEOUT);
+	/* count also the report id, if this was a numbered report. */
+	if (ret > 0 && skipped_report_id)
+		ret++;
+
+	return ret;
+}
+EXPORT_SYMBOL(asus_usbhid_set_raw_report);
+//ASUS_BSP : Add for gamepad vendor protocol --
+#endif
+
+#if defined CONFIG_MACH_ASUS_ZS673KS
+int usbhid_set_raw_report(struct hid_device *hid, unsigned int reportnum,
+				 __u8 *buf, size_t count, unsigned char rtype)
+#else
 static int usbhid_set_raw_report(struct hid_device *hid, unsigned int reportnum,
 				 __u8 *buf, size_t count, unsigned char rtype)
+#endif
 {
 	struct usbhid_device *usbhid = hid->driver_data;
 	struct usb_device *dev = hid_to_usb_dev(hid);
@@ -937,6 +1002,9 @@ static int usbhid_set_raw_report(struct hid_device *hid, unsigned int reportnum,
 
 	return ret;
 }
+#if defined CONFIG_MACH_ASUS_ZS673KS
+EXPORT_SYMBOL(usbhid_set_raw_report);
+#endif
 
 static int usbhid_output_report(struct hid_device *hid, __u8 *buf, size_t count)
 {
@@ -1411,6 +1479,19 @@ static int usbhid_probe(struct usb_interface *intf, const struct usb_device_id *
 		goto err_free;
 	}
 
+#if defined CONFIG_MACH_ASUS_ZS673KS
+	/* enable suspend/resume support for HID devices. */
+	if ((le16_to_cpu(dev->descriptor.idVendor) == 0x0BDA) &&
+	 ((le16_to_cpu(dev->descriptor.idProduct) == 0x480F)
+	||(le16_to_cpu(dev->descriptor.idProduct) == 0x4A41)
+	||(le16_to_cpu(dev->descriptor.idProduct) == 0x4A43)
+	||(le16_to_cpu(dev->descriptor.idProduct) == 0x4A45)
+	||(le16_to_cpu(dev->descriptor.idProduct) == 0x48F0)
+	||(le16_to_cpu(dev->descriptor.idProduct) == 0x4BF0))) {
+		hid_info(intf, "[USB] POGO HID enable autosuspend\n");
+		usb_enable_autosuspend(dev);
+	}
+#endif
 	return 0;
 err_free:
 	kfree(usbhid);
@@ -1604,6 +1685,7 @@ static int hid_suspend(struct usb_interface *intf, pm_message_t message)
 		goto failed;
 	}
 	dev_dbg(&intf->dev, "suspend\n");
+	printk("[USB_PM] hid_suspend, dev=%s\n", dev_name(&intf->dev));
 	return status;
 
  failed:
@@ -1618,6 +1700,7 @@ static int hid_resume(struct usb_interface *intf)
 
 	status = hid_resume_common(hid, true);
 	dev_dbg(&intf->dev, "resume status %d\n", status);
+	printk("[USB_PM] hid_resume, dev=%s\n", dev_name(&intf->dev));
 	return 0;
 }
 

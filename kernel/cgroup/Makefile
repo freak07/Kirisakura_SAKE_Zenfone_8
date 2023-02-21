@@ -6,3 +6,8 @@ obj-$(CONFIG_CGROUP_PIDS) += pids.o
 obj-$(CONFIG_CGROUP_RDMA) += rdma.o
 obj-$(CONFIG_CPUSETS) += cpuset.o
 obj-$(CONFIG_CGROUP_DEBUG) += debug.o
+ifeq ($(CONFIG_MACH_ASUS),y)
+obj-$(CONFIG_CGF_NOTIFY_EVENT) += cgf_notify.o
+endif
+
+

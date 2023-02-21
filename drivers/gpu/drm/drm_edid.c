@@ -2895,7 +2895,11 @@ add_detailed_modes(struct drm_connector *connector, struct edid *edid,
 	struct detailed_mode_closure closure = {
 		.connector = connector,
 		.edid = edid,
+#ifdef CONFIG_MACH_ASUS
+		.preferred = false, /* ASUS BSP Display +++ */
+#else
 		.preferred = true,
+#endif
 		.quirks = quirks,
 	};
 

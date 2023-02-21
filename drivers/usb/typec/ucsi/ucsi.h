@@ -290,6 +290,9 @@ struct ucsi_connector {
 
 	struct ucsi *ucsi;
 	struct mutex lock; /* port lock */
+#ifdef CONFIG_MACH_ASUS
+	struct mutex swap_lock; /* swap lock */
+#endif
 	struct work_struct work;
 	struct completion complete;
 

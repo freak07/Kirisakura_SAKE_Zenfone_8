@@ -58,6 +58,10 @@ config NET_REDIRECT
 config SKB_EXTENSIONS
 	bool
 
+config SLA_STAIC_COLLECT
+	bool "Build SLA module"
+	default y
+
 menu "Networking options"
 
 source "net/packet/Kconfig"
@@ -67,6 +71,7 @@ source "net/xfrm/Kconfig"
 source "net/iucv/Kconfig"
 source "net/smc/Kconfig"
 source "net/xdp/Kconfig"
+source "net/sla/Kconfig"
 
 config INET
 	bool "TCP/IP networking"
@@ -199,11 +204,17 @@ config BRIDGE_NETFILTER
 
 	  If unsure, say N.
 
+config SLA_STAIC_COLLECT
+        bool "Build SLA"
+	depends on NET && INET && NETFILTER
+	depends on MACH_ASUS_ZS673KS || MACH_ASUS_PICASSO || MACH_ASUS_VODKA || MACH_ASUS_SAKE
+
 source "net/netfilter/Kconfig"
 source "net/ipv4/netfilter/Kconfig"
 source "net/ipv6/netfilter/Kconfig"
 source "net/decnet/netfilter/Kconfig"
 source "net/bridge/netfilter/Kconfig"
+source "net/sla/Kconfig"
 
 endif
 

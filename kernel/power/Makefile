@@ -18,3 +18,9 @@ obj-$(CONFIG_MAGIC_SYSRQ)	+= poweroff.o
 
 obj-$(CONFIG_SUSPEND)		+= wakeup_reason.o
 obj-$(CONFIG_ENERGY_MODEL)	+= energy_model.o
+
+ifeq ($(CONFIG_MACH_ASUS),y)
+#[PM_debug +++]
+obj-y				+= pm_debug.o
+#[PM_debug ---]
+endif

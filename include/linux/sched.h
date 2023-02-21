@@ -527,6 +527,10 @@ struct sched_entity {
 	ANDROID_KABI_RESERVE(2);
 	ANDROID_KABI_RESERVE(3);
 	ANDROID_KABI_RESERVE(4);
+#ifdef CONFIG_MACH_ASUS
+	int binder_sender_pid;
+	int binder_sender_tid;
+#endif
 };
 
 struct cpu_cycle_counter_cb {

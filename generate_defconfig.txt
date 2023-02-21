@@ -1,0 +1,206 @@
+
+================ begin generate_defconfig.sh ================
+
+[generate_defconfig.sh] generate_defconfig.sh vendor/lahaina-qgki_defconfig 
+[generate_defconfig.sh] QCOM_GKI_ALLYES_FRAG=/home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_ALLYES_GKI.config
+[generate_defconfig.sh] REQUIRED_DEFCONFIG=lahaina-qgki_defconfig
+[generate_defconfig.sh] fragment_allyesconfig.sh QCOM_GKI_FRAG:/home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_GKI.config QCOM_GKI_ALLYES_FRAG:/home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_ALLYES_GKI.config
+[generate_defconfig.sh] Step 1: FINAL_DEFCONFIG_BLEND:  /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/debugfs.config /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_QGKI.config /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_ALLYES_GKI.config 
+[generate_defconfig.sh] Step 2: FINAL_DEFCONFIG_BLEND:  /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/debugfs.config /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_QGKI.config /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_ALLYES_GKI.config /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/gki_defconfig
+
++++[generate_defconfig.sh]+++
+[generate_defconfig.sh] after awk FINAL_DEFCONFIG_BLEND: /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/gki_defconfig /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_ALLYES_GKI.config /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_QGKI.config /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/debugfs.config
+[generate_defconfig.sh] ONLY_GKI=0
+[generate_defconfig.sh] ASUS_CONFIGS_DIR=/home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/
+[generate_defconfig.sh] ASUS_BUILD_PROJECT=SAKE
+[generate_defconfig.sh] TARGET_BUILD_VARIANT=user
+[generate_defconfig.sh] REQUIRED_DEFCONFIG: lahaina-qgki_defconfig
+[generate_defconfig.sh] defconfig blend for FINAL_DEFCONFIG_BLEND: /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/gki_defconfig /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_ALLYES_GKI.config /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_QGKI.config /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/debugfs.config /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/SAKE-perf_defconfig
+---[generate_defconfig.sh]---
+
+================ end generate_defconfig.sh ================
+
+
+================ begin generate_defconfig.sh ================
+
+[generate_defconfig.sh] generate_defconfig.sh vendor/lahaina-gki_defconfig 
+[generate_defconfig.sh] QCOM_GKI_ALLYES_FRAG=/home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_ALLYES_GKI.config
+[generate_defconfig.sh] REQUIRED_DEFCONFIG=lahaina-gki_defconfig
+[generate_defconfig.sh] Step 1: FINAL_DEFCONFIG_BLEND:  /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_GKI.config 
+[generate_defconfig.sh] Step 2: FINAL_DEFCONFIG_BLEND:  /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_GKI.config /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/gki_defconfig
+
++++[generate_defconfig.sh]+++
+[generate_defconfig.sh] after awk FINAL_DEFCONFIG_BLEND: /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/gki_defconfig /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_GKI.config
+[generate_defconfig.sh] ONLY_GKI=1
+[generate_defconfig.sh] ASUS_CONFIGS_DIR=/home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/
+[generate_defconfig.sh] ASUS_BUILD_PROJECT=SAKE
+[generate_defconfig.sh] TARGET_BUILD_VARIANT=user
+[generate_defconfig.sh] ONLY_GKI=1
+[generate_defconfig.sh] ASUS_GKI_BUILD=y
+[generate_defconfig.sh] REQUIRED_DEFCONFIG: lahaina-gki_defconfig
+[generate_defconfig.sh] defconfig blend for FINAL_DEFCONFIG_BLEND: /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/gki_defconfig /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_GKI.config
+---[generate_defconfig.sh]---
+
+================ end generate_defconfig.sh ================
+
+
+================ begin generate_defconfig.sh ================
+
+[generate_defconfig.sh] generate_defconfig.sh vendor/lahaina-gki_defconfig 
+[generate_defconfig.sh] QCOM_GKI_ALLYES_FRAG=/home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_ALLYES_GKI.config
+[generate_defconfig.sh] REQUIRED_DEFCONFIG=lahaina-gki_defconfig
+[generate_defconfig.sh] Step 1: FINAL_DEFCONFIG_BLEND:  /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_GKI.config 
+[generate_defconfig.sh] Step 2: FINAL_DEFCONFIG_BLEND:  /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_GKI.config /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/gki_defconfig
+
++++[generate_defconfig.sh]+++
+[generate_defconfig.sh] after awk FINAL_DEFCONFIG_BLEND: /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/gki_defconfig /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_GKI.config
+[generate_defconfig.sh] ONLY_GKI=1
+[generate_defconfig.sh] ASUS_CONFIGS_DIR=/home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/
+[generate_defconfig.sh] ASUS_BUILD_PROJECT=SAKE
+[generate_defconfig.sh] TARGET_BUILD_VARIANT=user
+[generate_defconfig.sh] ONLY_GKI=1
+[generate_defconfig.sh] ASUS_GKI_BUILD=y
+[generate_defconfig.sh] REQUIRED_DEFCONFIG: lahaina-gki_defconfig
+[generate_defconfig.sh] defconfig blend for FINAL_DEFCONFIG_BLEND: /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/gki_defconfig /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_GKI.config
+---[generate_defconfig.sh]---
+
+================ end generate_defconfig.sh ================
+
+
+================ begin generate_defconfig.sh ================
+
+[generate_defconfig.sh] generate_defconfig.sh vendor/lahaina-gki_defconfig 
+[generate_defconfig.sh] QCOM_GKI_ALLYES_FRAG=/home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_ALLYES_GKI.config
+[generate_defconfig.sh] REQUIRED_DEFCONFIG=lahaina-gki_defconfig
+[generate_defconfig.sh] Step 1: FINAL_DEFCONFIG_BLEND:  /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_GKI.config 
+[generate_defconfig.sh] Step 2: FINAL_DEFCONFIG_BLEND:  /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_GKI.config /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/gki_defconfig
+
++++[generate_defconfig.sh]+++
+[generate_defconfig.sh] after awk FINAL_DEFCONFIG_BLEND: /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/gki_defconfig /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_GKI.config
+[generate_defconfig.sh] ONLY_GKI=1
+[generate_defconfig.sh] ASUS_CONFIGS_DIR=/home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/
+[generate_defconfig.sh] ASUS_BUILD_PROJECT=SAKE
+[generate_defconfig.sh] TARGET_BUILD_VARIANT=user
+[generate_defconfig.sh] ONLY_GKI=1
+[generate_defconfig.sh] ASUS_GKI_BUILD=y
+[generate_defconfig.sh] REQUIRED_DEFCONFIG: lahaina-gki_defconfig
+[generate_defconfig.sh] defconfig blend for FINAL_DEFCONFIG_BLEND: /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/gki_defconfig /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_GKI.config
+---[generate_defconfig.sh]---
+
+================ end generate_defconfig.sh ================
+
+
+================ begin generate_defconfig.sh ================
+
+[generate_defconfig.sh] generate_defconfig.sh vendor/lahaina-gki_defconfig 
+[generate_defconfig.sh] QCOM_GKI_ALLYES_FRAG=/home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_ALLYES_GKI.config
+[generate_defconfig.sh] REQUIRED_DEFCONFIG=lahaina-gki_defconfig
+[generate_defconfig.sh] Step 1: FINAL_DEFCONFIG_BLEND:  /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_GKI.config 
+[generate_defconfig.sh] Step 2: FINAL_DEFCONFIG_BLEND:  /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_GKI.config /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/gki_defconfig
+
++++[generate_defconfig.sh]+++
+[generate_defconfig.sh] after awk FINAL_DEFCONFIG_BLEND: /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/gki_defconfig /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_GKI.config
+[generate_defconfig.sh] ONLY_GKI=1
+[generate_defconfig.sh] ASUS_CONFIGS_DIR=/home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/
+[generate_defconfig.sh] ASUS_BUILD_PROJECT=SAKE
+[generate_defconfig.sh] TARGET_BUILD_VARIANT=user
+[generate_defconfig.sh] ONLY_GKI=1
+[generate_defconfig.sh] ASUS_GKI_BUILD=y
+[generate_defconfig.sh] REQUIRED_DEFCONFIG: lahaina-gki_defconfig
+[generate_defconfig.sh] defconfig blend for FINAL_DEFCONFIG_BLEND: /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/gki_defconfig /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_GKI.config
+---[generate_defconfig.sh]---
+
+================ end generate_defconfig.sh ================
+
+
+================ begin generate_defconfig.sh ================
+
+[generate_defconfig.sh] generate_defconfig.sh vendor/lahaina-gki_defconfig 
+[generate_defconfig.sh] QCOM_GKI_ALLYES_FRAG=/home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_ALLYES_GKI.config
+[generate_defconfig.sh] REQUIRED_DEFCONFIG=lahaina-gki_defconfig
+[generate_defconfig.sh] Step 1: FINAL_DEFCONFIG_BLEND:  /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_GKI.config 
+[generate_defconfig.sh] Step 2: FINAL_DEFCONFIG_BLEND:  /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_GKI.config /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/gki_defconfig
+
++++[generate_defconfig.sh]+++
+[generate_defconfig.sh] after awk FINAL_DEFCONFIG_BLEND: /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/gki_defconfig /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_GKI.config
+[generate_defconfig.sh] ONLY_GKI=1
+[generate_defconfig.sh] ASUS_CONFIGS_DIR=/home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/
+[generate_defconfig.sh] ASUS_BUILD_PROJECT=SAKE
+[generate_defconfig.sh] TARGET_BUILD_VARIANT=user
+[generate_defconfig.sh] ONLY_GKI=1
+[generate_defconfig.sh] ASUS_GKI_BUILD=y
+[generate_defconfig.sh] REQUIRED_DEFCONFIG: lahaina-gki_defconfig
+[generate_defconfig.sh] defconfig blend for FINAL_DEFCONFIG_BLEND: /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/gki_defconfig /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_GKI.config
+---[generate_defconfig.sh]---
+
+================ end generate_defconfig.sh ================
+
+
+================ begin generate_defconfig.sh ================
+
+[generate_defconfig.sh] generate_defconfig.sh vendor/lahaina-gki_defconfig 
+[generate_defconfig.sh] QCOM_GKI_ALLYES_FRAG=/home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_ALLYES_GKI.config
+[generate_defconfig.sh] REQUIRED_DEFCONFIG=lahaina-gki_defconfig
+[generate_defconfig.sh] Step 1: FINAL_DEFCONFIG_BLEND:  /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_GKI.config 
+[generate_defconfig.sh] Step 2: FINAL_DEFCONFIG_BLEND:  /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_GKI.config /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/gki_defconfig
+
++++[generate_defconfig.sh]+++
+[generate_defconfig.sh] after awk FINAL_DEFCONFIG_BLEND: /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/gki_defconfig /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_GKI.config
+[generate_defconfig.sh] ONLY_GKI=1
+[generate_defconfig.sh] ASUS_CONFIGS_DIR=/home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/
+[generate_defconfig.sh] ASUS_BUILD_PROJECT=SAKE
+[generate_defconfig.sh] TARGET_BUILD_VARIANT=user
+[generate_defconfig.sh] ONLY_GKI=1
+[generate_defconfig.sh] ASUS_GKI_BUILD=y
+[generate_defconfig.sh] REQUIRED_DEFCONFIG: lahaina-gki_defconfig
+[generate_defconfig.sh] defconfig blend for FINAL_DEFCONFIG_BLEND: /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/gki_defconfig /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_GKI.config
+---[generate_defconfig.sh]---
+
+================ end generate_defconfig.sh ================
+
+
+================ begin generate_defconfig.sh ================
+
+[generate_defconfig.sh] generate_defconfig.sh vendor/lahaina-gki_defconfig 
+[generate_defconfig.sh] QCOM_GKI_ALLYES_FRAG=/home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_ALLYES_GKI.config
+[generate_defconfig.sh] REQUIRED_DEFCONFIG=lahaina-gki_defconfig
+[generate_defconfig.sh] Step 1: FINAL_DEFCONFIG_BLEND:  /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_GKI.config 
+[generate_defconfig.sh] Step 2: FINAL_DEFCONFIG_BLEND:  /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_GKI.config /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/gki_defconfig
+
++++[generate_defconfig.sh]+++
+[generate_defconfig.sh] after awk FINAL_DEFCONFIG_BLEND: /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/gki_defconfig /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_GKI.config
+[generate_defconfig.sh] ONLY_GKI=1
+[generate_defconfig.sh] ASUS_CONFIGS_DIR=/home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/
+[generate_defconfig.sh] ASUS_BUILD_PROJECT=SAKE
+[generate_defconfig.sh] TARGET_BUILD_VARIANT=user
+[generate_defconfig.sh] ONLY_GKI=1
+[generate_defconfig.sh] ASUS_GKI_BUILD=y
+[generate_defconfig.sh] REQUIRED_DEFCONFIG: lahaina-gki_defconfig
+[generate_defconfig.sh] defconfig blend for FINAL_DEFCONFIG_BLEND: /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/gki_defconfig /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_GKI.config
+---[generate_defconfig.sh]---
+
+================ end generate_defconfig.sh ================
+
+
+================ begin generate_defconfig.sh ================
+
+[generate_defconfig.sh] generate_defconfig.sh vendor/lahaina-gki_defconfig 
+[generate_defconfig.sh] QCOM_GKI_ALLYES_FRAG=/home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_ALLYES_GKI.config
+[generate_defconfig.sh] REQUIRED_DEFCONFIG=lahaina-gki_defconfig
+[generate_defconfig.sh] Step 1: FINAL_DEFCONFIG_BLEND:  /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_GKI.config 
+[generate_defconfig.sh] Step 2: FINAL_DEFCONFIG_BLEND:  /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_GKI.config /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/gki_defconfig
+
++++[generate_defconfig.sh]+++
+[generate_defconfig.sh] after awk FINAL_DEFCONFIG_BLEND: /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/gki_defconfig /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_GKI.config
+[generate_defconfig.sh] ONLY_GKI=1
+[generate_defconfig.sh] ASUS_CONFIGS_DIR=/home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/
+[generate_defconfig.sh] ASUS_BUILD_PROJECT=SAKE
+[generate_defconfig.sh] TARGET_BUILD_VARIANT=user
+[generate_defconfig.sh] ONLY_GKI=1
+[generate_defconfig.sh] ASUS_GKI_BUILD=y
+[generate_defconfig.sh] REQUIRED_DEFCONFIG: lahaina-gki_defconfig
+[generate_defconfig.sh] defconfig blend for FINAL_DEFCONFIG_BLEND: /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/gki_defconfig /home/cm/Image/All_Project_Workspace/sm8350_apps/LINUX/android/kernel/msm-5.4/arch/arm64/configs/vendor/lahaina_GKI.config
+---[generate_defconfig.sh]---
+
+================ end generate_defconfig.sh ================
+

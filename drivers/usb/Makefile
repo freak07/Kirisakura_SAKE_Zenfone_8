@@ -67,3 +67,6 @@ obj-$(CONFIG_USBIP_CORE)	+= usbip/
 obj-$(CONFIG_TYPEC)		+= typec/
 
 obj-$(CONFIG_USB_ROLE_SWITCH)	+= roles/
+ifeq ($(CONFIG_MACH_ASUS),y)
+obj-$(CONFIG_TCPC_CLASS)        += pd_rt1715/
+endif
