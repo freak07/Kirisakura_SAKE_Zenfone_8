@@ -1117,23 +1117,6 @@ static void cfg80211_update_hidden_bsses(struct cfg80211_internal_bss *known,
 	}
 }
 
-static void cfg80211_update_hidden_bsses(struct cfg80211_internal_bss *known,
-					 const struct cfg80211_bss_ies *new_ies,
-					 const struct cfg80211_bss_ies *old_ies)
-{
-	struct cfg80211_internal_bss *bss;
-
-	/* Assign beacon IEs to all sub entries */
-	list_for_each_entry(bss, &known->hidden_list, hidden_list) {
-		const struct cfg80211_bss_ies *ies;
-
-		ies = rcu_access_pointer(bss->pub.beacon_ies);
-		WARN_ON(ies != old_ies);
-
-		rcu_assign_pointer(bss->pub.beacon_ies, new_ies);
-	}
-}
-
 static bool
 cfg80211_update_known_bss(struct cfg80211_registered_device *rdev,
 			  struct cfg80211_internal_bss *known,
