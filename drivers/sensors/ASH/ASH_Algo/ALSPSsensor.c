@@ -1162,6 +1162,7 @@ mutex_lock(&g_alsps_lock);
 			cancel_delayed_work(&light_polling_lux_work);
 			queue_delayed_work(ALSPS_delay_workqueue, &light_polling_lux_work, msecs_to_jiffies(400));
 			log("skip polling behavior since first event can be reported by chip ist");
+			g_tmd2755_status_param.log_first_evt = false;
 mutex_unlock(&g_alsps_lock);
 			return;
 		}
